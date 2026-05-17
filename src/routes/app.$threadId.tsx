@@ -33,11 +33,15 @@ function ThreadView() {
   const { data: thread } = useQuery({
     queryKey: ["thread", threadId],
     queryFn: async () => {
+<<<<<<< HEAD
       const { data, error } = await supabase
         .from("threads")
         .select("*")
         .eq("id", threadId)
         .single();
+=======
+      const { data, error } = await supabase.from("threads").select("*").eq("id", threadId).single();
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
       if (error) throw error;
       return data;
     },
@@ -69,6 +73,7 @@ function ThreadView() {
       new DefaultChatTransport({
         api: "/api/chat",
         body: () => ({ mode }),
+<<<<<<< HEAD
         prepareSendMessagesRequest: async (options) => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
@@ -89,6 +94,8 @@ function ThreadView() {
               : options.headers,
           };
         },
+=======
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
       }),
     [mode],
   );
@@ -145,10 +152,14 @@ function ThreadView() {
         .eq("id", threadId);
       qc.invalidateQueries({ queryKey: ["threads"] });
     } else {
+<<<<<<< HEAD
       await supabase
         .from("threads")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", threadId);
+=======
+      await supabase.from("threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
     }
 
     sendMessage({ text });
@@ -161,6 +172,7 @@ function ThreadView() {
           <div className="min-w-0">
             <div className="text-sm font-semibold truncate">{thread?.title ?? "Session"}</div>
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+<<<<<<< HEAD
               Agent #{threadId.slice(0, 6)} / {mode}
             </div>
           </div>
@@ -175,6 +187,16 @@ function ThreadView() {
               className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
               disabled
             >
+=======
+              Agent #{threadId.slice(0, 6)} · {mode}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5" disabled>
+              <Upload className="size-3" /> Upload ZIP
+            </button>
+            <button className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5" disabled>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
               <GitBranch className="size-3" /> Connect Repo
             </button>
           </div>
@@ -183,7 +205,11 @@ function ThreadView() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
             {loadingMsgs && (
+<<<<<<< HEAD
               <div className="text-xs text-muted-foreground font-mono">Loading session...</div>
+=======
+              <div className="text-xs text-muted-foreground font-mono">Loading session…</div>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
             )}
             {!loadingMsgs && messages.length === 0 && <EmptyChat />}
             {messages.map((m) => (
@@ -191,7 +217,11 @@ function ThreadView() {
             ))}
             {status === "submitted" && (
               <div className="font-mono text-[11px] text-accent flex items-center gap-2">
+<<<<<<< HEAD
                 <Loader2 className="size-3 animate-spin" /> Initializing workspace...
+=======
+                <Loader2 className="size-3 animate-spin" /> Initializing workspace…
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
               </div>
             )}
           </div>
@@ -228,7 +258,11 @@ function ThreadView() {
                     handleSend();
                   }
                 }}
+<<<<<<< HEAD
                 placeholder="Ask Nexus Core to analyze, plan, fix, build, or verify..."
+=======
+                placeholder="Ask Nexus Core to analyze, plan, fix, build, or verify…"
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
                 className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none"
               />
               <button
@@ -241,7 +275,11 @@ function ThreadView() {
               </button>
             </div>
             <div className="mt-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+<<<<<<< HEAD
               Cmd/Ctrl + Enter to execute
+=======
+              ⌘ + Enter to execute
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
             </div>
           </div>
         </div>
@@ -257,12 +295,17 @@ function ThreadView() {
             <div className="absolute left-[-9px] top-1 bottom-1 w-px bg-border" />
             {mockExecutionSteps.map((s) => (
               <div key={s.id} className="relative flex items-center gap-3">
+<<<<<<< HEAD
                 <div
                   className={`size-2 rounded-full ring-4 ring-background ${statusDot(s.status)}`}
                 />
                 <span
                   className={`text-[11px] ${s.status === "completed" ? "text-zinc-400" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}
                 >
+=======
+                <div className={`size-2 rounded-full ring-4 ring-background ${statusDot(s.status)}`} />
+                <span className={`text-[11px] ${s.status === "completed" ? "text-zinc-400" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
                   {s.title}
                 </span>
               </div>
@@ -275,9 +318,13 @@ function ThreadView() {
             {mockVerification.map((v) => (
               <div key={v.id} className="flex items-center justify-between">
                 <span className="text-xs text-zinc-300">{v.type}</span>
+<<<<<<< HEAD
                 <span
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(v.status)}`}
                 >
+=======
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(v.status)}`}>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
                   {v.status.replace("_", " ")}
                 </span>
               </div>
@@ -290,12 +337,17 @@ function ThreadView() {
             <div className="text-[11px] font-semibold text-warning mb-1">1 pending</div>
             <div className="text-[11px] text-zinc-400">Delete legacy session middleware</div>
             <div className="flex gap-1.5 mt-2">
+<<<<<<< HEAD
               <button className="flex-1 text-[10px] font-semibold rounded bg-foreground text-background py-1">
                 Approve
               </button>
               <button className="flex-1 text-[10px] font-semibold rounded border border-border py-1">
                 Reject
               </button>
+=======
+              <button className="flex-1 text-[10px] font-semibold rounded bg-foreground text-background py-1">Approve</button>
+              <button className="flex-1 text-[10px] font-semibold rounded border border-border py-1">Reject</button>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
             </div>
           </div>
         </DrawerSection>
@@ -308,8 +360,13 @@ function EmptyChat() {
   return (
     <div className="py-12 text-center">
       <div className="text-sm text-muted-foreground">
+<<<<<<< HEAD
         Ask Nexus Core anything - it will respond with a structured plan, execution log, and
         verification.
+=======
+        Ask Nexus Core anything — it will respond with a structured plan,
+        execution log, and verification.
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
       </div>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl mx-auto text-left">
         {[
@@ -318,10 +375,14 @@ function EmptyChat() {
           "Find startup issues in my Node service and fix them safely.",
           "Produce a Q3 sales report from the attached CSV.",
         ].map((p) => (
+<<<<<<< HEAD
           <div
             key={p}
             className="p-3 rounded-lg border border-border bg-surface text-xs text-zinc-400"
           >
+=======
+          <div key={p} className="p-3 rounded-lg border border-border bg-surface text-xs text-zinc-400">
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
             {p}
           </div>
         ))}
@@ -331,7 +392,13 @@ function EmptyChat() {
 }
 
 function MessageBlock({ message }: { message: UIMessage }) {
+<<<<<<< HEAD
   const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+=======
+  const text = message.parts
+    .map((p) => (p.type === "text" ? p.text : ""))
+    .join("");
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
 
   if (message.role === "user") {
     return (
@@ -366,16 +433,25 @@ const SECTION_NAMES = [
 ];
 
 function StructuredAssistant({ text }: { text: string }) {
+<<<<<<< HEAD
   if (!text) return <div className="text-xs text-muted-foreground font-mono">Thinking...</div>;
+=======
+  if (!text) return <div className="text-xs text-muted-foreground font-mono">Thinking…</div>;
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
 
   const sections: { name: string; body: string }[] = [];
   const regex = /\*\*([^*]+)\*\*/g;
   const indices: { name: string; index: number; len: number }[] = [];
   let m: RegExpExecArray | null;
   while ((m = regex.exec(text))) {
+<<<<<<< HEAD
     const sectionName = m[1]?.trim();
     if (sectionName && SECTION_NAMES.some((n) => n.toLowerCase() === sectionName.toLowerCase())) {
       indices.push({ name: sectionName, index: m.index, len: m[0].length });
+=======
+    if (SECTION_NAMES.some((n) => n.toLowerCase() === m[1].trim().toLowerCase())) {
+      indices.push({ name: m[1].trim(), index: m.index, len: m[0].length });
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
     }
   }
   if (indices.length === 0) {
@@ -404,6 +480,7 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
   return (
     <section
       className={`rounded-lg border ${
+<<<<<<< HEAD
         isRisk ? "border-destructive/30 bg-destructive/5" : "border-border bg-surface"
       } overflow-hidden`}
     >
@@ -412,6 +489,16 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
           isRisk ? "text-destructive" : "text-accent"
         }`}
       >
+=======
+        isRisk
+          ? "border-destructive/30 bg-destructive/5"
+          : "border-border bg-surface"
+      } overflow-hidden`}
+    >
+      <header className={`px-4 py-2 border-b border-white/5 font-mono text-[10px] uppercase tracking-widest ${
+        isRisk ? "text-destructive" : "text-accent"
+      }`}>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
         {name}
       </header>
       <div className="p-4">
@@ -430,6 +517,7 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
 }
 
 function stripCodeFence(s: string) {
+<<<<<<< HEAD
   return s
     .replace(/^```[a-z]*\n?/, "")
     .replace(/```$/, "")
@@ -446,6 +534,16 @@ function VerificationFromText({ text }: { text: string }) {
       /(Typecheck|Lint(?:er|ing)?|Build|Tests?|Security(?: Scan)?|Performance)[^A-Z]*?(PASSED|FAILED|WARNING|NOT RUN|RUNNING)/i,
     );
     if (!m) return { label: l.replace(/^[-*\s]+/, ""), status: "not_run" as VerificationStatus };
+=======
+  return s.replace(/^```[a-z]*\n?/, "").replace(/```$/, "").trim();
+}
+
+function VerificationFromText({ text }: { text: string }) {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const parsed = lines.map((l) => {
+    const m = l.match(/(Typecheck|Lint(?:er|ing)?|Build|Tests?|Security(?: Scan)?|Performance)[^A-Z]*?(PASSED|FAILED|WARNING|NOT RUN|RUNNING)/i);
+    if (!m) return { label: l.replace(/^[-*•\s]+/, ""), status: "not_run" as VerificationStatus };
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
     return {
       label: m[1],
       status: m[2].toUpperCase().replace(" ", "_").toLowerCase() as VerificationStatus,
@@ -456,9 +554,13 @@ function VerificationFromText({ text }: { text: string }) {
       {parsed.map((p, i) => (
         <div key={i} className="flex items-center justify-between text-xs">
           <span className="text-zinc-300">{p.label}</span>
+<<<<<<< HEAD
           <span
             className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(p.status)}`}
           >
+=======
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(p.status)}`}>
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
             {p.status.replace("_", " ")}
           </span>
         </div>
@@ -488,6 +590,7 @@ function FileTree({ nodes, depth }: { nodes: FileNode[]; depth: number }) {
             style={{ paddingLeft: 8 + depth * 12 }}
           >
             {n.type === "dir" ? (
+<<<<<<< HEAD
               <span className="text-muted-foreground">&gt;</span>
             ) : (
               <span
@@ -500,6 +603,12 @@ function FileTree({ nodes, depth }: { nodes: FileNode[]; depth: number }) {
                 }
               >
                 {n.status === "added" ? "+" : n.status === "modified" ? "~" : "-"}
+=======
+              <span className="text-muted-foreground">▸</span>
+            ) : (
+              <span className={n.status === "added" ? "text-emerald-400" : n.status === "modified" ? "text-accent" : "text-muted-foreground"}>
+                {n.status === "added" ? "+" : n.status === "modified" ? "~" : "·"}
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
               </span>
             )}
             <span className={n.type === "dir" ? "text-zinc-300" : "text-zinc-400"}>{n.name}</span>
@@ -513,6 +622,7 @@ function FileTree({ nodes, depth }: { nodes: FileNode[]; depth: number }) {
 
 function statusDot(s: TaskStatus): string {
   switch (s) {
+<<<<<<< HEAD
     case "completed":
       return "bg-emerald-500";
     case "running":
@@ -524,11 +634,20 @@ function statusDot(s: TaskStatus): string {
       return "bg-warning";
     default:
       return "bg-zinc-700";
+=======
+    case "completed": return "bg-emerald-500";
+    case "running":
+    case "verifying": return "bg-accent animate-pulse";
+    case "failed": return "bg-destructive";
+    case "awaiting_approval": return "bg-warning";
+    default: return "bg-zinc-700";
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
   }
 }
 
 function verifPill(s: VerificationStatus): string {
   switch (s) {
+<<<<<<< HEAD
     case "passed":
       return "bg-emerald-500/10 text-emerald-400";
     case "failed":
@@ -539,5 +658,12 @@ function verifPill(s: VerificationStatus): string {
       return "bg-accent/10 text-accent";
     default:
       return "bg-white/5 text-muted-foreground";
+=======
+    case "passed": return "bg-emerald-500/10 text-emerald-400";
+    case "failed": return "bg-destructive/10 text-destructive";
+    case "warning": return "bg-warning/10 text-warning";
+    case "running": return "bg-accent/10 text-accent";
+    default: return "bg-white/5 text-muted-foreground";
+>>>>>>> 2539edef339e3da35f548a966b4e08073deb6852
   }
 }
