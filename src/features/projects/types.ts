@@ -60,6 +60,26 @@ export interface ProjectFile {
   created_at: string;
 }
 
+export interface ProjectTextPreview {
+  id: string;
+  project_id: string;
+  file_id: string;
+  user_id: string;
+  preview_text: string;
+  summary: string;
+  detected_language: string | null;
+  indexed_at: string;
+  truncated: boolean;
+  line_count: number;
+  token_estimate: number;
+  metadata: Json;
+  created_at: string;
+}
+
+export interface ProjectTextPreviewWithPath extends ProjectTextPreview {
+  path: string;
+}
+
 export interface ProjectSecurityEvent {
   id: string;
   user_id: string;
@@ -80,6 +100,7 @@ export interface ProjectChatMetadata {
   status: ProjectStatus;
   ingestion_status: ProjectIngestionStatus | "none";
   manifest?: ProjectManifest | null;
+  previews?: ProjectContextPreview[];
 }
 
 export interface ProjectManifestDirectory {
@@ -108,4 +129,13 @@ export interface ProjectManifest {
   likely_entry_points: string[];
   directories: ProjectManifestDirectory[];
   stack_hints: ProjectStackHint[];
+}
+
+export interface ProjectContextPreview {
+  path: string;
+  summary: string;
+  detected_language: string | null;
+  preview_text: string;
+  truncated: boolean;
+  token_estimate: number;
 }

@@ -11,6 +11,9 @@ export interface ZipInventoryFile {
   name: string;
   extension: string | null;
   size_bytes: number;
+  compressed_size: number;
+  compression_method: number;
+  local_header_offset: number;
   mime_type: string;
   checksum: string | null;
 }
@@ -25,6 +28,7 @@ export interface ZipInventoryResult {
 
 const EOCD_SIGNATURE = 0x06054b50;
 const CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
+const LOCAL_FILE_HEADER_SIGNATURE = 0x04034b50;
 const ZIP64_SENTINEL = 0xffffffff;
 
 function readUInt16(bytes: Uint8Array, offset: number): number {
@@ -197,11 +201,14 @@ export function readZipCentralDirectory(bytes: Uint8Array): ZipInventoryResult {
     }
 
     const flags = readUInt16(bytes, offset + 8);
+    const compressionMethod = readUInt16(bytes, offset + 10);
     const crc32 = readUInt32(bytes, offset + 16);
+    const compressedSize = readUInt32(bytes, offset + 20);
     const uncompressedSize = readUInt32(bytes, offset + 24);
     const fileNameLength = readUInt16(bytes, offset + 28);
     const extraLength = readUInt16(bytes, offset + 30);
     const commentLength = readUInt16(bytes, offset + 32);
+    const localHeaderOffset = readUInt32(bytes, offset + 42);
     const nameStart = offset + 46;
     const nameEnd = nameStart + fileNameLength;
     const nextOffset = nameEnd + extraLength + commentLength;
@@ -259,6 +266,9 @@ export function readZipCentralDirectory(bytes: Uint8Array): ZipInventoryResult {
       name,
       extension,
       size_bytes: uncompressedSize,
+      compressed_size: compressedSize,
+      compression_method: compressionMethod,
+      local_header_offset: localHeaderOffset,
       mime_type: mimeCategoryFor(extension),
       checksum: crc32 ? `crc32:${crc32Hex(crc32)}` : null,
     });
@@ -293,4 +303,49 @@ export function toProjectFileInsert(
     mime_type: file.mime_type,
     checksum: file.checksum,
   };
+}
+
+async function decompressDeflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("Deflate decompression is not available in this runtime.");
+  }
+
+  const data = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(data).set(bytes);
+  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+export async function readZipEntryBytes(
+  archiveBytes: Uint8Array,
+  file: Pick<
+    ZipInventoryFile,
+    "local_header_offset" | "compressed_size" | "size_bytes" | "compression_method" | "path"
+  >,
+): Promise<Uint8Array> {
+  const offset = file.local_header_offset;
+  if (offset < 0 || offset + 30 > archiveBytes.byteLength) {
+    throw new Error(`Malformed ZIP entry header for ${file.path}.`);
+  }
+
+  if (readUInt32(archiveBytes, offset) !== LOCAL_FILE_HEADER_SIGNATURE) {
+    throw new Error(`Malformed ZIP local header for ${file.path}.`);
+  }
+
+  const fileNameLength = readUInt16(archiveBytes, offset + 26);
+  const extraLength = readUInt16(archiveBytes, offset + 28);
+  const dataStart = offset + 30 + fileNameLength + extraLength;
+  const dataEnd = dataStart + file.compressed_size;
+
+  if (dataStart < 0 || dataEnd > archiveBytes.byteLength) {
+    throw new Error(`ZIP entry data points outside the archive for ${file.path}.`);
+  }
+
+  const compressed = archiveBytes.slice(dataStart, dataEnd);
+  if (file.compression_method === 0) return compressed;
+  if (file.compression_method === 8) return decompressDeflateRaw(compressed);
+
+  throw new Error(
+    `Unsupported ZIP compression method ${file.compression_method} for ${file.path}.`,
+  );
 }

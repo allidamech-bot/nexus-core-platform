@@ -1,11 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadProjectZip, type UploadProjectInput } from "./projectUploadService";
-import { listLatestIngestionJobs, listProjectFiles, listProjects } from "./projectService";
-import type { ProjectFile, ProjectIngestionJob, ProjectWithLatestJob } from "./types";
+import {
+  listLatestIngestionJobs,
+  listProjectFiles,
+  listProjects,
+  listProjectTextPreviews,
+} from "./projectService";
+import type {
+  ProjectFile,
+  ProjectIngestionJob,
+  ProjectTextPreviewWithPath,
+  ProjectWithLatestJob,
+} from "./types";
 
 export const projectKeys = {
   all: ["projects"] as const,
   files: (projectId: string) => ["projects", projectId, "files"] as const,
+  previews: (projectId: string) => ["projects", projectId, "text-previews"] as const,
 };
 
 export function useProjectsQuery(enabled = true) {
@@ -38,6 +49,20 @@ export function useUploadProjectMutation() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: projectKeys.all });
       qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });
+      qc.invalidateQueries({ queryKey: projectKeys.previews(result.project.id) });
+    },
+  });
+}
+
+export function useProjectTextPreviewsQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId
+      ? projectKeys.previews(projectId)
+      : ["projects", "text-previews", "disabled"],
+    queryFn: async (): Promise<ProjectTextPreviewWithPath[]> => {
+      if (!projectId) return [];
+      return listProjectTextPreviews(projectId);
     },
   });
 }

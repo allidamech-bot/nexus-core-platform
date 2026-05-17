@@ -69,8 +69,8 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
           <DialogHeader>
             <DialogTitle className="text-xl tracking-tight">Upload project archive</DialogTitle>
             <DialogDescription>
-              Create a real project record and ingestion job from a ZIP archive. Extraction remains
-              disabled in Phase 2A.
+              Create a real project record, manifest, and safe text preview index from a ZIP
+              archive.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -94,8 +94,8 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
                   {file ? file.name : "Select a .zip archive"}
                 </div>
                 <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  ZIP only, max {PROJECT_UPLOAD_MAX_MB}MB. Nexus Core stores metadata now and does
-                  not execute or extract project code in this phase.
+                  ZIP only, max {PROJECT_UPLOAD_MAX_MB}MB. Nexus Core reads small allowlisted text
+                  previews only and never executes project code.
                 </div>
                 {file && (
                   <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useProjectsQuery } from "./projectQueries";
+import { useProjectsQuery, useProjectTextPreviewsQuery } from "./projectQueries";
+import { shapeProjectPreviewsForContext } from "./contextShaper";
 import { getProjectManifest } from "./projectManifest";
 import { ProjectWorkspaceContext } from "./projectWorkspaceContext";
 import type { ProjectChatMetadata } from "./types";
@@ -13,22 +14,27 @@ export function ProjectWorkspaceProvider({
 }) {
   const { data: projects = [], isLoading } = useProjectsQuery(enabled);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const projectSelectionKey = useMemo(
+    () => projects.map((project) => project.id).join("|"),
+    [projects],
+  );
 
   useEffect(() => {
-    if (projects.length === 0) {
-      setSelectedProjectId(null);
-      return;
-    }
-
-    if (!selectedProjectId || !projects.some((project) => project.id === selectedProjectId)) {
-      setSelectedProjectId(projects[0].id);
-    }
-  }, [projects, selectedProjectId]);
+    setSelectedProjectId((currentProjectId) => {
+      if (projects.length === 0) return currentProjectId === null ? currentProjectId : null;
+      if (currentProjectId && projects.some((project) => project.id === currentProjectId)) {
+        return currentProjectId;
+      }
+      return projects[0].id;
+    });
+  }, [projects, projectSelectionKey]);
 
   const activeProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   );
+  const { data: activeProjectPreviews = [], isLoading: activeProjectPreviewsLoading } =
+    useProjectTextPreviewsQuery(activeProject?.id ?? null);
 
   const activeProjectMetadata = useMemo<ProjectChatMetadata | null>(() => {
     if (!activeProject) return null;
@@ -38,20 +44,34 @@ export function ProjectWorkspaceProvider({
       status: activeProject.status,
       ingestion_status: activeProject.latest_job?.status ?? "none",
       manifest: getProjectManifest(activeProject),
+      previews: shapeProjectPreviewsForContext(activeProjectPreviews),
     };
-  }, [activeProject]);
+  }, [activeProject, activeProjectPreviews]);
+
+  const contextValue = useMemo(
+    () => ({
+      projects,
+      projectsLoading: isLoading,
+      selectedProjectId,
+      setSelectedProjectId,
+      activeProject,
+      activeProjectPreviews,
+      activeProjectPreviewsLoading,
+      activeProjectMetadata,
+    }),
+    [
+      activeProject,
+      activeProjectMetadata,
+      activeProjectPreviews,
+      activeProjectPreviewsLoading,
+      isLoading,
+      projects,
+      selectedProjectId,
+    ],
+  );
 
   return (
-    <ProjectWorkspaceContext.Provider
-      value={{
-        projects,
-        projectsLoading: isLoading,
-        selectedProjectId,
-        setSelectedProjectId,
-        activeProject,
-        activeProjectMetadata,
-      }}
-    >
+    <ProjectWorkspaceContext.Provider value={contextValue}>
       {children}
     </ProjectWorkspaceContext.Provider>
   );

@@ -1,4 +1,11 @@
-import { Link, Outlet, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, LogOut, Boxes, Workflow as WorkflowIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -17,12 +24,16 @@ export const Route = createFileRoute("/app")({
 function AppLayout() {
   const { session, loading, signOut, user } = useAuth();
 
-  if (loading || !session) {
+  if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-background">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
   }
 
   return (

@@ -134,6 +134,69 @@ export type Database = {
           },
         ];
       };
+      project_text_previews: {
+        Row: {
+          created_at: string;
+          detected_language: string | null;
+          file_id: string;
+          id: string;
+          indexed_at: string;
+          line_count: number;
+          metadata: Json;
+          preview_text: string;
+          project_id: string;
+          summary: string;
+          token_estimate: number;
+          truncated: boolean;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          detected_language?: string | null;
+          file_id: string;
+          id?: string;
+          indexed_at?: string;
+          line_count?: number;
+          metadata?: Json;
+          preview_text: string;
+          project_id: string;
+          summary: string;
+          token_estimate?: number;
+          truncated?: boolean;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          detected_language?: string | null;
+          file_id?: string;
+          id?: string;
+          indexed_at?: string;
+          line_count?: number;
+          metadata?: Json;
+          preview_text?: string;
+          project_id?: string;
+          summary?: string;
+          token_estimate?: number;
+          truncated?: boolean;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_text_previews_file_id_fkey";
+            columns: ["file_id"];
+            isOneToOne: false;
+            referencedRelation: "project_files";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_text_previews_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_security_events: {
         Row: {
           created_at: string;

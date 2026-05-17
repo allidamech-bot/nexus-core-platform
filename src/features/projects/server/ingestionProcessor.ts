@@ -3,6 +3,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 import { PROJECT_UPLOAD_BUCKET } from "../constants";
 import type { Project, ProjectIngestionJob, ProjectManifest } from "../types";
 import { generateProjectManifest } from "./manifestGenerator";
+import { generateTextPreviewsFromArchive } from "./textPreviewIndexer";
 import { readZipCentralDirectory, toProjectFileInsert } from "./zipCentralDirectory";
 
 type ProjectSupabaseClient = SupabaseClient<Database>;
@@ -112,7 +113,7 @@ export async function processProjectArchive({
       error_message: null,
       metadata: {
         ...existingMetadata,
-        pipeline: "zip_manifest_v1",
+        pipeline: "zip_manifest_text_preview_v1",
       },
     });
 
@@ -122,12 +123,15 @@ export async function processProjectArchive({
 
     if (downloadError) throw downloadError;
     if (!archive) throw new Error("Uploaded archive could not be downloaded.");
+    const archiveBytes = new Uint8Array(await archive.arrayBuffer());
 
     await updateJob(supabase, job.id, { status: "processing", stage: "scanning" });
-    const inventory = readZipCentralDirectory(new Uint8Array(await archive.arrayBuffer()));
+    const inventory = readZipCentralDirectory(archiveBytes);
 
     await updateJob(supabase, job.id, { status: "processing", stage: "manifest_generation" });
     const manifest = generateProjectManifest(inventory);
+    await updateJob(supabase, job.id, { status: "processing", stage: "text_preview_indexing" });
+    const previewIndex = await generateTextPreviewsFromArchive(archiveBytes, inventory.files);
 
     if (inventory.suspicious.length > 0) {
       await logSecurityEvent(supabase, {
@@ -139,6 +143,20 @@ export async function processProjectArchive({
           count: inventory.suspicious.length,
           entries: inventory.suspicious.slice(0, 25) as unknown as Json,
           skipped_reasons: inventory.skipped,
+        },
+      });
+    }
+
+    if (previewIndex.suspicious.length > 0) {
+      await logSecurityEvent(supabase, {
+        userId,
+        projectId,
+        severity: "warning",
+        eventType: "project_text_preview_suspicious_entries",
+        payload: {
+          count: previewIndex.suspicious.length,
+          entries: previewIndex.suspicious.slice(0, 25) as unknown as Json,
+          skipped_reasons: previewIndex.skipped,
         },
       });
     }
@@ -159,6 +177,45 @@ export async function processProjectArchive({
           });
         if (error) throw error;
       }
+
+      const previewPaths = previewIndex.previews.map((preview) => preview.path);
+      if (previewPaths.length > 0) {
+        const { data: fileRows, error: fileRowsError } = await supabase
+          .from("project_files")
+          .select("id,path")
+          .eq("project_id", projectId)
+          .in("path", previewPaths);
+
+        if (fileRowsError) throw fileRowsError;
+
+        const fileIdsByPath = new Map((fileRows ?? []).map((row) => [row.path, row.id]));
+        const previewRows = previewIndex.previews
+          .map((preview) => {
+            const fileId = fileIdsByPath.get(preview.path);
+            if (!fileId) return null;
+            return {
+              project_id: projectId,
+              file_id: fileId,
+              user_id: userId,
+              preview_text: preview.preview_text,
+              summary: preview.summary,
+              detected_language: preview.detected_language,
+              truncated: preview.truncated,
+              line_count: preview.line_count,
+              token_estimate: preview.token_estimate,
+              metadata: preview.metadata,
+              indexed_at: new Date().toISOString(),
+            };
+          })
+          .filter((row): row is NonNullable<typeof row> => row !== null);
+
+        if (previewRows.length > 0) {
+          const { error: previewError } = await supabase
+            .from("project_text_previews")
+            .upsert(previewRows, { onConflict: "project_id,file_id" });
+          if (previewError) throw previewError;
+        }
+      }
     }
 
     const completedMetadata = {
@@ -166,8 +223,13 @@ export async function processProjectArchive({
       storage_path: storagePath,
       storage_bucket: PROJECT_UPLOAD_BUCKET,
       storage_available: true,
-      pipeline: "zip_manifest_v1",
+      pipeline: "zip_manifest_text_preview_v1",
       manifest: manifest as unknown as Json,
+      text_preview: {
+        indexed_count: previewIndex.previews.length,
+        indexed_bytes: previewIndex.totalIndexedBytes,
+        skipped_reasons: previewIndex.skipped,
+      },
     };
 
     await updateProjectStatus(supabase, projectId, "indexed_manifest");
@@ -199,7 +261,7 @@ export async function processProjectArchive({
       error_message: message,
       metadata: {
         ...existingMetadata,
-        pipeline: "zip_manifest_v1",
+        pipeline: "zip_manifest_text_preview_v1",
         failure: message,
       },
     }).catch(() => {});

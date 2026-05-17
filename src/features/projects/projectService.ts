@@ -7,6 +7,7 @@ import type {
   ProjectIngestionStatus,
   ProjectSecurityEvent,
   ProjectStatus,
+  ProjectTextPreviewWithPath,
 } from "./types";
 
 export async function listProjects(): Promise<Project[]> {
@@ -44,6 +45,34 @@ export async function listProjectFiles(projectId: string): Promise<ProjectFile[]
 
   if (error) throw error;
   return (data ?? []) as ProjectFile[];
+}
+
+export async function listProjectTextPreviews(
+  projectId: string,
+): Promise<ProjectTextPreviewWithPath[]> {
+  const { data: previews, error: previewError } = await supabase
+    .from("project_text_previews")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("indexed_at", { ascending: false })
+    .limit(24);
+
+  if (previewError) throw previewError;
+  if (!previews?.length) return [];
+
+  const fileIds = previews.map((preview) => preview.file_id);
+  const { data: files, error: fileError } = await supabase
+    .from("project_files")
+    .select("id,path")
+    .in("id", fileIds);
+
+  if (fileError) throw fileError;
+  const pathsByFileId = new Map((files ?? []).map((file) => [file.id, file.path]));
+
+  return previews.map((preview) => ({
+    ...preview,
+    path: pathsByFileId.get(preview.file_id) ?? "unknown",
+  })) as ProjectTextPreviewWithPath[];
 }
 
 export async function createProject(input: {

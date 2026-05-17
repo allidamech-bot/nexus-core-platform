@@ -5,6 +5,7 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import type { Database } from "@/integrations/supabase/types";
 import type { ProjectChatMetadata } from "@/features/projects/types";
+import { manifestContextLine } from "@/features/projects/contextShaper";
 
 type Body = {
   id?: unknown;
@@ -45,19 +46,24 @@ Tone: precise, senior-engineer, business-grade. Never refuse without giving a st
 
 function projectContextPrompt(project: Body["project"]) {
   if (!project?.name) return "";
+  const previews = (project.previews ?? [])
+    .slice(0, 6)
+    .map((preview) => {
+      const text = String(preview.preview_text ?? "").slice(0, 1_500);
+      return `- ${String(preview.path ?? "unknown").slice(0, 220)} (${String(preview.summary ?? "preview").slice(0, 120)}):\n${text}`;
+    })
+    .join("\n\n");
 
   return `\n\nActive project metadata:
 - name: ${String(project.name).slice(0, 160)}
 - source_type: ${String(project.source_type ?? "unknown").slice(0, 40)}
 - project_status: ${String(project.status ?? "unknown").slice(0, 40)}
 - ingestion_status: ${String(project.ingestion_status ?? "none").slice(0, 40)}
-- manifest: ${
-    project.manifest
-      ? `${project.manifest.file_count} files, frameworks: ${project.manifest.frameworks.join(", ") || "unknown"}, languages: ${project.manifest.languages.join(", ") || "unknown"}`
-      : "not generated"
-  }
+- ${manifestContextLine(project.manifest)}
+- safe_text_previews: ${project.previews?.length ?? 0}
+${previews ? `\nSelected safe preview snippets:\n${previews}\n` : ""}
 
-Do not claim access to raw project files. Phase 2B provides safe manifest and file inventory metadata only; ZIP contents, deep indexing, execution, and verification are not available.`;
+Do not claim access to raw project files or entire repositories. Phase 2C provides only capped, redacted, allowlisted preview snippets and manifest metadata; execution, embeddings, deep indexing, and verification are not available.`;
 }
 
 function textResponse(message: string, status: number) {

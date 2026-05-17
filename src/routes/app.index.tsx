@@ -4,13 +4,15 @@ import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 import { getProjectManifest } from "@/features/projects/projectManifest";
 import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
+import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewPanel";
 
 export const Route = createFileRoute("/app/")({
   component: AppIndex,
 });
 
 function AppIndex() {
-  const { projects, activeProject } = useProjectWorkspace();
+  const { projects, activeProject, activeProjectPreviews, activeProjectPreviewsLoading } =
+    useProjectWorkspace();
   const manifest = getProjectManifest(activeProject);
 
   return (
@@ -48,6 +50,12 @@ function AppIndex() {
             </div>
             <div className="mt-4">
               <ProjectManifestCard manifest={manifest} />
+            </div>
+            <div className="mt-4">
+              <ProjectTextPreviewPanel
+                previews={activeProjectPreviews}
+                loading={activeProjectPreviewsLoading}
+              />
             </div>
           </div>
         ) : null}

@@ -14,6 +14,7 @@ import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
 import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
+import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewPanel";
 import { getProjectManifest } from "@/features/projects/projectManifest";
 import { useProjectFilesQuery } from "@/features/projects/projectQueries";
 
@@ -36,7 +37,12 @@ function ThreadView() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { activeProject, activeProjectMetadata } = useProjectWorkspace();
+  const {
+    activeProject,
+    activeProjectMetadata,
+    activeProjectPreviews,
+    activeProjectPreviewsLoading,
+  } = useProjectWorkspace();
   const activeProjectManifest = useMemo(() => getProjectManifest(activeProject), [activeProject]);
   const { data: projectFiles = [], isLoading: projectFilesLoading } = useProjectFilesQuery(
     activeProject?.id ?? null,
@@ -305,6 +311,15 @@ function ThreadView() {
             <FileTree nodes={mockFileTree} depth={0} />
           )}
         </DrawerSection>
+
+        {activeProject && (
+          <DrawerSection title="Safe Text Previews">
+            <ProjectTextPreviewPanel
+              previews={activeProjectPreviews}
+              loading={activeProjectPreviewsLoading}
+            />
+          </DrawerSection>
+        )}
 
         <DrawerSection title="Task Pipeline">
           <div className="space-y-3 relative ml-1.5 mt-1">
