@@ -79,7 +79,7 @@ function ThreadView() {
         thread_id: threadId,
         user_id: session.user.id,
         role: message.role,
-        parts: message.parts as unknown as object,
+        parts: message.parts as never,
       });
       if (error) console.error("save assistant", error);
     },
@@ -110,7 +110,7 @@ function ThreadView() {
       thread_id: threadId,
       user_id: session.user.id,
       role: "user",
-      parts: userMsg.parts as unknown as object,
+      parts: userMsg.parts as never,
     });
 
     if ((messages?.length ?? 0) === 0) {
@@ -327,7 +327,7 @@ function StructuredAssistant({ text }: { text: string }) {
   const sections: { name: string; body: string }[] = [];
   const regex = /\*\*([^*]+)\*\*/g;
   const indices: { name: string; index: number; len: number }[] = [];
-  let m;
+  let m: RegExpExecArray | null;
   while ((m = regex.exec(text))) {
     if (SECTION_NAMES.some((n) => n.toLowerCase() === m[1].trim().toLowerCase())) {
       indices.push({ name: m[1].trim(), index: m.index, len: m[0].length });
