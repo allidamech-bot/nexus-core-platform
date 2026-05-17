@@ -23,6 +23,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      audit_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          payload: Json;
+          project_id: string | null;
+          severity: string;
+          thread_id: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          payload?: Json;
+          project_id?: string | null;
+          severity?: string;
+          thread_id?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          payload?: Json;
+          project_id?: string | null;
+          severity?: string;
+          thread_id?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "audit_events_thread_id_fkey";
+            columns: ["thread_id"];
+            isOneToOne: false;
+            referencedRelation: "threads";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       billing_plans: {
         Row: {
           created_at: string;
@@ -239,28 +290,46 @@ export type Database = {
       plan_usage_limits: {
         Row: {
           created_at: string;
+          max_active_threads: number | null;
+          max_ai_requests_monthly: number | null;
           max_chat_context_previews: number | null;
+          max_context_payload_bytes: number | null;
+          max_context_previews: number | null;
+          max_indexed_preview_bytes: number | null;
           max_projects: number | null;
           max_text_preview_files: number | null;
           max_upload_mb: number | null;
+          max_uploads_monthly: number | null;
           plan_id: string;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
+          max_active_threads?: number | null;
+          max_ai_requests_monthly?: number | null;
           max_chat_context_previews?: number | null;
+          max_context_payload_bytes?: number | null;
+          max_context_previews?: number | null;
+          max_indexed_preview_bytes?: number | null;
           max_projects?: number | null;
           max_text_preview_files?: number | null;
           max_upload_mb?: number | null;
+          max_uploads_monthly?: number | null;
           plan_id: string;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
+          max_active_threads?: number | null;
+          max_ai_requests_monthly?: number | null;
           max_chat_context_previews?: number | null;
+          max_context_payload_bytes?: number | null;
+          max_context_previews?: number | null;
+          max_indexed_preview_bytes?: number | null;
           max_projects?: number | null;
           max_text_preview_files?: number | null;
           max_upload_mb?: number | null;
+          max_uploads_monthly?: number | null;
           plan_id?: string;
           updated_at?: string;
         };
@@ -451,6 +520,95 @@ export type Database = {
           },
         ];
       };
+      usage_daily_snapshots: {
+        Row: {
+          created_at: string;
+          id: string;
+          metrics: Json;
+          plan_id: string;
+          snapshot_date: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          metrics?: Json;
+          plan_id: string;
+          snapshot_date: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          metrics?: Json;
+          plan_id?: string;
+          snapshot_date?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "usage_daily_snapshots_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "billing_plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      usage_events: {
+        Row: {
+          created_at: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          project_id: string | null;
+          quantity: number;
+          size_bytes: number;
+          thread_id: string | null;
+          token_estimate: number;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          project_id?: string | null;
+          quantity?: number;
+          size_bytes?: number;
+          thread_id?: string | null;
+          token_estimate?: number;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          project_id?: string | null;
+          quantity?: number;
+          size_bytes?: number;
+          thread_id?: string | null;
+          token_estimate?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "usage_events_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "usage_events_thread_id_fkey";
+            columns: ["thread_id"];
+            isOneToOne: false;
+            referencedRelation: "threads";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_roles: {
         Row: {
           created_at: string;
@@ -515,9 +673,38 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_effective_plan_id: {
+        Args: {
+          check_user_id?: string;
+        };
+        Returns: string;
+      };
+      get_plan_limit: {
+        Args: {
+          check_user_id: string;
+          limit_key: string;
+        };
+        Returns: number;
+      };
+      get_usage_total: {
+        Args: {
+          check_user_id: string;
+          metric_name: string;
+          since_at?: string;
+        };
+        Returns: number;
+      };
       is_admin: {
         Args: {
           check_user_id?: string;
+        };
+        Returns: boolean;
+      };
+      is_within_usage_limit: {
+        Args: {
+          check_user_id: string;
+          limit_key: string;
+          increment?: number;
         };
         Returns: boolean;
       };

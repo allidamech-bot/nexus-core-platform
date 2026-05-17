@@ -22,6 +22,12 @@ import {
   logThreadContextSelection,
 } from "@/features/projects/projectService";
 import type { ProjectTextPreviewWithPath } from "@/features/projects/types";
+import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
+import {
+  estimateByteSize,
+  recordAuditEvent,
+  recordUsageEvent,
+} from "@/features/governance/governanceService";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -55,6 +61,7 @@ function ThreadView() {
   const { data: projectFiles = [], isLoading: projectFilesLoading } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
+  const { data: usageOverview } = useUsageOverviewQuery(session?.user.id ?? null);
 
   const { data: thread } = useQuery({
     queryKey: ["thread", threadId],
@@ -170,6 +177,14 @@ function ThreadView() {
         action: "attached_project",
         metadata: { project_name: activeProject.name },
       });
+      await recordAuditEvent({
+        userId: session.user.id,
+        actorUserId: session.user.id,
+        threadId,
+        projectId: activeProject.id,
+        eventType: "thread_project_attached",
+        payload: { project_name: activeProject.name },
+      }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["thread", threadId] });
       toast.success("Project attached to this session.");
     } catch (error) {
@@ -180,11 +195,39 @@ function ThreadView() {
   async function handleTogglePreview(preview: ProjectTextPreviewWithPath) {
     if (!session || !activeProject) return;
     const selected = selectedPreviewIds.includes(preview.id);
+    const previewLimit = usageOverview?.limits?.max_context_previews ?? 6;
+    if (!selected && selectedPreviewIds.length >= previewLimit) {
+      toast.error(
+        `Selected preview limit reached for the ${usageOverview?.planId ?? "current"} plan.`,
+      );
+      await recordAuditEvent({
+        userId: session.user.id,
+        actorUserId: session.user.id,
+        threadId,
+        projectId: activeProject.id,
+        eventType: "quota_hit_context_previews",
+        severity: "warning",
+        payload: { limit: previewLimit, selected: selectedPreviewIds.length },
+      }).catch(() => {});
+      return;
+    }
     const nextPreviewIds = selected
       ? selectedPreviewIds.filter((previewId) => previewId !== preview.id)
-      : [...selectedPreviewIds, preview.id].slice(-6);
+      : [...selectedPreviewIds, preview.id];
 
     setSelectedPreviewIds(nextPreviewIds);
+
+    if (!selected) {
+      await recordUsageEvent({
+        userId: session.user.id,
+        threadId,
+        projectId: activeProject.id,
+        eventType: "context_preview_selected",
+        sizeBytes: estimateByteSize(preview.preview_text),
+        tokenEstimate: preview.token_estimate,
+        metadata: { path: preview.path },
+      }).catch(() => {});
+    }
 
     await logThreadContextSelection({
       threadId,

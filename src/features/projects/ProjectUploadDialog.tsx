@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUploadProjectMutation } from "./projectQueries";
 import { deriveProjectName, validateProjectZip } from "./projectUploadService";
 import { PROJECT_UPLOAD_MAX_MB } from "./constants";
+import { useLocale } from "@/features/i18n/localeContext";
 
 export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigger: ReactNode }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,6 +25,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const uploadProject = useUploadProjectMutation();
+  const { t } = useLocale();
 
   const validationError = useMemo(() => (file ? validateProjectZip(file) : null), [file]);
   const busy = uploadProject.isPending;
@@ -67,11 +69,10 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
       <DialogContent className="border-border bg-background p-0 sm:max-w-xl">
         <div className="border-b border-border px-6 py-5">
           <DialogHeader>
-            <DialogTitle className="text-xl tracking-tight">Upload project archive</DialogTitle>
-            <DialogDescription>
-              Create a real project record, manifest, and safe text preview index from a ZIP
-              archive.
-            </DialogDescription>
+            <DialogTitle className="text-xl tracking-tight">
+              {t("uploadProjectArchive")}
+            </DialogTitle>
+            <DialogDescription>{t("uploadDescription")}</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -91,11 +92,10 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold">
-                  {file ? file.name : "Select a .zip archive"}
+                  {file ? file.name : t("selectZipArchive")}
                 </div>
                 <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  ZIP only, max {PROJECT_UPLOAD_MAX_MB}MB. Nexus Core reads small allowlisted text
-                  previews only and never executes project code.
+                  {t("zipOnly", { max: PROJECT_UPLOAD_MAX_MB })}
                 </div>
                 {file && (
                   <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -126,7 +126,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
 
           <div className="space-y-2">
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Project name
+              {t("projectName")}
             </label>
             <Input
               value={name}
@@ -138,7 +138,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
 
           <div className="space-y-2">
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Description
+              {t("description")}
             </label>
             <Textarea
               value={description}
@@ -152,11 +152,11 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
 
         <DialogFooter className="border-t border-border px-6 py-4">
           <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="button" onClick={onSubmit} disabled={busy || !file || !!validationError}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-            Create project
+            {t("createProject")}
           </Button>
         </DialogFooter>
       </DialogContent>

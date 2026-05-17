@@ -15,6 +15,11 @@ import {
   updateProjectStatus,
 } from "./projectService";
 import type { Project, ProjectIngestionJob } from "./types";
+import {
+  checkQuota,
+  recordAuditEvent,
+  recordUsageEvent,
+} from "@/features/governance/governanceService";
 
 export interface UploadProjectInput {
   userId: string;
@@ -124,6 +129,16 @@ async function requestManifestProcessing(projectId: string): Promise<void> {
 export async function uploadProjectZip(input: UploadProjectInput): Promise<UploadProjectResult> {
   const validationError = validateProjectZip(input.file);
   if (validationError) {
+    await recordAuditEvent({
+      userId: input.userId,
+      eventType: "blocked_upload",
+      severity: "warning",
+      payload: {
+        file_name: input.file.name,
+        size_bytes: input.file.size,
+        reason: validationError,
+      },
+    }).catch(() => {});
     await logProjectSecurityEvent({
       userId: input.userId,
       eventType: "project_upload_rejected",
@@ -135,6 +150,35 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       },
     }).catch((error) => console.warn("[project-upload] security event failed", error));
     throw new Error(validationError);
+  }
+
+  const [projectQuota, uploadQuota] = await Promise.all([
+    checkQuota(input.userId, "max_projects").catch(() => null),
+    checkQuota(input.userId, "max_uploads_monthly").catch(() => null),
+  ]);
+  const uploadMbLimit = await checkQuota(
+    input.userId,
+    "max_upload_mb",
+    Math.ceil(input.file.size / 1024 / 1024),
+  ).catch(() => null);
+
+  const blockedQuota = [projectQuota, uploadQuota, uploadMbLimit].find(
+    (quota) => quota && !quota.allowed,
+  );
+  if (blockedQuota) {
+    await recordAuditEvent({
+      userId: input.userId,
+      eventType: "quota_hit_upload",
+      severity: "warning",
+      payload: {
+        limit_key: blockedQuota.limitKey,
+        limit: blockedQuota.limit,
+        used: blockedQuota.used,
+        requested: blockedQuota.requested,
+        plan: blockedQuota.planId,
+      },
+    }).catch(() => {});
+    throw new Error(blockedQuota.message);
   }
 
   const project = await createProject({
@@ -204,6 +248,24 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       job = { ...job, status: "completed", stage: "completed" };
     }
 
+    await recordUsageEvent({
+      userId: input.userId,
+      projectId: project.id,
+      eventType: "project_upload_completed",
+      quantity: 1,
+      sizeBytes: input.file.size,
+      metadata: {
+        file_name: input.file.name,
+        storage_available: upload.storageAvailable,
+      },
+    }).catch((error) => console.warn("[project-upload] usage event failed", error));
+    await recordAuditEvent({
+      userId: input.userId,
+      projectId: project.id,
+      eventType: "project_upload_completed",
+      payload: { size_bytes: input.file.size, storage_available: upload.storageAvailable },
+    }).catch(() => {});
+
     return {
       project: { ...project, status: upload.storageAvailable ? "indexed_manifest" : status },
       job,
@@ -217,6 +279,19 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       status: "failed",
       stage: "upload_failed",
       error_message: message,
+    }).catch(() => {});
+    await recordUsageEvent({
+      userId: input.userId,
+      projectId: project.id,
+      eventType: "ingestion_failed",
+      metadata: { message },
+    }).catch(() => {});
+    await recordAuditEvent({
+      userId: input.userId,
+      projectId: project.id,
+      eventType: "ingestion_failed",
+      severity: "warning",
+      payload: { message },
     }).catch(() => {});
     throw error;
   }

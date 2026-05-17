@@ -118,6 +118,16 @@
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
   }
+  html[dir="rtl"] body {
+    font-family: var(--font-sans);
+  }
+  html[dir="rtl"] .font-mono {
+    letter-spacing: 0;
+  }
+  html[dir="rtl"] input,
+  html[dir="rtl"] textarea {
+    text-align: right;
+  }
   ::selection {
     background: rgba(59, 130, 246, 0.3);
   }

@@ -79,6 +79,35 @@ export const Route = createFileRoute("/api/projects/process-zip")({
             userId: auth.userId,
             projectId: body.projectId,
           });
+          const metadata =
+            result.job.metadata &&
+            typeof result.job.metadata === "object" &&
+            !Array.isArray(result.job.metadata)
+              ? result.job.metadata
+              : {};
+          const textPreview =
+            "text_preview" in metadata &&
+            metadata.text_preview &&
+            typeof metadata.text_preview === "object"
+              ? (metadata.text_preview as { indexed_count?: number; indexed_bytes?: number })
+              : {};
+
+          await auth.supabase.from("usage_events").insert([
+            {
+              user_id: auth.userId,
+              project_id: body.projectId,
+              event_type: "manifest_generated",
+              quantity: result.fileCount,
+              metadata: { status: result.project.status },
+            },
+            {
+              user_id: auth.userId,
+              project_id: body.projectId,
+              event_type: "preview_indexed",
+              quantity: Number(textPreview.indexed_count ?? 0),
+              size_bytes: Number(textPreview.indexed_bytes ?? 0),
+            },
+          ]);
 
           return Response.json({
             projectId: result.project.id,
@@ -92,6 +121,18 @@ export const Route = createFileRoute("/api/projects/process-zip")({
           console.error("[project-ingestion] processing failed", error);
           const message =
             error instanceof Error ? error.message : "Project manifest extraction failed.";
+          if (auth.supabase && auth.userId && typeof body.projectId === "string") {
+            try {
+              await auth.supabase.from("usage_events").insert({
+                user_id: auth.userId,
+                project_id: body.projectId,
+                event_type: "ingestion_failed",
+                metadata: { message },
+              });
+            } catch {
+              // Best-effort metering should not mask the ingestion error.
+            }
+          }
           return textResponse(message, 422);
         }
       },

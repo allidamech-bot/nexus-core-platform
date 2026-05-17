@@ -17,6 +17,15 @@ import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { useIsAdminQuery } from "@/features/admin/adminQueries";
+import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
+import { useLocale } from "@/features/i18n/localeContext";
+import { UsageMeters } from "@/features/governance/UsageMeters";
+import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
+import {
+  checkQuota,
+  recordAuditEvent,
+  recordUsageEvent,
+} from "@/features/governance/governanceService";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -59,6 +68,8 @@ function AppWorkspace({
   const { projects, projectsLoading, selectedProjectId, setSelectedProjectId } =
     useProjectWorkspace();
   const { data: isAdmin = false } = useIsAdminQuery(!!session);
+  const { data: usageOverview } = useUsageOverviewQuery(session.user.id);
+  const { t } = useLocale();
 
   const { data: threads } = useQuery({
     enabled: !!session,
@@ -75,6 +86,17 @@ function AppWorkspace({
 
   async function newSession() {
     if (!session) return;
+    const quota = await checkQuota(session.user.id, "max_active_threads").catch(() => null);
+    if (quota && !quota.allowed) {
+      toast.error("Active thread limit reached. Upgrade to Pro for higher limits.");
+      await recordAuditEvent({
+        userId: session.user.id,
+        eventType: "quota_hit_thread_create",
+        severity: "warning",
+        payload: { limit: quota.limit, used: quota.used, plan: quota.planId },
+      }).catch(() => {});
+      return;
+    }
     const { data, error } = await supabase
       .from("threads")
       .insert({ user_id: session.user.id, title: "New Session", mode: "engineering" })
@@ -84,6 +106,11 @@ function AppWorkspace({
       toast.error(error.message);
       return;
     }
+    await recordUsageEvent({
+      userId: session.user.id,
+      eventType: "thread_created",
+      threadId: data.id,
+    }).catch(() => {});
     qc.invalidateQueries({ queryKey: ["threads"] });
     navigate({ to: "/app/$threadId", params: { threadId: data.id } });
   }
@@ -99,6 +126,7 @@ function AppWorkspace({
             </div>
             <span className="text-sm font-bold tracking-tighter uppercase">Nexus</span>
           </Link>
+          <LanguageSwitcher />
         </div>
 
         <div className="p-3">
@@ -122,14 +150,20 @@ function AppWorkspace({
                   type="button"
                   className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 text-left"
                 >
-                  <Boxes className="size-3.5" /> Upload Project
+                  <Boxes className="size-3.5" /> {t("uploadZip")}
                 </button>
               }
             />
-            {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label="Admin Control" />}
-            <ActionRow icon={WorkflowIcon} label="Business Workflow" disabled />
+            {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label={t("adminControl")} />}
+            <ActionRow icon={WorkflowIcon} label={t("businessWorkflow")} disabled />
           </div>
         </div>
+
+        {usageOverview && (
+          <div className="px-3 mt-6">
+            <UsageMeters overview={usageOverview} />
+          </div>
+        )}
 
         <div className="px-3 mt-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">

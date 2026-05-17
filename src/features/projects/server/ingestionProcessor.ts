@@ -75,6 +75,52 @@ async function logSecurityEvent(
   if (error) console.warn("[project-ingestion] security event failed", error.message);
 }
 
+async function applyPreviewQuota(
+  supabase: ProjectSupabaseClient,
+  userId: string,
+  rows: Array<
+    Database["public"]["Tables"]["project_text_previews"]["Insert"] & { preview_text: string }
+  >,
+) {
+  const [{ data: fileLimit }, { data: byteLimit }, { data: currentFiles }, { data: currentBytes }] =
+    await Promise.all([
+      supabase.rpc("get_plan_limit", {
+        check_user_id: userId,
+        limit_key: "max_text_preview_files",
+      }),
+      supabase.rpc("get_plan_limit", {
+        check_user_id: userId,
+        limit_key: "max_indexed_preview_bytes",
+      }),
+      supabase.rpc("get_usage_total", {
+        check_user_id: userId,
+        metric_name: "indexed_preview_files",
+      }),
+      supabase.rpc("get_usage_total", {
+        check_user_id: userId,
+        metric_name: "indexed_preview_bytes",
+      }),
+    ]);
+
+  const remainingFiles =
+    fileLimit === null ? rows.length : Math.max(0, Number(fileLimit) - Number(currentFiles ?? 0));
+  const remainingBytes =
+    byteLimit === null
+      ? Number.POSITIVE_INFINITY
+      : Math.max(0, Number(byteLimit) - Number(currentBytes ?? 0));
+  const accepted = [];
+  let usedBytes = 0;
+
+  for (const row of rows.slice(0, remainingFiles)) {
+    const rowBytes = row.preview_text.length;
+    if (usedBytes + rowBytes > remainingBytes) break;
+    accepted.push(row);
+    usedBytes += rowBytes;
+  }
+
+  return accepted;
+}
+
 export async function processProjectArchive({
   supabase,
   userId,
@@ -132,6 +178,8 @@ export async function processProjectArchive({
     const manifest = generateProjectManifest(inventory);
     await updateJob(supabase, job.id, { status: "processing", stage: "text_preview_indexing" });
     const previewIndex = await generateTextPreviewsFromArchive(archiveBytes, inventory.files);
+    let indexedPreviewCount = 0;
+    let indexedPreviewBytes = 0;
 
     if (inventory.suspicious.length > 0) {
       await logSecurityEvent(supabase, {
@@ -209,10 +257,30 @@ export async function processProjectArchive({
           })
           .filter((row): row is NonNullable<typeof row> => row !== null);
 
-        if (previewRows.length > 0) {
+        const quotaLimitedPreviewRows = await applyPreviewQuota(supabase, userId, previewRows);
+        indexedPreviewCount = quotaLimitedPreviewRows.length;
+        indexedPreviewBytes = quotaLimitedPreviewRows.reduce(
+          (sum, row) => sum + row.preview_text.length,
+          0,
+        );
+
+        if (quotaLimitedPreviewRows.length < previewRows.length) {
+          await logSecurityEvent(supabase, {
+            userId,
+            projectId,
+            severity: "warning",
+            eventType: "preview_quota_limited",
+            payload: {
+              requested: previewRows.length,
+              accepted: quotaLimitedPreviewRows.length,
+            },
+          });
+        }
+
+        if (quotaLimitedPreviewRows.length > 0) {
           const { error: previewError } = await supabase
             .from("project_text_previews")
-            .upsert(previewRows, { onConflict: "project_id,file_id" });
+            .upsert(quotaLimitedPreviewRows, { onConflict: "project_id,file_id" });
           if (previewError) throw previewError;
         }
       }
@@ -226,8 +294,8 @@ export async function processProjectArchive({
       pipeline: "zip_manifest_text_preview_v1",
       manifest: manifest as unknown as Json,
       text_preview: {
-        indexed_count: previewIndex.previews.length,
-        indexed_bytes: previewIndex.totalIndexedBytes,
+        indexed_count: indexedPreviewCount,
+        indexed_bytes: indexedPreviewBytes,
         skipped_reasons: previewIndex.skipped,
       },
     };

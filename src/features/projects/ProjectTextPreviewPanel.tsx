@@ -1,6 +1,7 @@
 import { FileSearch, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ProjectTextPreviewWithPath } from "./types";
+import { useLocale } from "@/features/i18n/localeContext";
 
 export function ProjectTextPreviewPanel({
   previews,
@@ -14,6 +15,7 @@ export function ProjectTextPreviewPanel({
   onTogglePreview?: (preview: ProjectTextPreviewWithPath) => void;
 }) {
   const [query, setQuery] = useState("");
+  const { t } = useLocale();
   const filteredPreviews = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return previews;
@@ -46,7 +48,7 @@ export function ProjectTextPreviewPanel({
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Filter previews"
+        placeholder={t("filterPreviews")}
         className="mb-2 h-8 w-full rounded-md border border-border bg-background/60 px-2 font-mono text-[11px] text-zinc-200 outline-none placeholder:text-muted-foreground focus:border-accent/40"
       />
       {filteredPreviews.slice(0, 8).map((preview) => {
@@ -72,7 +74,7 @@ export function ProjectTextPreviewPanel({
                       : "border-border text-muted-foreground hover:bg-white/5"
                   }`}
                 >
-                  {selected ? "Selected" : "Select"}
+                  {selected ? t("selected") : t("select")}
                 </button>
               )}
             </div>
@@ -84,7 +86,7 @@ export function ProjectTextPreviewPanel({
       })}
       {filteredPreviews.length === 0 && (
         <div className="rounded-md border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-          No previews match that filter.
+          {t("noPreviewMatch")}
         </div>
       )}
     </div>

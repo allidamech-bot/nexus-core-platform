@@ -1,15 +1,29 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { useEffect } from "react";
 import { AdminDashboard } from "@/features/admin/AdminDashboard";
 import { useAdminDashboardQuery, useIsAdminQuery } from "@/features/admin/adminQueries";
+import { useAuth } from "@/lib/auth";
+import { recordAuditEvent } from "@/features/governance/governanceService";
 
 export const Route = createFileRoute("/app/admin")({
   component: AdminRoute,
 });
 
 function AdminRoute() {
+  const { session } = useAuth();
   const { data: isAdmin = false, isLoading: checkingAdmin, isError } = useIsAdminQuery();
   const { data, isLoading: loadingDashboard } = useAdminDashboardQuery(isAdmin);
+
+  useEffect(() => {
+    if (!isAdmin || !session?.user.id) return;
+    recordAuditEvent({
+      userId: session.user.id,
+      actorUserId: session.user.id,
+      eventType: "admin_dashboard_viewed",
+      payload: { route: "/app/admin" },
+    }).catch(() => {});
+  }, [isAdmin, session?.user.id]);
 
   if (checkingAdmin) {
     return (

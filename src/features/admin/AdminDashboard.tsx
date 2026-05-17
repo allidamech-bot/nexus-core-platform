@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import type { AdminDashboardData } from "./adminService";
+import { useLocale } from "@/features/i18n/localeContext";
 
 const PLACEHOLDERS = [
   { icon: Users, label: "Users", detail: "Role and account operations" },
@@ -21,13 +22,42 @@ const PLACEHOLDERS = [
 ];
 
 export function AdminDashboard({ data }: { data: AdminDashboardData }) {
+  const { t } = useLocale();
+  const aiRequests = data.usageEvents
+    .filter((event) => event.event_type === "ai_request")
+    .reduce((sum, event) => sum + event.quantity, 0);
+  const tokenUsage = data.usageEvents.reduce((sum, event) => sum + event.token_estimate, 0);
+  const uploadCount = data.usageEvents
+    .filter((event) => event.event_type === "project_upload_completed")
+    .reduce((sum, event) => sum + event.quantity, 0);
+  const previewCount = data.usageEvents
+    .filter((event) => event.event_type === "preview_indexed")
+    .reduce((sum, event) => sum + event.quantity, 0);
+  const storageBytes = data.usageEvents.reduce((sum, event) => sum + event.size_bytes, 0);
+  const quotaViolations = data.auditEvents.filter((event) =>
+    event.event_type.startsWith("quota_hit"),
+  );
+  const ingestionFailures = data.usageEvents.filter(
+    (event) => event.event_type === "ingestion_failed",
+  ).length;
+  const planDistribution = data.subscriptions.reduce<Record<string, number>>(
+    (acc, subscription) => {
+      acc[subscription.plan_id] = (acc[subscription.plan_id] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
   const metrics = [
     { label: "Role records", value: data.roles.length },
     { label: "Plans", value: data.plans.length },
     { label: "Subscriptions", value: data.subscriptions.length },
-    { label: "Projects", value: data.projects.length },
-    { label: "Security events", value: data.securityEvents.length },
-    { label: "Context selections", value: data.contextSelections.length },
+    { label: t("projects"), value: data.projects.length },
+    { label: t("uploads"), value: uploadCount },
+    { label: t("aiRequests"), value: aiRequests },
+    { label: "Tokens", value: tokenUsage },
+    { label: t("previews"), value: previewCount },
+    { label: "Failures", value: ingestionFailures },
   ];
 
   return (
@@ -36,16 +66,16 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
         <div className="mb-8 flex items-start justify-between gap-6">
           <div>
             <div className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-accent">
-              <ShieldCheck className="size-3.5" /> Admin foundation
+              <ShieldCheck className="size-3.5" /> {t("adminFoundation")}
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">Control plane</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t("controlPlane")}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               Secure administrative visibility for roles, billing placeholders, project ingestion,
               security events, audit history, and system health.
             </p>
           </div>
           <div className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-emerald-400">
-            RLS enforced
+            {t("rlsEnforced")}
           </div>
         </div>
 
@@ -74,11 +104,11 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
 
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <AdminTable
-            title="Billing plans"
+            title={t("billingPlans")}
             rows={data.plans.map((plan) => [plan.name, plan.status, "Payments not connected"])}
           />
           <AdminTable
-            title="Recent security events"
+            title={t("securityEvents")}
             rows={data.securityEvents.map((event) => [
               event.severity,
               event.event_type,
@@ -86,8 +116,82 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
             ])}
             empty="No security events visible."
           />
+          <AdminTable
+            title={t("quotaViolations")}
+            rows={quotaViolations.map((event) => [
+              event.severity,
+              event.event_type,
+              new Date(event.created_at).toLocaleDateString(),
+            ])}
+            empty="No quota violations recorded."
+          />
+          <AdminTable
+            title={t("recentActivity")}
+            rows={data.usageEvents
+              .slice(0, 12)
+              .map((event) => [
+                event.event_type,
+                event.quantity.toLocaleString(),
+                new Date(event.created_at).toLocaleDateString(),
+              ])}
+            empty="No usage events recorded."
+          />
+        </div>
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <div className="mb-4 text-sm font-semibold">Plan distribution</div>
+            <div className="space-y-3">
+              {data.plans.map((plan) => {
+                const count = planDistribution[plan.id] ?? 0;
+                const width = data.subscriptions.length
+                  ? Math.max(8, Math.round((count / data.subscriptions.length) * 100))
+                  : 8;
+                return (
+                  <div key={plan.id}>
+                    <div className="mb-1 flex justify-between text-xs">
+                      <span>{plan.name}</span>
+                      <span className="text-muted-foreground">{count}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/5">
+                      <div className="h-2 rounded-full bg-accent" style={{ width: `${width}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <div className="mb-4 text-sm font-semibold">Storage and indexing health</div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <MetricDetail
+                label="Tracked storage"
+                value={`${(storageBytes / 1024 / 1024).toFixed(2)} MB`}
+              />
+              <MetricDetail
+                label="Context selections"
+                value={data.contextSelections.length.toString()}
+              />
+              <MetricDetail label="Audit events" value={data.auditEvents.length.toString()} />
+              <MetricDetail
+                label="Preview health"
+                value={ingestionFailures === 0 ? "Stable" : "Review"}
+              />
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MetricDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background/40 p-3">
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-zinc-100">{value}</div>
     </div>
   );
 }

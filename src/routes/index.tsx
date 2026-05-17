@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import heroPreview from "@/assets/hero-preview.jpg";
+import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -43,6 +44,7 @@ function Nav() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <LanguageSwitcher />
           <Link
             to="/login"
             className="text-[13px] font-medium text-muted-foreground hover:text-foreground"

@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 import "@/lib/console-noise-filter";
 
 import appCss from "../styles.css?url";
@@ -87,11 +88,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Nexus Core - Verified execution for AI operations" },
-      { name: "description", content: "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution." },
-      { property: "og:description", content: "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution." },
-      { name: "twitter:description", content: "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8afffc5d-d66e-4982-9796-29d3b684989b/id-preview-62f22a1b--666c51fe-b963-4e9e-92ff-f3d21ff1f775.lovable.app-1779035239050.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8afffc5d-d66e-4982-9796-29d3b684989b/id-preview-62f22a1b--666c51fe-b963-4e9e-92ff-f3d21ff1f775.lovable.app-1779035239050.png" },
+      {
+        name: "description",
+        content:
+          "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution.",
+      },
+      {
+        property: "og:description",
+        content:
+          "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8afffc5d-d66e-4982-9796-29d3b684989b/id-preview-62f22a1b--666c51fe-b963-4e9e-92ff-f3d21ff1f775.lovable.app-1779035239050.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8afffc5d-d66e-4982-9796-29d3b684989b/id-preview-62f22a1b--666c51fe-b963-4e9e-92ff-f3d21ff1f775.lovable.app-1779035239050.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -127,10 +148,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster theme="dark" />
-      </AuthProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster theme="dark" />
+        </AuthProvider>
+      </LocaleProvider>
     </QueryClientProvider>
   );
 }

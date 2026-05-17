@@ -1,0 +1,104 @@
+import { AlertTriangle, Gauge } from "lucide-react";
+import { quotaPercent, quotaState } from "./governanceService";
+import type { UsageOverview } from "./types";
+import { useLocale } from "@/features/i18n/localeContext";
+
+function Meter({
+  label,
+  used,
+  limit,
+}: {
+  label: string;
+  used: number;
+  limit: number | null | undefined;
+}) {
+  const percent = quotaPercent(used, limit);
+  const state = quotaState(used, limit);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3 text-[11px]">
+        <span className="text-muted-foreground">{label}</span>
+        <span className={state === "exceeded" ? "text-destructive" : "text-zinc-300"}>
+          {used.toLocaleString()} / {limit ?? "∞"}
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+        <div
+          className={`h-full rounded-full ${
+            state === "exceeded"
+              ? "bg-destructive"
+              : state === "warning"
+                ? "bg-warning"
+                : "bg-accent"
+          }`}
+          style={{ width: `${percent ?? 24}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function UsageMeters({ overview }: { overview: UsageOverview }) {
+  const { t } = useLocale();
+  const warning = [
+    ["max_projects", overview.projects, overview.limits?.max_projects],
+    [
+      "max_ai_requests_monthly",
+      overview.aiRequestsThisMonth,
+      overview.limits?.max_ai_requests_monthly,
+    ],
+    ["max_active_threads", overview.threads, overview.limits?.max_active_threads],
+  ].some(([, used, limit]) => quotaState(Number(used), limit as number | null) !== "ok");
+
+  return (
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Gauge className="size-4 text-accent" />
+          <div>
+            <div className="text-sm font-semibold">{t("quotaGovernance")}</div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              {t("plan")}: {overview.planId}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <Meter
+          label={t("projects")}
+          used={overview.projects}
+          limit={overview.limits?.max_projects}
+        />
+        <Meter
+          label={t("uploads")}
+          used={overview.uploadsThisMonth}
+          limit={overview.limits?.max_uploads_monthly}
+        />
+        <Meter
+          label={t("aiRequests")}
+          used={overview.aiRequestsThisMonth}
+          limit={overview.limits?.max_ai_requests_monthly}
+        />
+        <Meter
+          label={t("threads")}
+          used={overview.threads}
+          limit={overview.limits?.max_active_threads}
+        />
+        <Meter
+          label={t("previews")}
+          used={overview.indexedPreviewCount}
+          limit={overview.limits?.max_text_preview_files}
+        />
+      </div>
+      {warning && (
+        <div className="mt-4 flex gap-2 rounded-md border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          <div>
+            <div className="font-semibold">{t("nearLimit")}</div>
+            <div className="mt-1 text-warning/80">{t("upgradePrompt")}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
