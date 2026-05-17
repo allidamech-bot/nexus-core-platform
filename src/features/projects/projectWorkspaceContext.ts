@@ -13,6 +13,8 @@ export interface ProjectWorkspaceContextValue {
   activeProject: ProjectWithLatestJob | null;
   activeProjectPreviews: ProjectTextPreviewWithPath[];
   activeProjectPreviewsLoading: boolean;
+  selectedPreviewIds: string[];
+  setSelectedPreviewIds: (previewIds: string[]) => void;
   activeProjectMetadata: ProjectChatMetadata | null;
 }
 

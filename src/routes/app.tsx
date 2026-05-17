@@ -16,6 +16,7 @@ import { ProjectList } from "@/features/projects/ProjectList";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
+import { useIsAdminQuery } from "@/features/admin/adminQueries";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -57,6 +58,7 @@ function AppWorkspace({
   const qc = useQueryClient();
   const { projects, projectsLoading, selectedProjectId, setSelectedProjectId } =
     useProjectWorkspace();
+  const { data: isAdmin = false } = useIsAdminQuery(!!session);
 
   const { data: threads } = useQuery({
     enabled: !!session,
@@ -124,6 +126,7 @@ function AppWorkspace({
                 </button>
               }
             />
+            {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label="Admin Control" />}
             <ActionRow icon={WorkflowIcon} label="Business Workflow" disabled />
           </div>
         </div>
@@ -190,6 +193,25 @@ function AppWorkspace({
         <Outlet />
       </main>
     </div>
+  );
+}
+
+function ActionLink({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: "/app/admin";
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-muted-foreground hover:bg-white/5"
+    >
+      <Icon className="size-3.5" /> {label}
+    </Link>
   );
 }
 

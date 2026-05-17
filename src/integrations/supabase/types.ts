@@ -8,6 +8,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      admin_email_allowlist: {
+        Row: {
+          created_at: string;
+          email: string;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+        };
+        Relationships: [];
+      };
+      billing_plans: {
+        Row: {
+          created_at: string;
+          id: string;
+          monthly_price_cents: number | null;
+          name: string;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          monthly_price_cents?: number | null;
+          name: string;
+          status?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          monthly_price_cents?: number | null;
+          name?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
       messages: {
         Row: {
           created_at: string;
@@ -197,6 +236,44 @@ export type Database = {
           },
         ];
       };
+      plan_usage_limits: {
+        Row: {
+          created_at: string;
+          max_chat_context_previews: number | null;
+          max_projects: number | null;
+          max_text_preview_files: number | null;
+          max_upload_mb: number | null;
+          plan_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          max_chat_context_previews?: number | null;
+          max_projects?: number | null;
+          max_text_preview_files?: number | null;
+          max_upload_mb?: number | null;
+          plan_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          max_chat_context_previews?: number | null;
+          max_projects?: number | null;
+          max_text_preview_files?: number | null;
+          max_upload_mb?: number | null;
+          plan_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_usage_limits_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: true;
+            referencedRelation: "billing_plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_security_events: {
         Row: {
           created_at: string;
@@ -268,11 +345,77 @@ export type Database = {
         };
         Relationships: [];
       };
+      thread_context_selections: {
+        Row: {
+          action: string;
+          created_at: string;
+          file_id: string | null;
+          id: string;
+          metadata: Json;
+          preview_id: string | null;
+          project_id: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Insert: {
+          action: string;
+          created_at?: string;
+          file_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          preview_id?: string | null;
+          project_id: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Update: {
+          action?: string;
+          created_at?: string;
+          file_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          preview_id?: string | null;
+          project_id?: string;
+          thread_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "thread_context_selections_file_id_fkey";
+            columns: ["file_id"];
+            isOneToOne: false;
+            referencedRelation: "project_files";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "thread_context_selections_preview_id_fkey";
+            columns: ["preview_id"];
+            isOneToOne: false;
+            referencedRelation: "project_text_previews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "thread_context_selections_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "thread_context_selections_thread_id_fkey";
+            columns: ["thread_id"];
+            isOneToOne: false;
+            referencedRelation: "threads";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       threads: {
         Row: {
           created_at: string;
           id: string;
           mode: string;
+          project_id: string | null;
           project_name: string | null;
           title: string;
           updated_at: string;
@@ -282,6 +425,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           mode?: string;
+          project_id?: string | null;
           project_name?: string | null;
           title?: string;
           updated_at?: string;
@@ -291,19 +435,92 @@ export type Database = {
           created_at?: string;
           id?: string;
           mode?: string;
+          project_id?: string | null;
           project_name?: string | null;
           title?: string;
           updated_at?: string;
           user_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "threads_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_roles: {
+        Row: {
+          created_at: string;
+          role: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          role?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          role?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [];
+      };
+      user_subscriptions: {
+        Row: {
+          billing_status: string;
+          created_at: string;
+          current_period_end: string | null;
+          plan_id: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          billing_status?: string;
+          created_at?: string;
+          current_period_end?: string | null;
+          plan_id: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          billing_status?: string;
+          created_at?: string;
+          current_period_end?: string | null;
+          plan_id?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "billing_plans";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      is_admin: {
+        Args: {
+          check_user_id?: string;
+        };
+        Returns: boolean;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -195,3 +195,42 @@ export async function logProjectSecurityEvent(input: {
 
   if (error) throw error;
 }
+
+export async function attachProjectToThread(input: {
+  threadId: string;
+  projectId: string;
+  projectName: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from("threads")
+    .update({
+      project_id: input.projectId,
+      project_name: input.projectName,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.threadId);
+
+  if (error) throw error;
+}
+
+export async function logThreadContextSelection(input: {
+  threadId: string;
+  projectId: string;
+  userId: string;
+  action: "attached_project" | "selected_preview" | "cleared_preview";
+  previewId?: string | null;
+  fileId?: string | null;
+  metadata?: Record<string, Json>;
+}): Promise<void> {
+  const { error } = await supabase.from("thread_context_selections").insert({
+    thread_id: input.threadId,
+    project_id: input.projectId,
+    user_id: input.userId,
+    action: input.action,
+    preview_id: input.previewId ?? null,
+    file_id: input.fileId ?? null,
+    metadata: input.metadata ?? {},
+  });
+
+  if (error) throw error;
+}

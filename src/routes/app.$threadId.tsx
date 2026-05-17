@@ -17,6 +17,11 @@ import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
 import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewPanel";
 import { getProjectManifest } from "@/features/projects/projectManifest";
 import { useProjectFilesQuery } from "@/features/projects/projectQueries";
+import {
+  attachProjectToThread,
+  logThreadContextSelection,
+} from "@/features/projects/projectService";
+import type { ProjectTextPreviewWithPath } from "@/features/projects/types";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -42,6 +47,9 @@ function ThreadView() {
     activeProjectMetadata,
     activeProjectPreviews,
     activeProjectPreviewsLoading,
+    selectedPreviewIds,
+    setSelectedPreviewIds,
+    setSelectedProjectId,
   } = useProjectWorkspace();
   const activeProjectManifest = useMemo(() => getProjectManifest(activeProject), [activeProject]);
   const { data: projectFiles = [], isLoading: projectFilesLoading } = useProjectFilesQuery(
@@ -60,6 +68,12 @@ function ThreadView() {
       return data;
     },
   });
+
+  const threadProjectId = typeof thread?.project_id === "string" ? thread.project_id : null;
+
+  useEffect(() => {
+    if (threadProjectId) setSelectedProjectId(threadProjectId);
+  }, [setSelectedProjectId, threadProjectId]);
 
   const { data: initialMessages, isLoading: loadingMsgs } = useQuery({
     queryKey: ["messages", threadId],
@@ -140,6 +154,48 @@ function ThreadView() {
   }, [threadId, status]);
 
   const busy = status === "submitted" || status === "streaming";
+
+  async function handleAttachProject() {
+    if (!session || !activeProject) return;
+    try {
+      await attachProjectToThread({
+        threadId,
+        projectId: activeProject.id,
+        projectName: activeProject.name,
+      });
+      await logThreadContextSelection({
+        threadId,
+        projectId: activeProject.id,
+        userId: session.user.id,
+        action: "attached_project",
+        metadata: { project_name: activeProject.name },
+      });
+      qc.invalidateQueries({ queryKey: ["thread", threadId] });
+      toast.success("Project attached to this session.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Project attachment failed.");
+    }
+  }
+
+  async function handleTogglePreview(preview: ProjectTextPreviewWithPath) {
+    if (!session || !activeProject) return;
+    const selected = selectedPreviewIds.includes(preview.id);
+    const nextPreviewIds = selected
+      ? selectedPreviewIds.filter((previewId) => previewId !== preview.id)
+      : [...selectedPreviewIds, preview.id].slice(-6);
+
+    setSelectedPreviewIds(nextPreviewIds);
+
+    await logThreadContextSelection({
+      threadId,
+      projectId: activeProject.id,
+      userId: session.user.id,
+      action: selected ? "cleared_preview" : "selected_preview",
+      previewId: preview.id,
+      fileId: preview.file_id,
+      metadata: { path: preview.path, summary: preview.summary },
+    }).catch((error) => console.warn("[context-selection] audit write failed", error));
+  }
 
   async function handleSend() {
     const text = input.trim();
@@ -292,6 +348,14 @@ function ThreadView() {
                 {activeProject.source_type} / ingestion{" "}
                 {activeProject.latest_job?.status.replace("_", " ") ?? "not started"}
               </div>
+              <button
+                type="button"
+                onClick={handleAttachProject}
+                disabled={threadProjectId === activeProject.id}
+                className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {threadProjectId === activeProject.id ? "Attached to session" : "Attach to session"}
+              </button>
             </div>
           ) : (
             <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
@@ -317,6 +381,8 @@ function ThreadView() {
             <ProjectTextPreviewPanel
               previews={activeProjectPreviews}
               loading={activeProjectPreviewsLoading}
+              selectedPreviewIds={selectedPreviewIds}
+              onTogglePreview={handleTogglePreview}
             />
           </DrawerSection>
         )}

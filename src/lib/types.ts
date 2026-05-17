@@ -39,6 +39,7 @@ export interface ThreadRow {
   user_id: string;
   title: string;
   mode: string;
+  project_id: string | null;
   project_name: string | null;
   created_at: string;
   updated_at: string;
