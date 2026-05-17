@@ -9,6 +9,13 @@ import { useAuth } from "@/lib/auth";
 import { agentModes, mockExecutionSteps, mockFileTree, mockVerification } from "@/lib/mock-data";
 import type { AgentMode, FileNode, TaskStatus, VerificationStatus } from "@/lib/types";
 import { toast } from "sonner";
+import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
+import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
+import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
+import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
+import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
+import { getProjectManifest } from "@/features/projects/projectManifest";
+import { useProjectFilesQuery } from "@/features/projects/projectQueries";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -29,6 +36,11 @@ function ThreadView() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { activeProject, activeProjectMetadata } = useProjectWorkspace();
+  const activeProjectManifest = useMemo(() => getProjectManifest(activeProject), [activeProject]);
+  const { data: projectFiles = [], isLoading: projectFilesLoading } = useProjectFilesQuery(
+    activeProject?.id ?? null,
+  );
 
   const { data: thread } = useQuery({
     queryKey: ["thread", threadId],
@@ -68,7 +80,10 @@ function ThreadView() {
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: () => ({ mode }),
+        body: () => ({
+          mode,
+          project: activeProjectMetadata,
+        }),
         prepareSendMessagesRequest: async (options) => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
@@ -90,7 +105,7 @@ function ThreadView() {
           };
         },
       }),
-    [mode],
+    [activeProjectMetadata, mode],
   );
 
   const { messages, sendMessage, status } = useChat({
@@ -162,15 +177,23 @@ function ThreadView() {
             <div className="text-sm font-semibold truncate">{thread?.title ?? "Session"}</div>
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Agent #{threadId.slice(0, 6)} / {mode}
+              {activeProject ? ` / ${activeProject.name}` : ""}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
-              disabled
-            >
-              <Upload className="size-3" /> Upload ZIP
-            </button>
+            {session && (
+              <ProjectUploadDialog
+                userId={session.user.id}
+                trigger={
+                  <button
+                    type="button"
+                    className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
+                  >
+                    <Upload className="size-3" /> Upload ZIP
+                  </button>
+                }
+              />
+            )}
             <button
               className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
               disabled
@@ -248,8 +271,39 @@ function ThreadView() {
       </section>
 
       <aside className="w-80 shrink-0 bg-surface/40 flex flex-col">
-        <DrawerSection title="Files Changed">
-          <FileTree nodes={mockFileTree} depth={0} />
+        <DrawerSection title="Active Project">
+          {activeProject ? (
+            <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="truncate text-xs font-semibold text-zinc-200">
+                  {activeProject.name}
+                </div>
+                <ProjectStatusBadge
+                  status={activeProject.latest_job?.status ?? activeProject.status}
+                />
+              </div>
+              <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {activeProject.source_type} / ingestion{" "}
+                {activeProject.latest_job?.status.replace("_", " ") ?? "not started"}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
+              No project attached. Upload a ZIP to give Nexus Core safe project metadata.
+            </div>
+          )}
+        </DrawerSection>
+
+        <DrawerSection title="Project Summary">
+          <ProjectManifestCard manifest={activeProjectManifest} />
+        </DrawerSection>
+
+        <DrawerSection title={activeProject ? "File Inventory" : "Files Changed (mock)"}>
+          {activeProject ? (
+            <ProjectFileInventory files={projectFiles} loading={projectFilesLoading} />
+          ) : (
+            <FileTree nodes={mockFileTree} depth={0} />
+          )}
         </DrawerSection>
 
         <DrawerSection title="Task Pipeline">

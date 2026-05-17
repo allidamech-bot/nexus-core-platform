@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Terminal, Sparkles, ShieldCheck } from "lucide-react";
+import { Terminal, Sparkles, ShieldCheck, Boxes } from "lucide-react";
+import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
+import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
+import { getProjectManifest } from "@/features/projects/projectManifest";
+import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
 
 export const Route = createFileRoute("/app/")({
   component: AppIndex,
 });
 
 function AppIndex() {
+  const { projects, activeProject } = useProjectWorkspace();
+  const manifest = getProjectManifest(activeProject);
+
   return (
     <div className="flex-1 grid place-items-center p-8">
       <div className="max-w-xl text-center">
@@ -17,6 +24,33 @@ function AppIndex() {
           Start a new session from the sidebar. Nexus Core will plan, execute, and verify the work -
           surfacing every step in real time.
         </p>
+        {projects.length === 0 ? (
+          <div className="mb-8 rounded-lg border border-border bg-surface p-5 text-left">
+            <Boxes className="mb-3 size-5 text-accent" />
+            <div className="text-sm font-semibold">Project ingestion foundation is ready.</div>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              Upload a ZIP from the sidebar to create project records, ingestion jobs, and a safe
+              server-side manifest. Execution stays disabled until later phases.
+            </p>
+          </div>
+        ) : activeProject ? (
+          <div className="mb-8 rounded-lg border border-accent/20 bg-accent/5 p-4 text-left">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{activeProject.name}</div>
+                <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Active project / {activeProject.source_type}
+                </div>
+              </div>
+              <ProjectStatusBadge
+                status={activeProject.latest_job?.status ?? activeProject.status}
+              />
+            </div>
+            <div className="mt-4">
+              <ProjectManifestCard manifest={manifest} />
+            </div>
+          </div>
+        ) : null}
         <div className="grid grid-cols-3 gap-3 text-left">
           {[
             { i: Sparkles, t: "Structured planning", b: "Understanding / Plan / Risks / Files" },

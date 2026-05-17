@@ -43,6 +43,168 @@ export type Database = {
           },
         ];
       };
+      project_files: {
+        Row: {
+          checksum: string | null;
+          created_at: string;
+          extension: string | null;
+          id: string;
+          mime_type: string | null;
+          name: string;
+          path: string;
+          project_id: string;
+          size_bytes: number | null;
+          user_id: string;
+        };
+        Insert: {
+          checksum?: string | null;
+          created_at?: string;
+          extension?: string | null;
+          id?: string;
+          mime_type?: string | null;
+          name: string;
+          path: string;
+          project_id: string;
+          size_bytes?: number | null;
+          user_id: string;
+        };
+        Update: {
+          checksum?: string | null;
+          created_at?: string;
+          extension?: string | null;
+          id?: string;
+          mime_type?: string | null;
+          name?: string;
+          path?: string;
+          project_id?: string;
+          size_bytes?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_ingestion_jobs: {
+        Row: {
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          metadata: Json;
+          project_id: string;
+          stage: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          metadata?: Json;
+          project_id: string;
+          stage?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          metadata?: Json;
+          project_id?: string;
+          stage?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_ingestion_jobs_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_security_events: {
+        Row: {
+          created_at: string;
+          event_type: string;
+          id: string;
+          payload: Json;
+          project_id: string | null;
+          severity: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          payload?: Json;
+          project_id?: string | null;
+          severity: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          payload?: Json;
+          project_id?: string | null;
+          severity?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_security_events_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      projects: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          source_type: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          source_type?: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          source_type?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       threads: {
         Row: {
           created_at: string;

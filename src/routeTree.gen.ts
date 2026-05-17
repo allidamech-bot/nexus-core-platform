@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -52,6 +53,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProjectsProcessZipRoute = ApiProjectsProcessZipRouteImport.update({
+  id: '/api/projects/process-zip',
+  path: '/api/projects/process-zip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/': typeof AppIndexRoute
+  '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app': typeof AppIndexRoute
+  '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/': typeof AppIndexRoute
+  '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,8 +99,16 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/app/$threadId'
     | '/app/'
+    | '/api/projects/process-zip'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/api/chat' | '/app/$threadId' | '/app'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/api/chat'
+    | '/app/$threadId'
+    | '/app'
+    | '/api/projects/process-zip'
   id:
     | '__root__'
     | '/'
@@ -101,6 +118,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/app/$threadId'
     | '/app/'
+    | '/api/projects/process-zip'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -109,6 +127,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -162,6 +181,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/process-zip': {
+      id: '/api/projects/process-zip'
+      path: '/api/projects/process-zip'
+      fullPath: '/api/projects/process-zip'
+      preLoaderRoute: typeof ApiProjectsProcessZipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +209,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -4,8 +4,14 @@ import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import type { Database } from "@/integrations/supabase/types";
+import type { ProjectChatMetadata } from "@/features/projects/types";
 
-type Body = { id?: unknown; messages?: unknown; mode?: string };
+type Body = {
+  id?: unknown;
+  messages?: unknown;
+  mode?: string;
+  project?: Partial<ProjectChatMetadata> | null;
+};
 
 const SYSTEM_PROMPT = `You are Nexus Core — an AI operating system for businesses and developers.
 
@@ -36,6 +42,23 @@ Bulleted list of checks: Typecheck, Lint, Build, Tests, Security Scan — with P
 A concise summary of the outcome and next recommended action.
 
 Tone: precise, senior-engineer, business-grade. Never refuse without giving a structured alternative. Never produce filler.`;
+
+function projectContextPrompt(project: Body["project"]) {
+  if (!project?.name) return "";
+
+  return `\n\nActive project metadata:
+- name: ${String(project.name).slice(0, 160)}
+- source_type: ${String(project.source_type ?? "unknown").slice(0, 40)}
+- project_status: ${String(project.status ?? "unknown").slice(0, 40)}
+- ingestion_status: ${String(project.ingestion_status ?? "none").slice(0, 40)}
+- manifest: ${
+    project.manifest
+      ? `${project.manifest.file_count} files, frameworks: ${project.manifest.frameworks.join(", ") || "unknown"}, languages: ${project.manifest.languages.join(", ") || "unknown"}`
+      : "not generated"
+  }
+
+Do not claim access to raw project files. Phase 2B provides safe manifest and file inventory metadata only; ZIP contents, deep indexing, execution, and verification are not available.`;
+}
 
 function textResponse(message: string, status: number) {
   return new Response(message, { status });
@@ -115,7 +138,7 @@ export const Route = createFileRoute("/api/chat")({
           return textResponse("Invalid JSON body", 400);
         }
 
-        const { id, messages, mode } = body;
+        const { id, messages, mode, project } = body;
         if (!Array.isArray(messages)) {
           return textResponse("Messages required", 400);
         }
@@ -130,8 +153,8 @@ export const Route = createFileRoute("/api/chat")({
         const model = gateway("google/gemini-3-flash-preview");
 
         const system = mode
-          ? `${SYSTEM_PROMPT}\n\nActive agent mode: ${mode.toUpperCase()}. Bias the response toward this discipline.`
-          : SYSTEM_PROMPT;
+          ? `${SYSTEM_PROMPT}\n\nActive agent mode: ${mode.toUpperCase()}. Bias the response toward this discipline.${projectContextPrompt(project)}`
+          : `${SYSTEM_PROMPT}${projectContextPrompt(project)}`;
 
         const result = streamText({
           model,

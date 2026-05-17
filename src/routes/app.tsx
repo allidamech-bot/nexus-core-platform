@@ -1,11 +1,14 @@
 import { Link, Outlet, createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { Plus, LogOut, Boxes, Workflow as WorkflowIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ThreadRow } from "@/lib/types";
+import { ProjectList } from "@/features/projects/ProjectList";
+import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
+import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
+import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -13,13 +16,36 @@ export const Route = createFileRoute("/app")({
 
 function AppLayout() {
   const { session, loading, signOut, user } = useAuth();
+
+  if (loading || !session) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <ProjectWorkspaceProvider enabled={!!session}>
+      <AppWorkspace session={session} signOut={signOut} userEmail={user?.email ?? null} />
+    </ProjectWorkspaceProvider>
+  );
+}
+
+function AppWorkspace({
+  session,
+  signOut,
+  userEmail,
+}: {
+  session: NonNullable<ReturnType<typeof useAuth>["session"]>;
+  signOut: () => Promise<void>;
+  userEmail: string | null;
+}) {
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { threadId?: string };
   const qc = useQueryClient();
-
-  useEffect(() => {
-    if (!loading && !session) navigate({ to: "/login" });
-  }, [loading, session, navigate]);
+  const { projects, projectsLoading, selectedProjectId, setSelectedProjectId } =
+    useProjectWorkspace();
 
   const { data: threads } = useQuery({
     enabled: !!session,
@@ -49,14 +75,6 @@ function AppLayout() {
     navigate({ to: "/app/$threadId", params: { threadId: data.id } });
   }
 
-  if (loading || !session) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-background">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen w-screen flex bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
@@ -84,9 +102,31 @@ function AppLayout() {
             Quick Actions
           </div>
           <div className="space-y-0.5">
-            <ActionRow icon={Boxes} label="Upload Project" disabled />
+            <ProjectUploadDialog
+              userId={session.user.id}
+              trigger={
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 text-left"
+                >
+                  <Boxes className="size-3.5" /> Upload Project
+                </button>
+              }
+            />
             <ActionRow icon={WorkflowIcon} label="Business Workflow" disabled />
           </div>
+        </div>
+
+        <div className="px-3 mt-6">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
+            Projects
+          </div>
+          <ProjectList
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            loading={projectsLoading}
+            onSelect={setSelectedProjectId}
+          />
         </div>
 
         <div className="px-3 mt-6 flex-1 overflow-y-auto">
@@ -119,7 +159,7 @@ function AppLayout() {
 
         <div className="border-t border-border p-3 flex items-center justify-between">
           <div className="min-w-0">
-            <div className="text-xs font-medium truncate">{user?.email}</div>
+            <div className="text-xs font-medium truncate">{userEmail}</div>
             <div className="text-[10px] text-muted-foreground">Workspace owner</div>
           </div>
           <button
@@ -153,6 +193,7 @@ function ActionRow({
 }) {
   return (
     <button
+      type="button"
       disabled={disabled}
       className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed text-left"
     >
