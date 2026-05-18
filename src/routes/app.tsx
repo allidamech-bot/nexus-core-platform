@@ -142,13 +142,13 @@ function AppWorkspace({
             onClick={newSession}
             className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-semibold rounded-md py-2 text-sm hover:bg-zinc-200 transition-colors"
           >
-            <Plus className="size-4" /> New Session
+            <Plus className="size-4 shrink-0" /> {t("newSession")}
           </button>
         </div>
 
         <div className="px-3 mt-2">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
-            Quick Actions
+            {t("quickActions")}
           </div>
           <div className="space-y-0.5">
             <ActionLink to="/app" icon={LayoutDashboard} label={t("workspace")} />
@@ -157,15 +157,15 @@ function AppWorkspace({
               trigger={
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 text-left"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 text-start"
                 >
-                  <Boxes className="size-3.5" /> {t("uploadZip")}
+                  <Boxes className="size-3.5 shrink-0" /> {t("uploadZip")}
                 </button>
               }
             />
             {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label={t("adminControl")} />}
             <ActionLink to="/app/settings" icon={Settings} label={t("settings")} />
-            <ActionRow icon={WorkflowIcon} label={t("businessWorkflow")} disabled />
+            <ActionRow icon={WorkflowIcon} label={t("businessWorkflow")} disabled soonLabel={t("soon")} />
           </div>
         </div>
 
@@ -177,7 +177,7 @@ function AppWorkspace({
 
         <div className="px-3 mt-6">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
-            Projects
+            {t("projects")}
           </div>
           <ProjectList
             projects={projects}
@@ -189,44 +189,45 @@ function AppWorkspace({
 
         <div className="px-3 mt-6 flex-1 overflow-y-auto">
           <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
-            Sessions
+            {t("sessions")}
           </div>
           <div className="space-y-0.5">
             {threads?.length === 0 && (
-              <div className="px-2 py-3 text-xs text-muted-foreground">No sessions yet.</div>
+              <div className="px-2 py-3 text-xs text-muted-foreground">{t("noSessions")}</div>
             )}
-            {threads?.map((t) => {
-              const active = params.threadId === t.id;
+            {threads?.map((th) => {
+              const active = params.threadId === th.id;
               return (
                 <Link
-                  key={t.id}
+                  key={th.id}
                   to="/app/$threadId"
-                  params={{ threadId: t.id }}
+                  params={{ threadId: th.id }}
                   className={`block px-3 py-2 rounded-md text-sm truncate transition-colors ${
                     active
                       ? "bg-accent/10 text-accent border border-accent/20"
                       : "text-zinc-300 hover:bg-white/5 border border-transparent"
                   }`}
                 >
-                  {t.title || "Untitled"}
+                  {th.title || t("untitled")}
                 </Link>
               );
             })}
           </div>
         </div>
 
-        <div className="border-t border-border p-3 flex items-center justify-between">
+        <div className="border-t border-border p-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-medium truncate">{userEmail}</div>
-            <div className="text-[10px] text-muted-foreground">Workspace owner</div>
+            <div className="text-xs font-medium truncate" dir="ltr">{userEmail}</div>
+            <div className="text-[10px] text-muted-foreground">{t("workspaceOwner")}</div>
           </div>
           <button
             onClick={async () => {
               await signOut();
               navigate({ to: "/" });
             }}
-            className="size-7 grid place-items-center rounded-md border border-border hover:bg-white/5"
-            title="Sign out"
+            className="size-7 shrink-0 grid place-items-center rounded-md border border-border hover:bg-white/5"
+            title={t("signOut")}
+            aria-label={t("signOut")}
           >
             <LogOut className="size-3.5" />
           </button>
@@ -252,9 +253,9 @@ function ActionLink({
   return (
     <Link
       to={to}
-      className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-muted-foreground hover:bg-white/5"
+      className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-start text-sm text-muted-foreground hover:bg-white/5"
     >
-      <Icon className="size-3.5" /> {label}
+      <Icon className="size-3.5 shrink-0" /> {label}
     </Link>
   );
 }
@@ -263,21 +264,23 @@ function ActionRow({
   icon: Icon,
   label,
   disabled,
+  soonLabel,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   disabled?: boolean;
+  soonLabel?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
-      className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed text-left"
+      className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed text-start"
     >
-      <Icon className="size-3.5" /> {label}
+      <Icon className="size-3.5 shrink-0" /> <span className="flex-1 text-start">{label}</span>
       {disabled && (
-        <span className="ml-auto text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-          Soon
+        <span className="ms-auto text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
+          {soonLabel ?? "Soon"}
         </span>
       )}
     </button>
