@@ -182,10 +182,13 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
                 <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {mode === "zip"
                     ? t("zipOnly", { max: PROJECT_UPLOAD_MAX_MB })
-                    : "Local folder import builds a safe manifest from file names and metadata. Ignored directories stay out of the inventory."}
+                    : t("folderImportHint")}
                 </div>
                 {file && (
-                  <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <div
+                    className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
+                    dir="ltr"
+                  >
                     {(file.size / 1024 / 1024).toFixed(2)} MB / {file.type || "unknown type"}
                   </div>
                 )}
@@ -194,7 +197,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
                     <Metric label={t("acceptedFiles")} value={folderSummary.accepted.length} />
                     <Metric label={t("ignoredFiles")} value={folderSummary.ignored.length} />
                     <Metric
-                      label="Size"
+                      label={t("size")}
                       value={`${(folderSummary.totalBytes / 1024 / 1024).toFixed(2)} MB`}
                     />
                   </div>
