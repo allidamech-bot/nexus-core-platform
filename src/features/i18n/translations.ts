@@ -78,18 +78,14 @@ export const translations = {
     governedAccess: "Governed access",
     governedAccessBody: "Quota checks / Audit events / RLS",
     canDoNow: "What Nexus can do now",
-    canDoItems: [
-      "Ingest ZIP archives and folder manifests",
-      "Generate safe file inventory and preview context",
-      "Attach projects to threaded AI sessions",
-      "Meter usage and audit sensitive actions",
-    ],
+    canDoItem1: "Ingest ZIP archives and folder manifests",
+    canDoItem2: "Generate safe file inventory and preview context",
+    canDoItem3: "Attach projects to threaded AI sessions",
+    canDoItem4: "Meter usage and audit sensitive actions",
     notSupportedYet: "Not yet supported",
-    notSupportedItems: [
-      "No shell, terminal, sandbox, or dependency installation",
-      "No autonomous code modification or pull requests",
-      "No GitHub OAuth, embeddings, or payment checkout yet",
-    ],
+    notSupportedItem1: "No shell, terminal, sandbox, or dependency installation",
+    notSupportedItem2: "No autonomous code modification or pull requests",
+    notSupportedItem3: "No GitHub OAuth, embeddings, or payment checkout yet",
 
     // Project list / status
     loadingProjects: "Loading projects",
