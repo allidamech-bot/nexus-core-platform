@@ -22,9 +22,7 @@ function SettingsRoute() {
           <div className="mb-3 font-mono text-[11px] uppercase tracking-widest text-accent">
             {t("settings")}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight leading-snug">
-            {t("settingsTitle")}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight leading-snug">{t("settingsTitle")}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {t("settingsSubtitle")}
           </p>
@@ -49,32 +47,23 @@ function SettingsRoute() {
 
             <SettingsCard icon={Globe2} title={t("language")}>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {t("languageBody")}
-                </p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{t("languageBody")}</p>
                 <LanguageSwitcher />
               </div>
             </SettingsCard>
 
             <SettingsCard icon={KeyRound} title={t("apiAccess")}>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {t("apiAccessBody")}
-              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("apiAccessBody")}</p>
             </SettingsCard>
 
             <SettingsCard icon={ShieldCheck} title={t("dangerZone")}>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {t("dangerZoneBody")}
-              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("dangerZoneBody")}</p>
             </SettingsCard>
           </div>
 
           <div className="space-y-4">
             <SettingsCard icon={CreditCard} title={t("currentPlan")}>
-              <div
-                className="font-mono text-2xl font-semibold uppercase text-zinc-100"
-                dir="ltr"
-              >
+              <div className="font-mono text-2xl font-semibold uppercase text-zinc-100" dir="ltr">
                 {usage?.planId ?? "starter"}
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">

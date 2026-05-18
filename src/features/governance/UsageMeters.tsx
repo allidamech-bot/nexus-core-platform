@@ -26,9 +26,7 @@ function Meter({
         <bdi>{usedStr}</bdi> · {t("unlimited")}
       </span>
     ) : (
-      <span>
-        {t("usageFormat", { used: usedStr, limit: limitStr })}
-      </span>
+      <span>{t("usageFormat", { used: usedStr, limit: limitStr })}</span>
     );
 
   return (

@@ -92,6 +92,30 @@ function safeStorageName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 160);
 }
 
+async function requireQuota(
+  userId: string,
+  limitKey: Parameters<typeof checkQuota>[1],
+  requested = 1,
+) {
+  try {
+    return await checkQuota(userId, limitKey, requested);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Usage governance could not be verified for this upload.";
+    console.warn("[project-upload] quota verification failed", { limitKey, message });
+
+    if (import.meta.env.PROD) {
+      throw new Error(
+        "Upload quota could not be verified. Apply governance migrations or try again later.",
+      );
+    }
+
+    return null;
+  }
+}
+
 async function uploadArchive(input: {
   userId: string;
   projectId: string;
@@ -161,14 +185,23 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
   }
 
   const [projectQuota, uploadQuota] = await Promise.all([
-    checkQuota(input.userId, "max_projects").catch(() => null),
-    checkQuota(input.userId, "max_uploads_monthly").catch(() => null),
+    requireQuota(input.userId, "max_projects"),
+    requireQuota(input.userId, "max_uploads_monthly"),
   ]);
   const uploadMbLimit = await checkQuota(
     input.userId,
     "max_upload_mb",
     Math.ceil(input.file.size / 1024 / 1024),
-  ).catch(() => null);
+  ).catch((error) => {
+    const message = error instanceof Error ? error.message : "Upload size quota failed.";
+    console.warn("[project-upload] upload size quota verification failed", message);
+    if (import.meta.env.PROD) {
+      throw new Error(
+        "Upload size quota could not be verified. Apply governance migrations or try again later.",
+      );
+    }
+    return null;
+  });
 
   const blockedQuota = [projectQuota, uploadQuota, uploadMbLimit].find(
     (quota) => quota && !quota.allowed,
@@ -309,8 +342,8 @@ export async function importProjectFolder(input: ImportFolderInput): Promise<Upl
   if (input.summary.error) throw new Error(input.summary.error);
 
   const [projectQuota, uploadQuota] = await Promise.all([
-    checkQuota(input.userId, "max_projects").catch(() => null),
-    checkQuota(input.userId, "max_uploads_monthly").catch(() => null),
+    requireQuota(input.userId, "max_projects"),
+    requireQuota(input.userId, "max_uploads_monthly"),
   ]);
   const blockedQuota = [projectQuota, uploadQuota].find((quota) => quota && !quota.allowed);
   if (blockedQuota) {

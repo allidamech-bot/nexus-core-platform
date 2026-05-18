@@ -4,14 +4,20 @@ import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import type { Database } from "@/integrations/supabase/types";
-import type { ProjectChatMetadata } from "@/features/projects/types";
+import type {
+  ProjectChatMetadata,
+  ProjectIngestionStatus,
+  ProjectManifest,
+  ProjectSourceType,
+  ProjectStatus,
+} from "@/features/projects/types";
 import { manifestContextLine } from "@/features/projects/contextShaper";
 
 type Body = {
   id?: unknown;
   messages?: unknown;
   mode?: string;
-  project?: Partial<ProjectChatMetadata> | null;
+  selectedPreviewIds?: unknown;
 };
 
 const SYSTEM_PROMPT = `You are Nexus Core — an AI operating system for businesses and developers.
@@ -44,7 +50,10 @@ A concise summary of the outcome and next recommended action.
 
 Tone: precise, senior-engineer, business-grade. Never refuse without giving a structured alternative. Never produce filler.`;
 
-function projectContextPrompt(project: Body["project"]) {
+const MAX_CONTEXT_PREVIEWS = 6;
+const MAX_CONTEXT_BYTES = 8_000;
+
+function projectContextPrompt(project: ProjectChatMetadata | null) {
   if (!project?.name) return "";
   const previews = (project.previews ?? [])
     .slice(0, 6)
@@ -107,11 +116,25 @@ function getSupabaseEnv() {
   return { url, key };
 }
 
-async function requireThreadAccess(request: Request, threadId: unknown) {
-  if (typeof threadId !== "string" || !threadId) {
-    return { response: textResponse("Thread id required", 400) };
-  }
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
 
+function parseSelectedPreviewIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(
+    new Set(value.filter((item): item is string => typeof item === "string" && item.length > 0)),
+  ).slice(0, MAX_CONTEXT_PREVIEWS);
+}
+
+function parseManifest(value: unknown): ProjectManifest | null {
+  const record = asRecord(value);
+  if (record.version !== 1 || typeof record.file_count !== "number") return null;
+  return record as unknown as ProjectManifest;
+}
+
+async function requireThreadAccess(request: Request, threadId: unknown) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return { response: textResponse("Unauthorized", 401) };
@@ -120,6 +143,10 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
   const token = authHeader.replace("Bearer ", "").trim();
   if (!token) {
     return { response: textResponse("Unauthorized", 401) };
+  }
+
+  if (typeof threadId !== "string" || !threadId) {
+    return { response: textResponse("Thread id required", 400) };
   }
 
   let env: ReturnType<typeof getSupabaseEnv>;
@@ -156,20 +183,40 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
 
   const { data: thread, error: threadError } = await supabase
     .from("threads")
-    .select("id")
+    .select("id,project_id")
     .eq("id", threadId)
     .maybeSingle();
 
   if (threadError) {
     console.error("[chat] thread access check failed", threadError);
-    return { response: textResponse("Unable to verify thread access", 500) };
+    if (isExpectedGovernanceSetupError(threadError)) {
+      return {
+        response: jsonResponse(
+          {
+            error: "database_setup_missing",
+            message:
+              "Required database tables or RPCs are unavailable. Apply the Phase 1 through Phase 2E migrations before authenticated chat can run.",
+          },
+          503,
+        ),
+      };
+    }
+    return {
+      response: jsonResponse(
+        {
+          error: "thread_access_check_failed",
+          message: "Unable to verify thread access.",
+        },
+        503,
+      ),
+    };
   }
 
   if (!thread) {
     return { response: textResponse("Forbidden", 403) };
   }
 
-  return { supabase, userId: claimsData.claims.sub };
+  return { supabase, userId: claimsData.claims.sub, thread };
 }
 
 function estimateTokens(value: unknown): number {
@@ -185,7 +232,7 @@ async function enforceChatQuota(input: {
   userId: string;
   threadId: string;
   messages: unknown[];
-  project: Body["project"];
+  project: ProjectChatMetadata | null;
 }) {
   const selectedPreviews = input.project?.previews?.length ?? 0;
   const contextBytes = byteSize(input.project ?? {});
@@ -321,6 +368,80 @@ async function enforceChatQuota(input: {
   return null;
 }
 
+async function fetchTrustedProjectContext(input: {
+  supabase: ReturnType<typeof createClient<Database>>;
+  threadProjectId: string | null;
+  selectedPreviewIds: string[];
+}): Promise<ProjectChatMetadata | null> {
+  if (!input.threadProjectId) return null;
+
+  const { data: project, error: projectError } = await input.supabase
+    .from("projects")
+    .select("id,name,source_type,status")
+    .eq("id", input.threadProjectId)
+    .maybeSingle();
+  if (projectError) throw projectError;
+  if (!project) return null;
+
+  const { data: jobs, error: jobError } = await input.supabase
+    .from("project_ingestion_jobs")
+    .select("status,metadata")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (jobError) throw jobError;
+
+  const latestJob = jobs?.[0] ?? null;
+  const jobMetadata = asRecord(latestJob?.metadata);
+  const manifest = parseManifest(jobMetadata.manifest);
+
+  let previews: ProjectChatMetadata["previews"] = [];
+  if (input.selectedPreviewIds.length > 0) {
+    const { data: previewRows, error: previewError } = await input.supabase
+      .from("project_text_previews")
+      .select("id,file_id,preview_text,summary,detected_language,truncated,token_estimate")
+      .eq("project_id", project.id)
+      .in("id", input.selectedPreviewIds)
+      .limit(MAX_CONTEXT_PREVIEWS);
+    if (previewError) throw previewError;
+
+    const fileIds = Array.from(new Set((previewRows ?? []).map((preview) => preview.file_id)));
+    const { data: fileRows, error: fileError } =
+      fileIds.length > 0
+        ? await input.supabase.from("project_files").select("id,path").in("id", fileIds)
+        : { data: [], error: null };
+    if (fileError) throw fileError;
+
+    const pathByFileId = new Map((fileRows ?? []).map((file) => [file.id, file.path]));
+    let usedBytes = 0;
+    previews = (previewRows ?? []).flatMap((preview) => {
+      const remaining = MAX_CONTEXT_BYTES - usedBytes;
+      if (remaining <= 0) return [];
+      const previewText = String(preview.preview_text ?? "").slice(0, Math.min(1_500, remaining));
+      usedBytes += new TextEncoder().encode(previewText).length;
+      return [
+        {
+          path: pathByFileId.get(preview.file_id) ?? "unknown",
+          summary: String(preview.summary ?? "Safe text preview"),
+          detected_language: preview.detected_language,
+          preview_text: previewText,
+          truncated: Boolean(preview.truncated) || preview.preview_text.length > previewText.length,
+          token_estimate: Math.ceil(previewText.length / 4),
+        },
+      ];
+    });
+  }
+
+  return {
+    name: project.name,
+    source_type: project.source_type as ProjectSourceType,
+    status: project.status as ProjectStatus,
+    ingestion_status: (latestJob?.status as ProjectIngestionStatus | undefined) ?? "none",
+    manifest,
+    previews,
+  };
+}
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
@@ -332,13 +453,34 @@ export const Route = createFileRoute("/api/chat")({
           return textResponse("Invalid JSON body", 400);
         }
 
-        const { id, messages, mode, project } = body;
+        const { id, messages, mode } = body;
         if (!Array.isArray(messages)) {
           return textResponse("Messages required", 400);
         }
 
         const access = await requireThreadAccess(request, id);
         if (access.response) return access.response;
+
+        let project: ProjectChatMetadata | null = null;
+        try {
+          project = await fetchTrustedProjectContext({
+            supabase: access.supabase,
+            threadProjectId:
+              typeof access.thread?.project_id === "string" ? access.thread.project_id : null,
+            selectedPreviewIds: parseSelectedPreviewIds(body.selectedPreviewIds),
+          });
+        } catch (error) {
+          console.error("[chat] trusted project context failed", {
+            message: error instanceof Error ? error.message : String(error),
+          });
+          return jsonResponse(
+            {
+              error: "project_context_unavailable",
+              message: "Unable to load trusted project context for this session.",
+            },
+            503,
+          );
+        }
 
         try {
           const quotaError = await enforceChatQuota({

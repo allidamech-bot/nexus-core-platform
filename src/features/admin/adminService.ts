@@ -1,4 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type TableName = keyof Database["public"]["Tables"];
+type RpcName = keyof Database["public"]["Functions"];
+
+export interface DbHealthItem {
+  kind: "table" | "rpc";
+  name: string;
+  status: "available" | "missing" | "error";
+  message: string | null;
+}
 
 export interface AdminDashboardData {
   roles: Array<{ user_id: string; role: string; created_at: string; updated_at: string }>;
@@ -45,6 +56,110 @@ export interface AdminDashboardData {
     severity: string;
     created_at: string;
   }>;
+  dbHealth: DbHealthItem[];
+}
+
+const REQUIRED_TABLES: TableName[] = [
+  "projects",
+  "project_files",
+  "project_ingestion_jobs",
+  "project_text_previews",
+  "project_security_events",
+  "admin_email_allowlist",
+  "user_roles",
+  "billing_plans",
+  "plan_usage_limits",
+  "user_subscriptions",
+  "thread_context_selections",
+  "usage_events",
+  "audit_events",
+  "usage_daily_snapshots",
+];
+
+const REQUIRED_RPCS: RpcName[] = [
+  "is_admin",
+  "get_effective_plan_id",
+  "get_plan_limit",
+  "get_usage_total",
+  "is_within_usage_limit",
+];
+
+function classifyDbError(
+  error: { code?: string; message?: string } | null,
+): DbHealthItem["status"] {
+  if (!error) return "available";
+  return error.code === "42P01" || error.code === "42883" || error.code === "PGRST202"
+    ? "missing"
+    : "error";
+}
+
+async function checkTable(name: TableName): Promise<DbHealthItem> {
+  const { error } = await supabase.from(name).select("*").limit(1);
+  return {
+    kind: "table",
+    name,
+    status: classifyDbError(error),
+    message: error?.message ?? null,
+  };
+}
+
+async function checkRpc(name: RpcName, userId: string | null): Promise<DbHealthItem> {
+  if (!userId && name !== "is_admin") {
+    return {
+      kind: "rpc",
+      name,
+      status: "error",
+      message: "Current user is required to verify this RPC.",
+    };
+  }
+
+  const checkUserId = userId ?? "";
+  let error: { code?: string; message?: string } | null = null;
+  if (name === "is_admin") {
+    ({ error } = await supabase.rpc("is_admin"));
+  } else if (name === "get_effective_plan_id") {
+    ({ error } = await supabase.rpc("get_effective_plan_id", { check_user_id: checkUserId }));
+  } else if (name === "get_plan_limit") {
+    ({ error } = await supabase.rpc("get_plan_limit", {
+      check_user_id: checkUserId,
+      limit_key: "max_projects",
+    }));
+  } else if (name === "get_usage_total") {
+    ({ error } = await supabase.rpc("get_usage_total", {
+      check_user_id: checkUserId,
+      metric_name: "projects",
+    }));
+  } else if (name === "is_within_usage_limit") {
+    ({ error } = await supabase.rpc("is_within_usage_limit", {
+      check_user_id: checkUserId,
+      limit_key: "max_projects",
+      increment: 0,
+    }));
+  }
+
+  return {
+    kind: "rpc",
+    name,
+    status: classifyDbError(error),
+    message: error?.message ?? null,
+  };
+}
+
+async function getDbHealth(): Promise<DbHealthItem[]> {
+  const { data } = await supabase.auth.getUser();
+  const userId = data.user?.id ?? null;
+  return Promise.all([
+    ...REQUIRED_TABLES.map((table) => checkTable(table)),
+    ...REQUIRED_RPCS.map((rpc) => checkRpc(rpc, userId)),
+  ]);
+}
+
+function dataOrEmpty<T>(result: { data: T[] | null; error: { message?: string } | null }): T[] {
+  if (result.error) {
+    console.warn("[admin] dashboard query unavailable", result.error.message);
+    return [];
+  }
+  return result.data ?? [];
 }
 
 export async function getIsAdmin(): Promise<boolean> {
@@ -63,6 +178,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     contextSelections,
     usageEvents,
     auditEvents,
+    dbHealth,
   ] = await Promise.all([
     supabase.from("user_roles").select("user_id,role,created_at,updated_at").limit(100),
     supabase.from("billing_plans").select("id,name,status,monthly_price_cents").order("id"),
@@ -91,29 +207,18 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       .select("id,event_type,severity,created_at")
       .order("created_at", { ascending: false })
       .limit(100),
+    getDbHealth(),
   ]);
 
-  for (const result of [
-    roles,
-    plans,
-    subscriptions,
-    projects,
-    securityEvents,
-    contextSelections,
-    usageEvents,
-    auditEvents,
-  ]) {
-    if (result.error) throw result.error;
-  }
-
   return {
-    roles: roles.data ?? [],
-    plans: plans.data ?? [],
-    subscriptions: subscriptions.data ?? [],
-    projects: projects.data ?? [],
-    securityEvents: securityEvents.data ?? [],
-    contextSelections: contextSelections.data ?? [],
-    usageEvents: usageEvents.data ?? [],
-    auditEvents: auditEvents.data ?? [],
+    roles: dataOrEmpty(roles),
+    plans: dataOrEmpty(plans),
+    subscriptions: dataOrEmpty(subscriptions),
+    projects: dataOrEmpty(projects),
+    securityEvents: dataOrEmpty(securityEvents),
+    contextSelections: dataOrEmpty(contextSelections),
+    usageEvents: dataOrEmpty(usageEvents),
+    auditEvents: dataOrEmpty(auditEvents),
+    dbHealth,
   };
 }

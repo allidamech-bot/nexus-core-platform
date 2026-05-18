@@ -165,7 +165,12 @@ function AppWorkspace({
             />
             {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label={t("adminControl")} />}
             <ActionLink to="/app/settings" icon={Settings} label={t("settings")} />
-            <ActionRow icon={WorkflowIcon} label={t("businessWorkflow")} disabled soonLabel={t("soon")} />
+            <ActionRow
+              icon={WorkflowIcon}
+              label={t("businessWorkflow")}
+              disabled
+              soonLabel={t("soon")}
+            />
           </div>
         </div>
 
@@ -217,7 +222,9 @@ function AppWorkspace({
 
         <div className="border-t border-border p-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs font-medium truncate" dir="ltr">{userEmail}</div>
+            <div className="text-xs font-medium truncate" dir="ltr">
+              {userEmail}
+            </div>
             <div className="text-[10px] text-muted-foreground">{t("workspaceOwner")}</div>
           </div>
           <button

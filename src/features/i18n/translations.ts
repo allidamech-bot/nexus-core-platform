@@ -185,8 +185,7 @@ export const translations = {
     organization: "Organization",
     organizationBody:
       "Organization membership, roles, workspace permissions, and domain controls are planned but not active yet.",
-    languageBody:
-      "Language preference is saved locally and updates layout direction for Arabic.",
+    languageBody: "Language preference is saved locally and updates layout direction for Arabic.",
     apiAccess: "API and access",
     apiAccessBody:
       "API keys, SCIM, SSO, and service accounts are intentionally disabled until the enterprise security layer is ready.",
@@ -377,14 +376,12 @@ export const translations = {
     settingsSubtitle:
       "إدارة تفضيلات الحساب واللغة وحالة الخطة ومؤشرات الاستخدام وضوابط المؤسسة المستقبلية.",
     profile: "الملف الشخصي",
-    profileBody:
-      "تحرير الملف الشخصي وتفضيلات الإشعارات وبيانات الهوية محجوزة لمرحلة المؤسسات.",
+    profileBody: "تحرير الملف الشخصي وتفضيلات الإشعارات وبيانات الهوية محجوزة لمرحلة المؤسسات.",
     signedInUser: "المستخدم المسجّل",
     organization: "المؤسسة",
     organizationBody:
       "عضوية المؤسسة والأدوار وصلاحيات مساحة العمل وضوابط النطاق مخطّط لها ولم تُفعَّل بعد.",
-    languageBody:
-      "يُحفظ تفضيل اللغة محليًا، ويُحدِّث اتجاه التخطيط تلقائيًا عند اختيار العربية.",
+    languageBody: "يُحفظ تفضيل اللغة محليًا، ويُحدِّث اتجاه التخطيط تلقائيًا عند اختيار العربية.",
     apiAccess: "واجهات API والوصول",
     apiAccessBody:
       "مفاتيح API و SCIM و SSO وحسابات الخدمة معطّلة قصدًا إلى أن تجهز طبقة أمان المؤسسة.",
@@ -392,8 +389,7 @@ export const translations = {
     dangerZoneBody:
       "حذف مساحة العمل وعناصر التصدير ستتطلّب موافقة المسؤول وتسجيلًا للتدقيق. لا توجد إعدادات تدميرية متاحة في هذه المرحلة.",
     currentPlan: "الخطة الحالية",
-    currentPlanBody:
-      "الفوترة غير موصولة. تُطبَّق الحدود من خلال أساس الحوكمة.",
+    currentPlanBody: "الفوترة غير موصولة. تُطبَّق الحدود من خلال أساس الحوكمة.",
   },
 } as const;
 

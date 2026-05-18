@@ -50,7 +50,6 @@ function ThreadView() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     activeProject,
-    activeProjectMetadata,
     activeProjectPreviews,
     activeProjectPreviewsLoading,
     selectedPreviewIds,
@@ -109,7 +108,7 @@ function ThreadView() {
         api: "/api/chat",
         body: () => ({
           mode,
-          project: activeProjectMetadata,
+          selectedPreviewIds,
         }),
         prepareSendMessagesRequest: async (options) => {
           const { data } = await supabase.auth.getSession();
@@ -132,7 +131,7 @@ function ThreadView() {
           };
         },
       }),
-    [activeProjectMetadata, mode],
+    [mode, selectedPreviewIds],
   );
 
   const { messages, sendMessage, status } = useChat({

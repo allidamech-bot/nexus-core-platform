@@ -50,6 +50,8 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
     },
     {},
   );
+  const dbHealth = data.dbHealth ?? [];
+  const missingDbItems = dbHealth.filter((item) => item.status !== "available");
 
   const metrics = [
     { label: t("roleRecords"), value: data.roles.length },
@@ -156,7 +158,9 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
                   <div key={plan.id}>
                     <div className="mb-1 flex justify-between text-xs">
                       <span>{plan.name}</span>
-                      <span className="text-muted-foreground" dir="ltr">{fmt(count)}</span>
+                      <span className="text-muted-foreground" dir="ltr">
+                        {fmt(count)}
+                      </span>
                     </div>
                     <div className="h-2 rounded-full bg-white/5">
                       <div className="h-2 rounded-full bg-accent" style={{ width: `${width}%` }} />
@@ -198,16 +202,18 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
           />
           <OperationsPanel
             title={t("migrationChecklist")}
-            rows={[
-              [t("adminRoles"), data.roles.length > 0 ? t("detected") : t("noRecordsShort")],
-              [t("plans"), data.plans.length >= 4 ? t("seeded") : t("review")],
-              [t("recentActivity"), data.usageEvents.length > 0 ? t("receiving") : t("empty")],
-              [t("auditEvents"), data.auditEvents.length > 0 ? t("receiving") : t("empty")],
-            ]}
+            rows={dbHealth.map((item) => [
+              `${item.kind}: ${item.name}`,
+              item.status === "available" ? t("ready") : item.status,
+            ])}
           />
           <OperationsPanel
             title={t("operationalWarnings")}
             rows={[
+              [
+                t("systemHealth"),
+                missingDbItems.length === 0 ? t("ready") : `${fmt(missingDbItems.length)} missing`,
+              ],
               [t("billing"), t("providerNotConnected")],
               [t("teams"), t("notEnabled")],
               [t("sandbox"), t("notEnabled")],
@@ -249,15 +255,7 @@ function MetricDetail({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AdminTable({
-  title,
-  rows,
-  empty,
-}: {
-  title: string;
-  rows: string[][];
-  empty: string;
-}) {
+function AdminTable({ title, rows, empty }: { title: string; rows: string[][]; empty: string }) {
   return (
     <div className="rounded-lg border border-border bg-surface">
       <div className="border-b border-border px-4 py-3 text-sm font-semibold">{title}</div>

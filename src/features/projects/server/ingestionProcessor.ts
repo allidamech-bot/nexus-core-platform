@@ -82,25 +82,30 @@ async function applyPreviewQuota(
     Database["public"]["Tables"]["project_text_previews"]["Insert"] & { preview_text: string }
   >,
 ) {
-  const [{ data: fileLimit }, { data: byteLimit }, { data: currentFiles }, { data: currentBytes }] =
-    await Promise.all([
-      supabase.rpc("get_plan_limit", {
-        check_user_id: userId,
-        limit_key: "max_text_preview_files",
-      }),
-      supabase.rpc("get_plan_limit", {
-        check_user_id: userId,
-        limit_key: "max_indexed_preview_bytes",
-      }),
-      supabase.rpc("get_usage_total", {
-        check_user_id: userId,
-        metric_name: "indexed_preview_files",
-      }),
-      supabase.rpc("get_usage_total", {
-        check_user_id: userId,
-        metric_name: "indexed_preview_bytes",
-      }),
-    ]);
+  const quotaChecks = await Promise.all([
+    supabase.rpc("get_plan_limit", {
+      check_user_id: userId,
+      limit_key: "max_text_preview_files",
+    }),
+    supabase.rpc("get_plan_limit", {
+      check_user_id: userId,
+      limit_key: "max_indexed_preview_bytes",
+    }),
+    supabase.rpc("get_usage_total", {
+      check_user_id: userId,
+      metric_name: "indexed_preview_files",
+    }),
+    supabase.rpc("get_usage_total", {
+      check_user_id: userId,
+      metric_name: "indexed_preview_bytes",
+    }),
+  ]);
+
+  for (const check of quotaChecks) {
+    if (check.error) throw check.error;
+  }
+
+  const [fileLimit, byteLimit, currentFiles, currentBytes] = quotaChecks.map((check) => check.data);
 
   const remainingFiles =
     fileLimit === null ? rows.length : Math.max(0, Number(fileLimit) - Number(currentFiles ?? 0));

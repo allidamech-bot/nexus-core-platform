@@ -39,7 +39,11 @@ function AppIndex() {
   }
 
   const canDoItems = [t("canDoItem1"), t("canDoItem2"), t("canDoItem3"), t("canDoItem4")];
-  const notSupportedItems = [t("notSupportedItem1"), t("notSupportedItem2"), t("notSupportedItem3")];
+  const notSupportedItems = [
+    t("notSupportedItem1"),
+    t("notSupportedItem2"),
+    t("notSupportedItem3"),
+  ];
 
   return (
     <div className="flex-1 overflow-y-auto p-8">
@@ -85,8 +89,7 @@ function AppIndex() {
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold">{activeProject.name}</div>
                 <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {t("activeProject")} ·{" "}
-                  <bdi dir="ltr">{activeProject.source_type}</bdi>
+                  {t("activeProject")} · <bdi dir="ltr">{activeProject.source_type}</bdi>
                 </div>
               </div>
               <ProjectStatusBadge
