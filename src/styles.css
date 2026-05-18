@@ -128,6 +128,22 @@
   html[dir="rtl"] textarea {
     text-align: right;
   }
+  /* Isolate LTR tokens (numbers, code, brand names) inside RTL containers */
+  html[dir="rtl"] bdi,
+  html[dir="rtl"] [dir="ltr"] {
+    unicode-bidi: isolate;
+  }
+  /* Headings need a bit more vertical breathing room in Arabic */
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] h3 {
+    line-height: 1.4;
+    padding-block: 0.08em;
+  }
+  /* Page headings in either direction should not clip descenders */
+  h1 {
+    line-height: 1.2;
+  }
   ::selection {
     background: rgba(59, 130, 246, 0.3);
   }

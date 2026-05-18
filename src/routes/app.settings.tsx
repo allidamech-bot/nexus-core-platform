@@ -17,66 +17,68 @@ function SettingsRoute() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-5xl px-8 py-8">
-        <div className="mb-8">
+      <div className="mx-auto w-full max-w-5xl px-8 py-10">
+        <div className="mb-10">
           <div className="mb-3 font-mono text-[11px] uppercase tracking-widest text-accent">
             {t("settings")}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Workspace settings</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Manage account preferences, language, plan visibility, usage posture, and future
-            enterprise controls.
+          <h1 className="text-3xl font-bold tracking-tight leading-snug">
+            {t("settingsTitle")}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            {t("settingsSubtitle")}
           </p>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
           <div className="space-y-4">
             <SettingsCard icon={UserRound} title={t("profile")}>
-              <div className="text-sm text-zinc-200">{user?.email ?? "Signed-in user"}</div>
+              <div className="text-sm text-zinc-200" dir="ltr">
+                {user?.email ?? t("signedInUser")}
+              </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Profile editing, notification preferences, and identity metadata are reserved for
-                the organization phase.
+                {t("profileBody")}
               </p>
             </SettingsCard>
 
             <SettingsCard icon={UsersRound} title={t("organization")}>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Organization membership, roles, workspace permissions, and domain controls are
-                planned but not active yet.
+                {t("organizationBody")}
               </p>
             </SettingsCard>
 
             <SettingsCard icon={Globe2} title={t("language")}>
               <div className="flex items-center justify-between gap-4">
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Language preference is saved locally and updates layout direction for Arabic.
+                  {t("languageBody")}
                 </p>
                 <LanguageSwitcher />
               </div>
             </SettingsCard>
 
-            <SettingsCard icon={KeyRound} title="API and access">
+            <SettingsCard icon={KeyRound} title={t("apiAccess")}>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                API keys, SCIM, SSO, and service accounts are intentionally disabled until the
-                enterprise security layer is ready.
+                {t("apiAccessBody")}
               </p>
             </SettingsCard>
 
             <SettingsCard icon={ShieldCheck} title={t("dangerZone")}>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Workspace deletion and export controls will require admin approval and audit
-                logging. No destructive settings are available in this phase.
+                {t("dangerZoneBody")}
               </p>
             </SettingsCard>
           </div>
 
           <div className="space-y-4">
             <SettingsCard icon={CreditCard} title={t("currentPlan")}>
-              <div className="font-mono text-2xl font-semibold uppercase text-zinc-100">
+              <div
+                className="font-mono text-2xl font-semibold uppercase text-zinc-100"
+                dir="ltr"
+              >
                 {usage?.planId ?? "starter"}
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Billing is not connected. Limits are enforced through the governance foundation.
+                {t("currentPlanBody")}
               </p>
             </SettingsCard>
             {usage && <UsageMeters overview={usage} />}
@@ -99,7 +101,7 @@ function SettingsCard({
   return (
     <section className="rounded-lg border border-border bg-surface p-5">
       <div className="mb-3 flex items-center gap-2">
-        <Icon className="size-4 text-accent" />
+        <Icon className="size-4 text-accent shrink-0" />
         <h2 className="text-sm font-semibold">{title}</h2>
       </div>
       {children}
