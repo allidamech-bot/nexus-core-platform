@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { LocaleContext, type LocaleContextValue } from "./localeContext";
 import { translations, type Locale } from "./translations";
 const STORAGE_KEY = "nexus-locale";
@@ -10,7 +10,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "ar") setLocaleState("ar");
+    if (stored === "ar" || stored === "en") setLocaleState(stored);
     setHydrated(true);
   }, []);
 
@@ -22,11 +22,16 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, locale);
   }, [dir, hydrated, locale]);
 
+  const setLocale = useCallback((nextLocale: Locale) => {
+    setLocaleState(nextLocale);
+    window.localStorage.setItem(STORAGE_KEY, nextLocale);
+  }, []);
+
   const value = useMemo<LocaleContextValue>(
     () => ({
       locale,
       dir,
-      setLocale: setLocaleState,
+      setLocale,
       t: (key, values) => {
         let text: string = translations[locale][key] ?? translations.en[key] ?? key;
         if (values) {
@@ -37,7 +42,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
         return text;
       },
     }),
-    [dir, locale],
+    [dir, locale, setLocale],
   );
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
