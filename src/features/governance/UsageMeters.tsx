@@ -12,14 +12,31 @@ function Meter({
   used: number;
   limit: number | null | undefined;
 }) {
+  const { t, locale } = useLocale();
   const percent = quotaPercent(used, limit);
   const state = quotaState(used, limit);
+  const usedStr = used.toLocaleString(locale === "ar" ? "ar-EG" : "en-US");
+  const limitStr =
+    limit === null || limit === undefined
+      ? t("unlimited")
+      : limit.toLocaleString(locale === "ar" ? "ar-EG" : "en-US");
+  const valueDisplay =
+    limit === null || limit === undefined ? (
+      <span>
+        <bdi>{usedStr}</bdi> · {t("unlimited")}
+      </span>
+    ) : (
+      <span>
+        {t("usageFormat", { used: usedStr, limit: limitStr })}
+      </span>
+    );
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3 text-[11px]">
         <span className="text-muted-foreground">{label}</span>
         <span className={state === "exceeded" ? "text-destructive" : "text-zinc-300"}>
-          {used.toLocaleString()} / {limit ?? "∞"}
+          {valueDisplay}
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
@@ -54,11 +71,14 @@ export function UsageMeters({ overview }: { overview: UsageOverview }) {
     <div className="rounded-lg border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Gauge className="size-4 text-accent" />
+          <Gauge className="size-4 text-accent shrink-0" />
           <div>
             <div className="text-sm font-semibold">{t("quotaGovernance")}</div>
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              {t("plan")}: {overview.planId}
+              {t("plan")}:{" "}
+              <bdi dir="ltr" className="uppercase">
+                {overview.planId}
+              </bdi>
             </div>
           </div>
         </div>
