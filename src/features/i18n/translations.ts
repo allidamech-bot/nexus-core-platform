@@ -31,7 +31,7 @@ export const translations = {
     zipOnly:
       "ZIP only, max {max}MB. Nexus Core reads small allowlisted text previews only and never executes project code.",
     folderImportHint:
-      "Local folder import builds a safe manifest from file names and metadata. Ignored directories stay out of the inventory.",
+      "Folder import creates a safe metadata inventory only. Raw file contents are not uploaded and text previews are not generated from folders. ZIP remains the real server-side ingestion and preview path.",
     selectFolderFirst: "Select a project folder first.",
     folderImportSuccess: "Folder manifest imported. Safe file inventory is ready.",
     selectZipFirst: "Select a .zip archive first.",
@@ -228,7 +228,7 @@ export const translations = {
     zipOnly:
       "ملفات ZIP فقط، بحد أقصى {max} ميغابايت. تقرأ منصة Nexus Core معاينات نصية محدودة ومصرّحًا بها فقط، ولا تنفّذ أي شيفرة من المشروع.",
     folderImportHint:
-      "استيراد المجلد المحلي يبني بيانًا آمنًا اعتمادًا على أسماء الملفات وبياناتها الوصفية فقط. تُستثنى المجلدات المتجاهلة من الفهرس.",
+      "استيراد المجلد ينشئ فهرسًا آمنًا للبيانات الوصفية فقط. لا يتم رفع محتويات الملفات الخام ولا يتم إنشاء معاينات نصية من المجلدات. يبقى ZIP هو مسار الاستيعاب والمعاينة الخادمي.",
     selectFolderFirst: "يرجى اختيار مجلد المشروع أولًا.",
     folderImportSuccess: "تم استيراد بيان المجلد. فهرس الملفات الآمن جاهز.",
     selectZipFirst: "يرجى اختيار أرشيف ZIP أولًا.",
@@ -274,7 +274,7 @@ export const translations = {
     safeContextBody: "البيان / المعاينة / فهرس الملفات",
     governedAccess: "وصول محوكَم",
     governedAccessBody: "فحوصات الحصص / سجلات التدقيق / RLS",
-    canDoNow: "ما يمكن لـ Nexus تنفيذه الآن",
+    canDoNow: "ما يمكن لـ Nexus فعله الآن",
     canDoItem1: "استيعاب أرشيفات ZIP وبيانات المجلدات",
     canDoItem2: "توليد فهرس ملفات آمن وسياق معاينة",
     canDoItem3: "ربط المشاريع بجلسات ذكاء اصطناعي متعددة",

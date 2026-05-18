@@ -35,7 +35,7 @@ function LoginPage() {
   return (
     <AuthShell
       title="Sign in to Nexus Core"
-      subtitle="Resume your sessions and continue execution."
+      subtitle="Resume your sessions and continue project-aware planning."
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <Field label="Email" type="email" value={email} onChange={setEmail} required />

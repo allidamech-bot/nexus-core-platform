@@ -42,7 +42,7 @@ export const mockExecutionSteps: ExecutionStep[] = [
   { id: "s1", title: "Analyze dependencies", status: "completed" },
   { id: "s2", title: "Map existing routes to controllers", status: "completed" },
   { id: "s3", title: "Generate compatibility shim", status: "running" },
-  { id: "s4", title: "Run verification suite", status: "pending" },
+  { id: "s4", title: "Prepare verification checklist", status: "pending" },
   { id: "s5", title: "Produce final report", status: "pending" },
 ];
 

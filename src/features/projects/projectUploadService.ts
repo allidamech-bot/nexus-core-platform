@@ -153,8 +153,18 @@ async function requestManifestProcessing(projectId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Project manifest extraction failed.");
+    const text = await response.text();
+    let message = text;
+    try {
+      const payload = JSON.parse(text) as { message?: string; error?: string };
+      message = payload.message || payload.error || text;
+    } catch {
+      // Keep the original text response.
+    }
+    throw new Error(
+      message ||
+        "Project ZIP processing is unavailable. Check Supabase configuration and migrations.",
+    );
   }
 }
 

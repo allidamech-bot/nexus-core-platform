@@ -30,11 +30,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
   const [description, setDescription] = useState("");
   const uploadProject = useUploadProjectMutation();
   const importFolder = useImportFolderMutation();
-  const { locale, t } = useLocale();
-  const folderImportSafetyCopy =
-    locale === "ar"
-      ? "استيراد المجلد ينشئ فهرساً آمناً للبيانات الوصفية فقط. لا يتم رفع محتويات الملفات الخام أو إنشاء معاينات نصية من المجلدات. يبقى ZIP هو مسار الاستيعاب والمعاينة الخادمي."
-      : "Folder import creates a safe metadata inventory only. Raw file contents are not uploaded and text previews are not generated from folders. ZIP remains the real server-side ingestion and preview path.";
+  const { t } = useLocale();
 
   const validationError = useMemo(() => (file ? validateProjectZip(file) : null), [file]);
   const busy = uploadProject.isPending || importFolder.isPending;
@@ -186,7 +182,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
                 <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {mode === "zip"
                     ? t("zipOnly", { max: PROJECT_UPLOAD_MAX_MB })
-                    : folderImportSafetyCopy}
+                    : t("folderImportHint")}
                 </div>
                 {file && (
                   <div

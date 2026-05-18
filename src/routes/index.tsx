@@ -70,14 +70,14 @@ function Hero() {
       <div className="relative mx-auto max-w-5xl pt-28 pb-24 px-6 text-center animate-entrance">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-white/5 text-[12px] font-medium mb-8">
           <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-          Enterprise-grade AI OS - Public Preview
+          Project-aware AI workspace - Public Preview
         </div>
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance mb-8">
-          Nexus Core turns instructions into <span className="text-accent">verified execution</span>
+          Nexus Core turns project context into <span className="text-accent">structured plans</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 text-pretty">
-          An AI operating system for developers and businesses. Analyze projects, plan work, execute
-          tasks, verify results, and manage workflows from one intelligent workspace.
+          An AI workspace for developers and businesses. Ingest project context, analyze codebase
+          structure, plan work, and prepare verification-ready workflows.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
@@ -140,12 +140,12 @@ function Problem() {
             The problem
           </div>
           <h2 className="text-4xl font-bold tracking-tight mb-6">
-            Chatbots generate. Operators execute.
+            Chatbots answer. Operators need grounded project plans.
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            Most AI tools stop at suggestions. Your team is still left to inspect, plan, implement,
-            and verify the work by hand. The cost of an unverified change is a regression, an
-            outage, or a wrong report sent to a customer.
+            Most AI tools stop at generic suggestions. Your team is still left to inspect context,
+            plan implementation, and decide what is safe to verify. Nexus Core starts with a
+            governed project-understanding layer before execution is introduced.
           </p>
         </div>
         <div className="space-y-3">
@@ -153,7 +153,7 @@ function Problem() {
             "Hallucinated code shipped without verification",
             "No audit trail for AI-driven changes",
             "Approval gates ignored or invisible",
-            "Business workflows disconnected from execution",
+            "Business workflows disconnected from project context",
           ].map((p) => (
             <div
               key={p}
@@ -184,8 +184,8 @@ const features = [
   },
   {
     icon: ShieldCheck,
-    title: "Verification engine",
-    body: "Every task ends with typecheck, lint, build, tests, and security scans.",
+    title: "Verification-ready workflow",
+    body: "Plans are shaped around typecheck, lint, build, tests, and security review before execution exists.",
   },
   {
     icon: GitBranch,
@@ -195,7 +195,7 @@ const features = [
   {
     icon: Lock,
     title: "Approval gates",
-    body: "Dangerous actions pause for human approval. Full audit log of every step.",
+    body: "Context selection and sensitive actions are audited. Approval workflows expand before execution ships.",
   },
   {
     icon: Zap,
@@ -213,8 +213,8 @@ function Features() {
         </div>
         <h2 className="text-4xl font-bold tracking-tight mb-4">One workspace. Every operator.</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Nexus Core combines specialized agents, project intelligence, and a verification engine
-          into a single execution surface.
+          Nexus Core combines structured AI planning, project intelligence, and governance into a
+          single workspace. The execution layer is intentionally reserved for a later sandbox phase.
         </p>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -253,8 +253,8 @@ const steps = [
   },
   {
     n: "04",
-    title: "Execute",
-    body: "Runs the plan with a streaming execution log you can audit live.",
+    title: "Prepare",
+    body: "Creates a readiness log and verification checklist for later execution phases.",
   },
   {
     n: "05",
@@ -305,8 +305,8 @@ function Security() {
           <h2 className="text-4xl font-bold tracking-tight">Built for regulated environments.</h2>
         </div>
         <p className="text-sm text-muted-foreground max-w-md">
-          Row-level access, full audit logs, approval gates, and sandboxed execution. Your data
-          never trains shared models.
+          Row-level access, audit logs, explicit context selection, and no code execution in the
+          current phase. Your data never trains shared models.
         </p>
       </div>
       <div className="grid md:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden border border-border">
@@ -333,7 +333,7 @@ const plans = [
     name: "Starter",
     price: "$49",
     per: "/mo",
-    features: ["5 active sessions", "1 project", "Basic verification", "Community support"],
+    features: ["5 active sessions", "1 project", "Planning checklist", "Community support"],
   },
   {
     name: "Pro",
@@ -342,7 +342,7 @@ const plans = [
     features: [
       "Unlimited sessions",
       "10 projects",
-      "Full verification suite",
+      "Verification-ready planning",
       "Approval workflows",
       "Priority support",
     ],
@@ -360,7 +360,7 @@ const plans = [
     per: "",
     features: [
       "Dedicated instance",
-      "Private execution",
+      "Private data posture",
       "Compliance review",
       "Custom integrations",
     ],
@@ -415,8 +415,8 @@ function Pricing() {
 
 const faqs = [
   {
-    q: "Does Nexus Core actually execute code?",
-    a: "Yes. The execution layer runs in sandboxed environments. Destructive actions pause at approval gates for human review.",
+    q: "Does Nexus Core execute code today?",
+    a: "No. This version is pre-execution: it ingests project context, builds safe manifests, indexes limited previews, and produces structured plans. Sandboxed execution comes later.",
   },
   {
     q: "What about my source code privacy?",
@@ -424,7 +424,7 @@ const faqs = [
   },
   {
     q: "Can it run business workflows, not just engineering?",
-    a: "Yes - dedicated Business, Research, and Workflow agents handle ops, sales, support, and reporting tasks.",
+    a: "Today it can structure business workflow plans. Dedicated Business, Research, and Workflow agents are planned for later phases.",
   },
   {
     q: "Which AI models does it use?",
@@ -464,7 +464,7 @@ function FinalCTA() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-32 text-center">
       <Boxes className="size-10 mx-auto text-accent mb-6" />
-      <h2 className="text-5xl font-bold tracking-tight mb-6">Deploy your first verified agent.</h2>
+      <h2 className="text-5xl font-bold tracking-tight mb-6">Create your first project-aware AI workspace.</h2>
       <p className="text-muted-foreground max-w-xl mx-auto mb-8">
         Free during preview. No credit card. Spin up a workspace in under a minute.
       </p>
@@ -487,7 +487,7 @@ function Footer() {
             Nexus Core
           </span>
           <p className="text-sm text-muted-foreground max-w-xs">
-            The verified execution layer for modern AI operations.
+            The project-aware planning layer for modern AI operations.
           </p>
         </div>
         <div className="space-y-3">

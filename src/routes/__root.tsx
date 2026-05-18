@@ -37,16 +37,24 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const isConfigError =
+    error.message.includes("Missing Supabase environment variable") ||
+    error.message.includes("SUPABASE_URL") ||
+    error.message.includes("SUPABASE_PUBLISHABLE_KEY");
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="max-w-md text-center">
         <div className="font-mono text-[11px] text-destructive uppercase tracking-widest">
-          Runtime exception
+          {isConfigError ? "Configuration required" : "Runtime exception"}
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-          Something failed verification
+          {isConfigError ? "Nexus Core is not connected yet" : "Something failed to load"}
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {isConfigError
+            ? "Supabase environment variables are missing. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY, then reload the workspace."
+            : error.message}
+        </p>
         <div className="mt-6 flex justify-center gap-2">
           <button
             onClick={() => {
@@ -74,34 +82,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nexus Core - Verified execution for AI operations" },
+      { title: "Nexus Core - Project-aware AI planning for engineering operations" },
       {
         name: "description",
         content:
-          "Nexus Core is an AI operating system for developers and businesses. Analyze, plan, execute, and verify work from one intelligent workspace.",
+          "Nexus Core is a project-aware AI workspace for developers and businesses. Ingest projects, analyze context, and produce structured implementation plans.",
       },
-      { property: "og:title", content: "Nexus Core - Verified execution for AI operations" },
+      { property: "og:title", content: "Nexus Core - Project-aware AI planning" },
       {
         property: "og:description",
-        content: "Turn instructions into verified execution. The first OS for the agentic era.",
+        content: "Turn project context into structured planning, risk review, and verification-ready workflows.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Nexus Core - Verified execution for AI operations" },
+      { name: "twitter:title", content: "Nexus Core - Project-aware AI planning" },
       {
         name: "description",
         content:
-          "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution.",
+          "Nexus Core is an AI workspace for businesses and developers that turns project context into structured implementation plans.",
       },
       {
         property: "og:description",
         content:
-          "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution.",
+          "Nexus Core turns project context into structured implementation plans and verification-ready workflows.",
       },
       {
         name: "twitter:description",
         content:
-          "Nexus Core is an AI operating system for businesses and developers that turns instructions into verified execution.",
+          "Nexus Core turns project context into structured implementation plans and verification-ready workflows.",
       },
       {
         property: "og:image",

@@ -40,7 +40,7 @@ function SignupPage() {
   return (
     <AuthShell
       title="Create your workspace"
-      subtitle="Deploy your first verified agent in under a minute."
+      subtitle="Create your first project-aware planning workspace in under a minute."
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <Field label="Work email" type="email" value={email} onChange={setEmail} required />

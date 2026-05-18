@@ -40,6 +40,23 @@ interface MessageRow {
   created_at: string;
 }
 
+function friendlyChatError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (message.includes("ai_gateway_env_missing") || message.includes("LOVABLE_API_KEY")) {
+    return "AI gateway is not configured yet. Add LOVABLE_API_KEY, then retry the chat.";
+  }
+  if (message.includes("Unauthorized") || message.includes("401")) {
+    return "Your session could not be verified. Sign in again and retry.";
+  }
+  if (message.includes("database_setup_missing") || message.includes("governance_unavailable")) {
+    return "Workspace governance is not fully configured. Apply the Supabase migrations, then retry.";
+  }
+  if (message.includes("project_context_unavailable")) {
+    return "Project context is temporarily unavailable. Try again without selected previews.";
+  }
+  return message || "Chat is unavailable. Check project configuration and try again.";
+}
+
 function ThreadView() {
   const { threadId } = Route.useParams();
   const { session } = useAuth();
@@ -148,7 +165,7 @@ function ThreadView() {
       });
       if (error) console.error("save assistant", error);
     },
-    onError: (err) => toast.error(err.message ?? "Stream failed"),
+    onError: (err) => toast.error(friendlyChatError(err)),
   });
 
   useEffect(() => {
@@ -249,12 +266,16 @@ function ThreadView() {
       role: "user",
       parts: [{ type: "text", text }],
     };
-    await supabase.from("messages").insert({
+    const { error: messageError } = await supabase.from("messages").insert({
       thread_id: threadId,
       user_id: session.user.id,
       role: "user",
       parts: userMsg.parts as never,
     });
+    if (messageError) {
+      toast.error(`Could not save your message: ${messageError.message}`);
+      return;
+    }
 
     if ((messages?.length ?? 0) === 0) {
       const title = text.slice(0, 60);
@@ -355,7 +376,7 @@ function ThreadView() {
                     handleSend();
                   }
                 }}
-                placeholder="Ask Nexus Core to analyze, plan, fix, build, or verify..."
+                placeholder="Ask Nexus Core to analyze, plan, scope, or review..."
                 className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none"
               />
               <button
@@ -364,11 +385,11 @@ function ThreadView() {
                 className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-md text-[12px] font-bold disabled:opacity-50"
               >
                 {busy ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
-                Run
+                Send
               </button>
             </div>
             <div className="mt-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-              Cmd/Ctrl + Enter to execute
+              Cmd/Ctrl + Enter to send
             </div>
           </div>
         </div>
@@ -449,7 +470,7 @@ function ThreadView() {
           </DrawerSection>
         )}
 
-        <DrawerSection title={activeProject ? "File Inventory" : "Files Changed (mock)"}>
+        <DrawerSection title={activeProject ? "File Inventory" : "Example file scope"}>
           {activeProject ? (
             <ProjectFileInventory files={projectFiles} loading={projectFilesLoading} />
           ) : (
@@ -468,7 +489,7 @@ function ThreadView() {
           </DrawerSection>
         )}
 
-        <DrawerSection title="Task Pipeline">
+        <DrawerSection title="Planning Pipeline">
           <div className="space-y-3 relative ml-1.5 mt-1">
             <div className="absolute left-[-9px] top-1 bottom-1 w-px bg-border" />
             {mockExecutionSteps.map((s) => (
@@ -486,7 +507,7 @@ function ThreadView() {
           </div>
         </DrawerSection>
 
-        <DrawerSection title="Verification">
+        <DrawerSection title="Readiness checks">
           <div className="space-y-2">
             {mockVerification.map((v) => (
               <div key={v.id} className="flex items-center justify-between">
@@ -587,6 +608,7 @@ const SECTION_NAMES = [
   "Files to inspect or change",
   "Proposed actions",
   "Execution log",
+  "Readiness log",
   "Verification",
   "Final result",
 ];
@@ -624,7 +646,7 @@ function StructuredAssistant({ text }: { text: string }) {
 
 function SectionBlock({ name, body }: { name: string; body: string }) {
   const isRisk = name.toLowerCase().startsWith("risk");
-  const isLog = name.toLowerCase() === "execution log";
+  const isLog = ["execution log", "readiness log"].includes(name.toLowerCase());
   const isVerif = name.toLowerCase() === "verification";
 
   return (
