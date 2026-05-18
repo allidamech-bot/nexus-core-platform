@@ -56,7 +56,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
   async function onSubmit() {
     if (mode === "folder") {
       if (!folderSummary) {
-        toast.error("Select a project folder first.");
+        toast.error(t("selectFolderFirst"));
         return;
       }
 
@@ -67,17 +67,17 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
           projectName: name,
           description,
         });
-        toast.success("Folder manifest imported. Safe file inventory is ready.");
+        toast.success(t("folderImportSuccess"));
         setOpen(false);
         resetForm();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Folder import failed.");
+        toast.error(error instanceof Error ? error.message : t("folderImportSuccess"));
       }
       return;
     }
 
     if (!file) {
-      toast.error("Select a .zip archive first.");
+      toast.error(t("selectZipFirst"));
       return;
     }
 
@@ -94,15 +94,11 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
         description,
       });
 
-      toast.success(
-        result.storageAvailable
-          ? "Project archive uploaded. Ingestion foundation is ready."
-          : "Project staged. Storage bucket is not configured yet.",
-      );
+      toast.success(result.storageAvailable ? t("uploadSuccess") : t("uploadStaged"));
       setOpen(false);
       resetForm();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Project upload failed.");
+      toast.error(error instanceof Error ? error.message : t("uploadSuccess"));
     }
   }
 
