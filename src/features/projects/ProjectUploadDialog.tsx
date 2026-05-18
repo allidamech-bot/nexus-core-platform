@@ -258,7 +258,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Nexus web application"
+              placeholder={t("projectNamePlaceholder")}
               disabled={busy}
             />
           </div>
@@ -270,7 +270,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
             <Textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Optional project context for operators."
+              placeholder={t("descriptionPlaceholder")}
               disabled={busy}
               className="min-h-[84px]"
             />
