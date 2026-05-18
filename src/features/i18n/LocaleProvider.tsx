@@ -3,22 +3,24 @@ import { LocaleContext, type LocaleContextValue } from "./localeContext";
 import { translations, type Locale } from "./translations";
 const STORAGE_KEY = "nexus-locale";
 
-function getInitialLocale(): Locale {
-  if (typeof window === "undefined") return "en";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === "ar" ? "ar" : "en";
-}
-
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+  const [locale, setLocaleState] = useState<Locale>("en");
+  const [hydrated, setHydrated] = useState(false);
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   useEffect(() => {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === "ar") setLocaleState("ar");
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     document.documentElement.lang = locale;
     document.documentElement.dir = dir;
     document.documentElement.classList.toggle("rtl", dir === "rtl");
     window.localStorage.setItem(STORAGE_KEY, locale);
-  }, [dir, locale]);
+  }, [dir, hydrated, locale]);
 
   const value = useMemo<LocaleContextValue>(
     () => ({

@@ -20,6 +20,7 @@ import {
   recordAuditEvent,
   recordUsageEvent,
 } from "@/features/governance/governanceService";
+import type { FolderImportSummary } from "./folderImportService";
 
 export interface UploadProjectInput {
   userId: string;
@@ -33,6 +34,13 @@ export interface UploadProjectResult {
   job: ProjectIngestionJob;
   storagePath: string | null;
   storageAvailable: boolean;
+}
+
+export interface ImportFolderInput {
+  userId: string;
+  summary: FolderImportSummary;
+  projectName?: string;
+  description?: string;
 }
 
 export function validateProjectZip(file: File): string | null {
@@ -295,4 +303,94 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
     }).catch(() => {});
     throw error;
   }
+}
+
+export async function importProjectFolder(input: ImportFolderInput): Promise<UploadProjectResult> {
+  if (input.summary.error) throw new Error(input.summary.error);
+
+  const [projectQuota, uploadQuota] = await Promise.all([
+    checkQuota(input.userId, "max_projects").catch(() => null),
+    checkQuota(input.userId, "max_uploads_monthly").catch(() => null),
+  ]);
+  const blockedQuota = [projectQuota, uploadQuota].find((quota) => quota && !quota.allowed);
+  if (blockedQuota) {
+    await recordAuditEvent({
+      userId: input.userId,
+      eventType: "quota_hit_folder_import",
+      severity: "warning",
+      payload: {
+        limit_key: blockedQuota.limitKey,
+        limit: blockedQuota.limit,
+        used: blockedQuota.used,
+        requested: blockedQuota.requested,
+        plan: blockedQuota.planId,
+      },
+    }).catch(() => {});
+    throw new Error(blockedQuota.message);
+  }
+
+  const project = await createProject({
+    userId: input.userId,
+    name: input.projectName?.trim() || input.summary.rootName,
+    description: input.description,
+    status: "indexed_manifest",
+  });
+
+  const job = await createIngestionJob({
+    projectId: project.id,
+    userId: input.userId,
+    status: "completed",
+    stage: "folder_manifest_preview",
+    metadata: {
+      source_type: "folder",
+      accepted_files: input.summary.accepted.length,
+      ignored_files: input.summary.ignored.length,
+      total_bytes: input.summary.totalBytes,
+      ignored_preview: input.summary.ignored.slice(0, 25),
+      extraction: "client_folder_manifest_only",
+    },
+  });
+
+  for (const entry of input.summary.accepted.slice(0, 300)) {
+    await createProjectFile({
+      projectId: project.id,
+      userId: input.userId,
+      path: entry.path,
+      name: entry.name,
+      extension: entry.extension,
+      sizeBytes: entry.file.size,
+      mimeType: entry.file.type || null,
+      checksum: null,
+    });
+  }
+
+  await recordUsageEvent({
+    userId: input.userId,
+    projectId: project.id,
+    eventType: "project_upload_completed",
+    quantity: 1,
+    sizeBytes: input.summary.totalBytes,
+    metadata: {
+      source_type: "folder",
+      accepted_files: input.summary.accepted.length,
+      ignored_files: input.summary.ignored.length,
+    },
+  }).catch(() => {});
+  await recordAuditEvent({
+    userId: input.userId,
+    projectId: project.id,
+    eventType: "folder_import_completed",
+    payload: {
+      accepted_files: input.summary.accepted.length,
+      ignored_files: input.summary.ignored.length,
+      total_bytes: input.summary.totalBytes,
+    },
+  }).catch(() => {});
+
+  return {
+    project,
+    job,
+    storagePath: null,
+    storageAvailable: false,
+  };
 }

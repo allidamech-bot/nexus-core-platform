@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { uploadProjectZip, type UploadProjectInput } from "./projectUploadService";
+import {
+  importProjectFolder,
+  uploadProjectZip,
+  type ImportFolderInput,
+  type UploadProjectInput,
+} from "./projectUploadService";
 import {
   listLatestIngestionJobs,
   listProjectFiles,
@@ -46,6 +51,18 @@ export function useUploadProjectMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UploadProjectInput) => uploadProjectZip(input),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: projectKeys.all });
+      qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });
+      qc.invalidateQueries({ queryKey: projectKeys.previews(result.project.id) });
+    },
+  });
+}
+
+export function useImportFolderMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ImportFolderInput) => importProjectFolder(input),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: projectKeys.all });
       qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });

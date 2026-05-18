@@ -7,7 +7,15 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, LogOut, Boxes, Workflow as WorkflowIcon, Loader2 } from "lucide-react";
+import {
+  Plus,
+  LogOut,
+  Boxes,
+  Workflow as WorkflowIcon,
+  Loader2,
+  Settings,
+  LayoutDashboard,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -143,6 +151,7 @@ function AppWorkspace({
             Quick Actions
           </div>
           <div className="space-y-0.5">
+            <ActionLink to="/app" icon={LayoutDashboard} label={t("workspace")} />
             <ProjectUploadDialog
               userId={session.user.id}
               trigger={
@@ -155,6 +164,7 @@ function AppWorkspace({
               }
             />
             {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label={t("adminControl")} />}
+            <ActionLink to="/app/settings" icon={Settings} label={t("settings")} />
             <ActionRow icon={WorkflowIcon} label={t("businessWorkflow")} disabled />
           </div>
         </div>
@@ -235,7 +245,7 @@ function ActionLink({
   icon: Icon,
   label,
 }: {
-  to: "/app/admin";
+  to: "/app" | "/app/admin" | "/app/settings";
   icon: React.ComponentType<{ className?: string }>;
   label: string;
 }) {

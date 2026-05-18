@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Send, Upload, GitBranch, Loader2 } from "lucide-react";
+import { Send, Upload, GitBranch, Loader2, Terminal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { agentModes, mockExecutionSteps, mockFileTree, mockVerification } from "@/lib/mock-data";
@@ -411,6 +411,45 @@ function ThreadView() {
           <ProjectManifestCard manifest={activeProjectManifest} />
         </DrawerSection>
 
+        {activeProject && (
+          <DrawerSection title="Project Health">
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <StatusMetric
+                label="Files"
+                value={projectFilesLoading ? "..." : projectFiles.length.toString()}
+              />
+              <StatusMetric
+                label="Previews"
+                value={
+                  activeProjectPreviewsLoading ? "..." : activeProjectPreviews.length.toString()
+                }
+              />
+              <StatusMetric
+                label="Ingestion"
+                value={activeProject.latest_job?.status.replace("_", " ") ?? activeProject.status}
+              />
+              <StatusMetric label="Context" value={`${selectedPreviewIds.length} selected`} />
+            </div>
+            <div className="mt-3 rounded-md border border-border bg-background/40 p-3">
+              <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Ingestion timeline
+              </div>
+              {["uploaded", "manifest", "safe previews", "ready"].map((step, index) => (
+                <div key={step} className="flex items-center gap-2 py-1 text-[11px]">
+                  <span
+                    className={`size-1.5 rounded-full ${
+                      index <= 2 && activeProject.latest_job?.status === "completed"
+                        ? "bg-emerald-400"
+                        : "bg-muted-foreground"
+                    }`}
+                  />
+                  <span className="text-muted-foreground">{step}</span>
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
+        )}
+
         <DrawerSection title={activeProject ? "File Inventory" : "Files Changed (mock)"}>
           {activeProject ? (
             <ProjectFileInventory files={projectFiles} loading={projectFilesLoading} />
@@ -463,17 +502,12 @@ function ThreadView() {
           </div>
         </DrawerSection>
 
-        <DrawerSection title="Approval Gates">
-          <div className="p-3 rounded-md border border-warning/30 bg-warning/5">
-            <div className="text-[11px] font-semibold text-warning mb-1">1 pending</div>
-            <div className="text-[11px] text-zinc-400">Delete legacy session middleware</div>
-            <div className="flex gap-1.5 mt-2">
-              <button className="flex-1 text-[10px] font-semibold rounded bg-foreground text-background py-1">
-                Approve
-              </button>
-              <button className="flex-1 text-[10px] font-semibold rounded border border-border py-1">
-                Reject
-              </button>
+        <DrawerSection title="Guardrails">
+          <div className="p-3 rounded-md border border-border bg-background/40">
+            <div className="text-[11px] font-semibold text-zinc-200 mb-1">Pre-execution mode</div>
+            <div className="text-[11px] leading-relaxed text-muted-foreground">
+              Nexus can analyze manifest and preview context, but cannot execute commands, install
+              dependencies, modify files, or open pull requests in this phase.
             </div>
           </div>
         </DrawerSection>
@@ -485,16 +519,20 @@ function ThreadView() {
 function EmptyChat() {
   return (
     <div className="py-12 text-center">
+      <div className="mx-auto mb-4 grid size-10 place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
+        <Terminal className="size-4" />
+      </div>
+      <h2 className="mb-2 text-xl font-semibold tracking-tight">Start with a scoped request.</h2>
       <div className="text-sm text-muted-foreground">
-        Ask Nexus Core anything - it will respond with a structured plan, execution log, and
-        verification.
+        Nexus will answer with structured planning, risks, file scope, and verification guidance. It
+        will not execute code or mutate your project.
       </div>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl mx-auto text-left">
         {[
           "Analyze this repository and propose a refactor of the auth layer.",
           "Generate a customer onboarding workflow for a B2B SaaS.",
-          "Find startup issues in my Node service and fix them safely.",
-          "Produce a Q3 sales report from the attached CSV.",
+          "Summarize the selected preview files and identify architecture risks.",
+          "Draft a safe Phase 2 implementation plan from the active project manifest.",
         ].map((p) => (
           <div
             key={p}
@@ -504,6 +542,17 @@ function EmptyChat() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function StatusMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background/40 p-2">
+      <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-xs font-semibold text-zinc-200">{value}</div>
     </div>
   );
 }

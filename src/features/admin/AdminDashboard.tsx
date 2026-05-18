@@ -180,8 +180,56 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
             </div>
           </div>
         </div>
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-3">
+          <OperationsPanel
+            title="System health"
+            rows={[
+              ["Auth/RLS", "Active"],
+              ["Project ingestion", "Ready"],
+              ["AI gateway", "Configured by env"],
+              ["Execution runtime", "Disabled"],
+            ]}
+          />
+          <OperationsPanel
+            title="Migration checklist"
+            rows={[
+              ["Admin roles", data.roles.length > 0 ? "Detected" : "No records"],
+              ["Plans", data.plans.length >= 4 ? "Seeded" : "Review"],
+              ["Usage events", data.usageEvents.length > 0 ? "Receiving" : "Empty"],
+              ["Audit events", data.auditEvents.length > 0 ? "Receiving" : "Empty"],
+            ]}
+          />
+          <OperationsPanel
+            title="Operational warnings"
+            rows={[
+              ["Billing", "Provider not connected"],
+              ["Teams", "Not enabled"],
+              ["Sandbox", "Not enabled"],
+              ["Bundle", "Large chunk warning"],
+            ]}
+          />
+        </div>
       </div>
     </div>
+  );
+}
+
+function OperationsPanel({ title, rows }: { title: string; rows: string[][] }) {
+  return (
+    <section className="rounded-lg border border-border bg-surface p-5">
+      <h2 className="mb-4 text-sm font-semibold">{title}</h2>
+      <div className="space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-3 text-xs">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="rounded border border-border bg-background/50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-zinc-300">
+              {value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

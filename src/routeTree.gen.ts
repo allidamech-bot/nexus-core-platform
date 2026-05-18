@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/app/$threadId'
     | '/app/admin'
+    | '/app/settings'
     | '/app/'
     | '/api/projects/process-zip'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/app/$threadId'
     | '/app/admin'
+    | '/app/settings'
     | '/app'
     | '/api/projects/process-zip'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/app/$threadId'
     | '/app/admin'
+    | '/app/settings'
     | '/app/'
     | '/api/projects/process-zip'
   fileRoutesById: FileRoutesById
@@ -179,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -213,12 +232,14 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppThreadIdRoute: typeof AppThreadIdRoute
   AppAdminRoute: typeof AppAdminRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppThreadIdRoute: AppThreadIdRoute,
   AppAdminRoute: AppAdminRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
