@@ -11,18 +11,21 @@ import {
 import type { AdminDashboardData } from "./adminService";
 import { useLocale } from "@/features/i18n/localeContext";
 
-const PLACEHOLDERS = [
-  { icon: Users, label: "Users", detail: "Role and account operations" },
-  { icon: CreditCard, label: "Subscriptions", detail: "Plan status and billing health" },
-  { icon: Gauge, label: "Usage limits", detail: "Quota policy and enforcement" },
-  { icon: UploadCloud, label: "Project uploads", detail: "Ingestion and storage visibility" },
-  { icon: FileWarning, label: "Security events", detail: "Suspicious upload and access events" },
-  { icon: Database, label: "Audit logs", detail: "Admin and context-selection history" },
-  { icon: Activity, label: "System health", detail: "Runtime, queue, and provider status" },
-];
-
 export function AdminDashboard({ data }: { data: AdminDashboardData }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const numLocale = locale === "ar" ? "ar-EG" : "en-US";
+  const fmt = (n: number) => n.toLocaleString(numLocale);
+
+  const PLACEHOLDERS = [
+    { icon: Users, label: t("placeholderUsers"), detail: t("placeholderUsersDetail") },
+    { icon: CreditCard, label: t("placeholderSubs"), detail: t("placeholderSubsDetail") },
+    { icon: Gauge, label: t("placeholderUsageLimits"), detail: t("placeholderUsageLimitsDetail") },
+    { icon: UploadCloud, label: t("placeholderUploads"), detail: t("placeholderUploadsDetail") },
+    { icon: FileWarning, label: t("placeholderSecurity"), detail: t("placeholderSecurityDetail") },
+    { icon: Database, label: t("placeholderAudit"), detail: t("placeholderAuditDetail") },
+    { icon: Activity, label: t("placeholderSystem"), detail: t("placeholderSystemDetail") },
+  ];
+
   const aiRequests = data.usageEvents
     .filter((event) => event.event_type === "ai_request")
     .reduce((sum, event) => sum + event.quantity, 0);
@@ -49,32 +52,31 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
   );
 
   const metrics = [
-    { label: "Role records", value: data.roles.length },
-    { label: "Plans", value: data.plans.length },
-    { label: "Subscriptions", value: data.subscriptions.length },
+    { label: t("roleRecords"), value: data.roles.length },
+    { label: t("plans"), value: data.plans.length },
+    { label: t("subscriptions"), value: data.subscriptions.length },
     { label: t("projects"), value: data.projects.length },
     { label: t("uploads"), value: uploadCount },
     { label: t("aiRequests"), value: aiRequests },
-    { label: "Tokens", value: tokenUsage },
+    { label: t("tokens"), value: tokenUsage },
     { label: t("previews"), value: previewCount },
-    { label: "Failures", value: ingestionFailures },
+    { label: t("failures"), value: ingestionFailures },
   ];
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-6xl px-8 py-8">
-        <div className="mb-8 flex items-start justify-between gap-6">
-          <div>
+      <div className="mx-auto w-full max-w-6xl px-8 py-10">
+        <div className="mb-10 flex items-start justify-between gap-6 flex-wrap">
+          <div className="min-w-0">
             <div className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-accent">
-              <ShieldCheck className="size-3.5" /> {t("adminFoundation")}
+              <ShieldCheck className="size-3.5 shrink-0" /> {t("adminFoundation")}
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("controlPlane")}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Secure administrative visibility for roles, billing placeholders, project ingestion,
-              security events, audit history, and system health.
+            <h1 className="text-3xl font-bold tracking-tight leading-snug">{t("controlPlane")}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {t("controlPlaneSubtitle")}
             </p>
           </div>
-          <div className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-emerald-400">
+          <div className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-emerald-400 shrink-0">
             {t("rlsEnforced")}
           </div>
         </div>
@@ -82,7 +84,9 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
           {metrics.map((metric) => (
             <div key={metric.label} className="rounded-lg border border-border bg-surface p-4">
-              <div className="font-mono text-2xl font-semibold text-zinc-100">{metric.value}</div>
+              <div className="font-mono text-2xl font-semibold text-zinc-100" dir="ltr">
+                {fmt(metric.value)}
+              </div>
               <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
                 {metric.label}
               </div>
@@ -105,25 +109,26 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <AdminTable
             title={t("billingPlans")}
-            rows={data.plans.map((plan) => [plan.name, plan.status, "Payments not connected"])}
+            rows={data.plans.map((plan) => [plan.name, plan.status, t("paymentsNotConnected")])}
+            empty={t("noRecords")}
           />
           <AdminTable
             title={t("securityEvents")}
             rows={data.securityEvents.map((event) => [
               event.severity,
               event.event_type,
-              new Date(event.created_at).toLocaleDateString(),
+              new Date(event.created_at).toLocaleDateString(numLocale),
             ])}
-            empty="No security events visible."
+            empty={t("noSecurityEvents")}
           />
           <AdminTable
             title={t("quotaViolations")}
             rows={quotaViolations.map((event) => [
               event.severity,
               event.event_type,
-              new Date(event.created_at).toLocaleDateString(),
+              new Date(event.created_at).toLocaleDateString(numLocale),
             ])}
-            empty="No quota violations recorded."
+            empty={t("noQuotaViolations")}
           />
           <AdminTable
             title={t("recentActivity")}
@@ -131,16 +136,16 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
               .slice(0, 12)
               .map((event) => [
                 event.event_type,
-                event.quantity.toLocaleString(),
-                new Date(event.created_at).toLocaleDateString(),
+                fmt(event.quantity),
+                new Date(event.created_at).toLocaleDateString(numLocale),
               ])}
-            empty="No usage events recorded."
+            empty={t("noUsageEvents")}
           />
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <div className="rounded-lg border border-border bg-surface p-5">
-            <div className="mb-4 text-sm font-semibold">Plan distribution</div>
+            <div className="mb-4 text-sm font-semibold">{t("planDistribution")}</div>
             <div className="space-y-3">
               {data.plans.map((plan) => {
                 const count = planDistribution[plan.id] ?? 0;
@@ -151,7 +156,7 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
                   <div key={plan.id}>
                     <div className="mb-1 flex justify-between text-xs">
                       <span>{plan.name}</span>
-                      <span className="text-muted-foreground">{count}</span>
+                      <span className="text-muted-foreground" dir="ltr">{fmt(count)}</span>
                     </div>
                     <div className="h-2 rounded-full bg-white/5">
                       <div className="h-2 rounded-full bg-accent" style={{ width: `${width}%` }} />
@@ -162,20 +167,20 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
             </div>
           </div>
           <div className="rounded-lg border border-border bg-surface p-5">
-            <div className="mb-4 text-sm font-semibold">Storage and indexing health</div>
+            <div className="mb-4 text-sm font-semibold">{t("storageIndexing")}</div>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <MetricDetail
-                label="Tracked storage"
+                label={t("trackedStorage")}
                 value={`${(storageBytes / 1024 / 1024).toFixed(2)} MB`}
               />
               <MetricDetail
-                label="Context selections"
-                value={data.contextSelections.length.toString()}
+                label={t("contextSelections")}
+                value={fmt(data.contextSelections.length)}
               />
-              <MetricDetail label="Audit events" value={data.auditEvents.length.toString()} />
+              <MetricDetail label={t("auditEvents")} value={fmt(data.auditEvents.length)} />
               <MetricDetail
-                label="Preview health"
-                value={ingestionFailures === 0 ? "Stable" : "Review"}
+                label={t("previewHealth")}
+                value={ingestionFailures === 0 ? t("stable") : t("review")}
               />
             </div>
           </div>
@@ -183,30 +188,30 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
 
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
           <OperationsPanel
-            title="System health"
+            title={t("systemHealth")}
             rows={[
-              ["Auth/RLS", "Active"],
-              ["Project ingestion", "Ready"],
-              ["AI gateway", "Configured by env"],
-              ["Execution runtime", "Disabled"],
+              [t("authRls"), t("active")],
+              [t("projectIngestion"), t("ready")],
+              [t("aiGateway"), t("configuredByEnv")],
+              [t("executionRuntime"), t("disabled")],
             ]}
           />
           <OperationsPanel
-            title="Migration checklist"
+            title={t("migrationChecklist")}
             rows={[
-              ["Admin roles", data.roles.length > 0 ? "Detected" : "No records"],
-              ["Plans", data.plans.length >= 4 ? "Seeded" : "Review"],
-              ["Usage events", data.usageEvents.length > 0 ? "Receiving" : "Empty"],
-              ["Audit events", data.auditEvents.length > 0 ? "Receiving" : "Empty"],
+              [t("adminRoles"), data.roles.length > 0 ? t("detected") : t("noRecordsShort")],
+              [t("plans"), data.plans.length >= 4 ? t("seeded") : t("review")],
+              [t("recentActivity"), data.usageEvents.length > 0 ? t("receiving") : t("empty")],
+              [t("auditEvents"), data.auditEvents.length > 0 ? t("receiving") : t("empty")],
             ]}
           />
           <OperationsPanel
-            title="Operational warnings"
+            title={t("operationalWarnings")}
             rows={[
-              ["Billing", "Provider not connected"],
-              ["Teams", "Not enabled"],
-              ["Sandbox", "Not enabled"],
-              ["Bundle", "Large chunk warning"],
+              [t("billing"), t("providerNotConnected")],
+              [t("teams"), t("notEnabled")],
+              [t("sandbox"), t("notEnabled")],
+              [t("bundle"), t("largeChunkWarning")],
             ]}
           />
         </div>
@@ -247,11 +252,11 @@ function MetricDetail({ label, value }: { label: string; value: string }) {
 function AdminTable({
   title,
   rows,
-  empty = "No records visible.",
+  empty,
 }: {
   title: string;
   rows: string[][];
-  empty?: string;
+  empty: string;
 }) {
   return (
     <div className="rounded-lg border border-border bg-surface">
