@@ -73,7 +73,8 @@ function Hero() {
           Project-aware AI workspace - Public Preview
         </div>
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance mb-8">
-          Nexus Core turns project context into <span className="text-accent">structured plans</span>
+          Nexus Core turns project context into{" "}
+          <span className="text-accent">structured plans</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 text-pretty">
           An AI workspace for developers and businesses. Ingest project context, analyze codebase
@@ -464,7 +465,9 @@ function FinalCTA() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-32 text-center">
       <Boxes className="size-10 mx-auto text-accent mb-6" />
-      <h2 className="text-5xl font-bold tracking-tight mb-6">Create your first project-aware AI workspace.</h2>
+      <h2 className="text-5xl font-bold tracking-tight mb-6">
+        Create your first project-aware AI workspace.
+      </h2>
       <p className="text-muted-foreground max-w-xl mx-auto mb-8">
         Free during preview. No credit card. Spin up a workspace in under a minute.
       </p>

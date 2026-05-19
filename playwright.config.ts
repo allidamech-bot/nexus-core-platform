@@ -2,7 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:8080";
 const shouldStartServer = !process.env.E2E_BASE_URL;
-const browserChannel = process.env.E2E_BROWSER_CHANNEL ?? (process.platform === "win32" ? "chrome" : undefined);
+const browserChannel =
+  process.env.E2E_BROWSER_CHANNEL ?? (process.platform === "win32" ? "chrome" : undefined);
 
 export default defineConfig({
   testDir: "./tests/e2e",

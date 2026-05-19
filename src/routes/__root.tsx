@@ -91,7 +91,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Nexus Core - Project-aware AI planning" },
       {
         property: "og:description",
-        content: "Turn project context into structured planning, risk review, and verification-ready workflows.",
+        content:
+          "Turn project context into structured planning, risk review, and verification-ready workflows.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
