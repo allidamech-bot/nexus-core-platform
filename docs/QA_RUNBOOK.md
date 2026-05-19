@@ -218,3 +218,67 @@ Optional protected configuration:
 - `E2E_BROWSER_CHANNEL`
 
 Do not expose these secrets to forks, public PRs, debug logs, screenshots, traces, or committed files.
+
+## Trusted Production Credentialed QA Plan
+
+This section defines the safe plan for executing credentialed production QA against the official production URL (`https://nexus-core-ai-os.lovable.app`) without exposing secrets, changing product behavior, or running destructive tests.
+
+### Required Trusted QA Accounts
+
+- **Admin account:** `allidamech@gmail.com`
+- **Non-admin account:** manually created production test account
+- **Optional upload/quota account:** manually assigned safe test quota/plan
+
+### Protected Secrets & Environment Variables
+
+When running against production, the following environment variables must be securely provided:
+
+- `E2E_BASE_URL=https://nexus-core-ai-os.lovable.app`
+- `E2E_ADMIN_EMAIL`
+- `E2E_ADMIN_PASSWORD`
+- `E2E_NON_ADMIN_EMAIL`
+- `E2E_NON_ADMIN_PASSWORD`
+- `E2E_BROWSER_CHANNEL`
+- `LOVABLE_API_KEY` (only if needed by the environment)
+
+### GitHub Protected Environment Policy
+
+- Credentialed tests must run only through a protected/manual workflow.
+- Do not run credentialed tests on untrusted PRs or forks.
+- Secrets must be scoped to a protected GitHub Environment.
+- At least one manual approval should be required before credentialed production QA.
+
+### Safe Production QA Boundaries
+
+- No large ZIP uploads.
+- No destructive data mutation.
+- No service-role key in browser/client.
+- No real customer data fixtures.
+- No secrets in logs, screenshots, console, or network captures.
+
+### Manual Production QA Checklist
+
+- Admin login
+- Non-admin `/app/admin` denial
+- Session restore
+- Logout/private data clearing
+- Arabic/RTL persistence
+- Authenticated chat smoke
+- Valid tiny ZIP upload (only if quota allows)
+- Invalid ZIP rejection
+- Suspicious path traversal ZIP rejection
+- Usage metering check
+- Admin dashboard does not leak after logout
+
+### Running Playwright Against Production
+
+If the existing Playwright credentialed tests support these environment variables, they can be run against Lovable from a local shell:
+
+```powershell
+$env:E2E_BASE_URL="https://nexus-core-ai-os.lovable.app"
+$env:E2E_ADMIN_EMAIL="allidamech@gmail.com"
+$env:E2E_ADMIN_PASSWORD="replace-with-secret"
+$env:E2E_NON_ADMIN_EMAIL="nonadmin@example.com"
+$env:E2E_NON_ADMIN_PASSWORD="replace-with-secret"
+pnpm test:e2e
+```
