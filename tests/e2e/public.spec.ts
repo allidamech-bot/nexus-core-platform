@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { useAnonymousBrowserState } from "./helpers";
 
 test.describe("public routes and unauthenticated boundaries", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test.beforeEach(async ({ context }) => {
+    await useAnonymousBrowserState(context);
+  });
+
   test("login page loads", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "Sign in to Nexus Core" })).toBeVisible();

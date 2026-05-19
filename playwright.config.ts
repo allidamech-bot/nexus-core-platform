@@ -17,6 +17,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL,
+    storageState: { cookies: [], origins: [] },
     trace: "on-first-retry",
   },
   webServer: shouldStartServer

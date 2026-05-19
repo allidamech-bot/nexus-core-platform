@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type BrowserContext, type Page } from "@playwright/test";
 
 export const adminCredentials = {
   email: process.env.E2E_ADMIN_EMAIL,
@@ -12,6 +12,19 @@ export const nonAdminCredentials = {
 
 export function hasCredentials(credentials: { email?: string; password?: string }) {
   return Boolean(credentials.email && credentials.password);
+}
+
+export async function useAnonymousBrowserState(context: BrowserContext) {
+  await context.clearCookies();
+  await context.clearPermissions();
+  await context.addInitScript(() => {
+    const clearedMarker = "__nexus_e2e_anonymous_state_cleared__";
+    if (window.name.includes(clearedMarker)) return;
+
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    window.name = window.name ? `${window.name} ${clearedMarker}` : clearedMarker;
+  });
 }
 
 export async function login(page: Page, credentials: { email?: string; password?: string }) {
