@@ -63,6 +63,12 @@ Phase 2E governance migrations are required for full chat metering and quota enf
 
 Set the same environment variables in Lovable Cloud/Vercel. The app expects the TanStack Start routes to include `/`, `/login`, `/signup`, `/app`, `/app/$threadId`, `/app/admin`, `/app/settings`, `/api/chat`, and `/api/projects/process-zip`.
 
+## Production / Deployment
+
+Lovable is the official deployment target for this phase. The production URL is https://nexus-core-ai-os.lovable.app. Vercel is not the official deployment target for now; Vercel-specific deployment failures should be ignored unless they reveal a real app bug.
+
+Before release, GitHub CI must be green and the local verification gate must pass. For the production baseline, Lovable smoke checklist, verified Phase 9 results, and remaining QA gaps, see [docs/PRODUCTION_READINESS.md](D:/nexus-core-platform-main/docs/PRODUCTION_READINESS.md). For credentialed E2E setup and manual QA account requirements, see [docs/QA_RUNBOOK.md](D:/nexus-core-platform-main/docs/QA_RUNBOOK.md).
+
 ## E2E QA
 
 The Playwright E2E harness covers public route loading, protected-route redirects, unauthenticated API boundaries, and Arabic/RTL persistence without credentials.
