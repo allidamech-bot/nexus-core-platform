@@ -67,6 +67,8 @@ Set the same environment variables in Lovable Cloud/Vercel. The app expects the 
 
 The Playwright E2E harness covers public route loading, protected-route redirects, unauthenticated API boundaries, and Arabic/RTL persistence without credentials.
 
+For the full credentialed QA process, required accounts, optional environment variables, fixture behavior, and release checklist, see [docs/QA_RUNBOOK.md](D:/nexus-core-platform-main/docs/QA_RUNBOOK.md).
+
 Run the non-credentialed suite:
 
 ```bash

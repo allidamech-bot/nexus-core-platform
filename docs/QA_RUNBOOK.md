@@ -1,0 +1,192 @@
+# Nexus Core QA Runbook
+
+This runbook defines the safe credentialed E2E QA process for Nexus Core Platform. It must never contain real passwords, tokens, cookies, JWTs, API keys, refresh tokens, or service-role keys.
+
+Nexus Core remains pre-execution. These tests validate auth, routing, governance, upload boundaries, project-aware planning, and UI stability. They do not validate code execution, sandboxing, GitHub import, Stripe billing, organizations, embeddings, or autonomous code changes.
+
+## Required QA Accounts
+
+Admin account:
+
+- `allidamech@gmail.com`
+- Must have admin access through the database-backed admin role/allowlist model.
+- Used for `/app/admin`, database health, audit, usage, and privileged dashboard visibility checks.
+
+Non-admin test account:
+
+- Must be created manually.
+- Must not have an admin role or admin allowlist entry.
+- Used to verify that `/app/admin` redirects or blocks access without exposing admin dashboard data.
+
+High-quota upload test account or plan:
+
+- Required for full ZIP ingestion E2E when Starter quota is exhausted.
+- The current Starter plan can block upload tests with `1 used / 1 limit`.
+- Use a Pro, Business, Enterprise, or dedicated QA plan when validating valid ZIP ingestion repeatedly.
+
+Do not create accounts automatically from test code unless a future task explicitly approves a safe seed process.
+
+## Environment Variables
+
+Set these only in a local shell, CI secret store, or private environment file that is ignored by Git.
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:8080
+E2E_ADMIN_EMAIL=admin@example.com
+E2E_ADMIN_PASSWORD=replace-with-secret
+E2E_NON_ADMIN_EMAIL=user@example.com
+E2E_NON_ADMIN_PASSWORD=replace-with-secret
+E2E_BROWSER_CHANNEL=chrome
+LOVABLE_API_KEY=replace-with-secret
+```
+
+Notes:
+
+- `E2E_BASE_URL` is optional. If omitted, Playwright starts `pnpm dev -- --host 127.0.0.1`.
+- `E2E_BROWSER_CHANNEL` is optional. On Windows the harness defaults to the installed Chrome channel. Set another channel only when needed.
+- `LOVABLE_API_KEY` is required only for successful chat streaming QA. Without it, chat tests should assert the expected setup boundary.
+- Never commit environment files containing real values.
+
+## Running E2E QA
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Install Playwright-managed Chromium if you are not using an installed Chrome channel:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+Run the default non-credentialed suite:
+
+```bash
+pnpm test:e2e
+```
+
+Run with Playwright UI:
+
+```bash
+pnpm test:e2e:ui
+```
+
+Run against an already-running local server:
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:8080 pnpm test:e2e
+```
+
+Run credentialed tests from PowerShell:
+
+```powershell
+$env:E2E_ADMIN_EMAIL="admin@example.com"
+$env:E2E_ADMIN_PASSWORD="replace-with-secret"
+$env:E2E_NON_ADMIN_EMAIL="user@example.com"
+$env:E2E_NON_ADMIN_PASSWORD="replace-with-secret"
+$env:E2E_BASE_URL="http://127.0.0.1:8080"
+$env:E2E_BROWSER_CHANNEL="chrome"
+pnpm test:e2e
+```
+
+Expected skip behavior:
+
+- Without admin credentials, admin, chat, upload, and logout credentialed tests skip.
+- Without non-admin credentials, non-admin admin-denial tests skip.
+- Without available project quota, ZIP upload fixture tests skip.
+- Without `LOVABLE_API_KEY`, chat tests validate the friendly setup boundary instead of streaming.
+
+## QA Checklist
+
+Account and auth:
+
+- Admin account can log in.
+- Admin account can access `/app/admin`.
+- Non-admin account cannot access `/app/admin`.
+- Session restores after browser refresh.
+- Logout redirects to login.
+- Logout clears private user, project, and admin UI from the page.
+- No stale admin data appears after logout/login cycle.
+
+Routes:
+
+- `/` loads.
+- `/login` loads.
+- `/signup` loads.
+- `/app` redirects unauthenticated users to `/login`.
+- `/app/settings` redirects unauthenticated users to `/login`.
+- `/app/admin` redirects unauthenticated users to `/login`.
+- `/app/$threadId` redirects unauthenticated users to `/login`.
+
+API boundaries:
+
+- Unauthenticated `/api/chat` returns `401`.
+- Unauthenticated `/api/projects/process-zip` returns `401`.
+- Authenticated `/api/chat` reaches the trusted auth/thread boundary.
+- Missing `LOVABLE_API_KEY` produces a friendly setup error.
+- Successful chat streaming works when `LOVABLE_API_KEY` exists.
+- Chat usage events are recorded when governance tables/RPCs are available.
+
+ZIP ingestion:
+
+- `small-valid-project.zip` uploads successfully when quota allows.
+- Valid upload creates/updates project and ingestion job state.
+- Project file inventory renders after ingestion.
+- Safe text preview availability is visible.
+- `invalid-not-zip.txt` is rejected with a readable error.
+- `suspicious-paths.zip` is rejected or fails safely when path traversal is detected.
+- Quota exceeded states are readable and do not create misleading success states.
+
+Governance and admin:
+
+- Supabase table/RPC health checklist shows required items.
+- Usage metering updates for chat, context, uploads, and failures where applicable.
+- Audit/security events are queryable in admin.
+- Admin dashboard does not render privileged data before admin validation completes.
+
+Arabic and RTL:
+
+- Switching to Arabic updates `html lang="ar"` and `dir="rtl"`.
+- Arabic preference persists after refresh.
+- `/app`, `/app/settings`, and `/app/admin` remain usable in RTL.
+- English can be restored and returns `dir="ltr"`.
+
+Browser and network safety:
+
+- No secrets appear in browser console logs.
+- No service-role key is exposed client-side.
+- No JWT, refresh token, cookie, or API key is printed by tests.
+- Network failures produce readable states instead of console floods.
+
+## Controlled Fixtures
+
+The E2E harness generates fixtures at runtime in `.e2e-fixtures/`:
+
+- `small-valid-project.zip`
+- `invalid-not-zip.txt`
+- `suspicious-paths.zip`
+
+The fixture directory is ignored by Git and should not be committed.
+
+## Known Blockers
+
+- No non-admin test account is configured yet.
+- No local `LOVABLE_API_KEY` is configured yet.
+- Starter quota may block ZIP upload validation.
+- Credentialed tests intentionally skip when E2E environment variables are missing.
+- Playwright-managed Chromium may need `pnpm exec playwright install chromium`; on Windows, the harness defaults to installed Chrome.
+- Large Vite chunk warning remains a performance follow-up.
+
+## Release Gate
+
+Before starting a new feature phase, run:
+
+```bash
+pnpm exec tsc -p tsconfig.json --noEmit
+pnpm build
+pnpm test:e2e
+```
+
+For a full credentialed gate, configure admin, non-admin, upload quota, and `LOVABLE_API_KEY`, then rerun `pnpm test:e2e`.
