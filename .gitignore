@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 .env
+.e2e-fixtures/
+playwright-report/
+test-results/
 
 # Wrangler / Cloudflare
 .wrangler/

@@ -63,6 +63,38 @@ Phase 2E governance migrations are required for full chat metering and quota enf
 
 Set the same environment variables in Lovable Cloud/Vercel. The app expects the TanStack Start routes to include `/`, `/login`, `/signup`, `/app`, `/app/$threadId`, `/app/admin`, `/app/settings`, `/api/chat`, and `/api/projects/process-zip`.
 
+## E2E QA
+
+The Playwright E2E harness covers public route loading, protected-route redirects, unauthenticated API boundaries, and Arabic/RTL persistence without credentials.
+
+Run the non-credentialed suite:
+
+```bash
+pnpm exec playwright install chromium
+pnpm test:e2e
+```
+
+Open Playwright UI mode:
+
+```bash
+pnpm test:e2e:ui
+```
+
+Optional credentialed tests skip automatically unless these environment variables are set:
+
+```bash
+E2E_ADMIN_EMAIL=
+E2E_ADMIN_PASSWORD=
+E2E_NON_ADMIN_EMAIL=
+E2E_NON_ADMIN_PASSWORD=
+E2E_BASE_URL=
+E2E_BROWSER_CHANNEL=
+```
+
+On Windows the harness uses the installed Chrome channel by default. Set `E2E_BROWSER_CHANNEL` if you need another installed browser channel, or run `pnpm exec playwright install chromium` to use Playwright-managed browsers.
+
+Never commit E2E credentials, cookies, JWTs, API keys, refresh tokens, or service-role keys. Full credentialed QA requires an admin account, a non-admin account, available project quota for upload fixtures, and `LOVABLE_API_KEY` when validating successful chat streaming. Without `LOVABLE_API_KEY`, chat tests assert the expected setup boundary instead of streaming.
+
 ## Known Limitations
 
 - No code execution, shell, terminal, sandbox, or dependency installation
