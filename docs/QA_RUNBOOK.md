@@ -190,3 +190,31 @@ pnpm test:e2e
 ```
 
 For a full credentialed gate, configure admin, non-admin, upload quota, and `LOVABLE_API_KEY`, then rerun `pnpm test:e2e`.
+
+## CI Policy
+
+Normal pushes and pull requests run the safe non-credentialed gate:
+
+- install dependencies with `pnpm install --frozen-lockfile`
+- TypeScript check
+- lint
+- production build
+- Playwright Chromium install
+- `pnpm test:e2e`
+
+Credentialed tests intentionally skip in normal CI because E2E secrets are not provided. This protects admin credentials, non-admin credentials, AI gateway keys, cookies, JWTs, and Supabase tokens from untrusted pull request contexts.
+
+Protected credentialed E2E should run only in a trusted environment such as a protected branch workflow, manual `workflow_dispatch`, deployment preview with restricted secrets, or a private CI runner. Required protected secrets:
+
+- `E2E_ADMIN_EMAIL`
+- `E2E_ADMIN_PASSWORD`
+- `E2E_NON_ADMIN_EMAIL`
+- `E2E_NON_ADMIN_PASSWORD`
+- `LOVABLE_API_KEY`
+
+Optional protected configuration:
+
+- `E2E_BASE_URL`
+- `E2E_BROWSER_CHANNEL`
+
+Do not expose these secrets to forks, public PRs, debug logs, screenshots, traces, or committed files.
