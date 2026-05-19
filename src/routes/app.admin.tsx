@@ -12,8 +12,13 @@ export const Route = createFileRoute("/app/admin")({
 
 function AdminRoute() {
   const { session } = useAuth();
-  const { data: isAdmin = false, isLoading: checkingAdmin, isError } = useIsAdminQuery();
-  const { data, isLoading: loadingDashboard } = useAdminDashboardQuery(isAdmin);
+  const userId = session?.user.id ?? null;
+  const {
+    data: isAdmin = false,
+    isLoading: checkingAdmin,
+    isError,
+  } = useIsAdminQuery(Boolean(userId), userId);
+  const { data, isLoading: loadingDashboard } = useAdminDashboardQuery(isAdmin, userId);
 
   useEffect(() => {
     if (!isAdmin || !session?.user.id) return;

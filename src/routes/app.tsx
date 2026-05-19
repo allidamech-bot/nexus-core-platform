@@ -40,12 +40,23 @@ export const Route = createFileRoute("/app")({
 });
 
 function AppLayout() {
-  const { session, loading, signOut, user } = useAuth();
+  const { session, loading, signOut, user, error } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-background">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background p-6">
+        <div className="max-w-md rounded-lg border border-border bg-surface p-6 text-center">
+          <h1 className="text-lg font-semibold">Authentication unavailable</h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{error}</p>
+        </div>
       </div>
     );
   }
@@ -75,7 +86,7 @@ function AppWorkspace({
   const qc = useQueryClient();
   const { projects, projectsLoading, selectedProjectId, setSelectedProjectId } =
     useProjectWorkspace();
-  const { data: isAdmin = false } = useIsAdminQuery(!!session);
+  const { data: isAdmin = false } = useIsAdminQuery(!!session, session.user.id);
   const { data: usageOverview } = useUsageOverviewQuery(session.user.id);
   const { t } = useLocale();
 
@@ -230,6 +241,7 @@ function AppWorkspace({
           <button
             onClick={async () => {
               await signOut();
+              qc.clear();
               navigate({ to: "/" });
             }}
             className="size-7 shrink-0 grid place-items-center rounded-md border border-border hover:bg-white/5"
