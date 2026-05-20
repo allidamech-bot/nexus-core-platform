@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { processProjectArchive } from "@/features/projects/server/ingestionProcessor";
+import { safeErrorLog, safeErrorMessage } from "@/lib/safeLogging";
 
 type Body = {
   projectId?: unknown;
@@ -60,10 +61,7 @@ async function createAuthenticatedClient(request: Request) {
   try {
     env = getSupabaseEnv();
   } catch (error) {
-    console.error(
-      "[project-ingestion] missing Supabase env",
-      error instanceof Error ? error.message : String(error),
-    );
+    console.error("[project-ingestion] missing Supabase env", safeErrorLog(error));
     return {
       response: jsonResponse(
         {
@@ -150,7 +148,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
             },
           ]);
           if (usageError) {
-            console.warn("[project-ingestion] usage metering skipped", usageError.message);
+            console.warn("[project-ingestion] usage metering skipped", safeErrorLog(usageError));
           }
 
           return Response.json({
@@ -162,9 +160,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
             manifest: result.manifest,
           });
         } catch (error) {
-          console.error("[project-ingestion] processing failed", {
-            message: error instanceof Error ? error.message : String(error),
-          });
+          console.error("[project-ingestion] processing failed", safeErrorLog(error));
           if (isExpectedSetupError(error)) {
             return jsonResponse(
               {
@@ -175,8 +171,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
               503,
             );
           }
-          const message =
-            error instanceof Error ? error.message : "Project manifest extraction failed.";
+          const message = safeErrorMessage(error, "Project manifest extraction failed.");
           if (auth.supabase && auth.userId && typeof body.projectId === "string") {
             try {
               await auth.supabase.from("usage_events").insert({

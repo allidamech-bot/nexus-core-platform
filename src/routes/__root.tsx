@@ -10,6 +10,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
+import { safeErrorLog } from "@/lib/safeLogging";
 import "@/lib/console-noise-filter";
 
 import appCss from "../styles.css?url";
@@ -35,7 +36,7 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("[root] route error", safeErrorLog(error));
   const router = useRouter();
   const isConfigError =
     error.message.includes("Missing Supabase environment variable") ||
@@ -53,7 +54,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-3 text-sm text-muted-foreground">
           {isConfigError
             ? "Supabase environment variables are missing. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY, then reload the workspace."
-            : error.message}
+            : "The application hit an unexpected runtime error. Check the production logs for the redacted root error entry."}
         </p>
         <div className="mt-6 flex justify-center gap-2">
           <button

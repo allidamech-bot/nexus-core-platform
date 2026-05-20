@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { safeErrorLog } from "@/lib/safeLogging";
 import type { Database } from "@/integrations/supabase/types";
 import type {
   ProjectChatMetadata,
@@ -152,7 +153,7 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
   try {
     env = getSupabaseEnv();
   } catch (error) {
-    console.error("[chat] missing Supabase env", error instanceof Error ? error.message : error);
+    console.error("[chat] missing Supabase env", safeErrorLog(error));
     return {
       response: jsonResponse(
         {
@@ -187,7 +188,7 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
     .maybeSingle();
 
   if (threadError) {
-    console.error("[chat] thread access check failed", threadError);
+    console.error("[chat] thread access check failed", safeErrorLog(threadError));
     if (isExpectedGovernanceSetupError(threadError)) {
       return {
         response: jsonResponse(
@@ -271,7 +272,7 @@ async function enforceChatQuota(input: {
     if (isExpectedGovernanceSetupError(error)) {
       console.warn("[chat] governance unavailable", {
         degraded: canDegradeGovernanceLocally(),
-        message: error instanceof Error ? error.message : String(error),
+        ...safeErrorLog(error),
       });
       if (canDegradeGovernanceLocally()) return null;
       return jsonResponse(
@@ -303,7 +304,7 @@ async function enforceChatQuota(input: {
         limit: limits.max_ai_requests_monthly,
       },
     });
-    if (error) console.warn("[chat] quota audit write failed", error.message);
+    if (error) console.warn("[chat] quota audit write failed", safeErrorLog(error));
     return jsonResponse(
       {
         error: "quota_exceeded",
@@ -358,7 +359,10 @@ async function enforceChatQuota(input: {
   ]);
   if (usageError) {
     if (isExpectedGovernanceSetupError(usageError) && canDegradeGovernanceLocally()) {
-      console.warn("[chat] usage metering skipped in local degraded mode", usageError.message);
+      console.warn(
+        "[chat] usage metering skipped in local degraded mode",
+        safeErrorLog(usageError),
+      );
       return null;
     }
     throw usageError;
@@ -469,9 +473,7 @@ export const Route = createFileRoute("/api/chat")({
             selectedPreviewIds: parseSelectedPreviewIds(body.selectedPreviewIds),
           });
         } catch (error) {
-          console.error("[chat] trusted project context failed", {
-            message: error instanceof Error ? error.message : String(error),
-          });
+          console.error("[chat] trusted project context failed", safeErrorLog(error));
           return jsonResponse(
             {
               error: "project_context_unavailable",
@@ -491,9 +493,7 @@ export const Route = createFileRoute("/api/chat")({
           });
           if (quotaError) return quotaError;
         } catch (error) {
-          console.error("[chat] quota enforcement failed", {
-            message: error instanceof Error ? error.message : String(error),
-          });
+          console.error("[chat] quota enforcement failed", safeErrorLog(error));
           return jsonResponse(
             {
               error: "quota_enforcement_failed",
@@ -531,9 +531,7 @@ export const Route = createFileRoute("/api/chat")({
             messages: await convertToModelMessages(messages as UIMessage[]),
           });
         } catch (error) {
-          console.error("[chat] stream initialization failed", {
-            message: error instanceof Error ? error.message : String(error),
-          });
+          console.error("[chat] stream initialization failed", safeErrorLog(error));
           return jsonResponse(
             {
               error: "ai_stream_initialization_failed",

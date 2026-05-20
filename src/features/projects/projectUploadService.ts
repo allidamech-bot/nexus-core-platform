@@ -21,6 +21,7 @@ import {
   recordUsageEvent,
 } from "@/features/governance/governanceService";
 import type { FolderImportSummary } from "./folderImportService";
+import { safeErrorLog, safeErrorMessage } from "@/lib/safeLogging";
 
 export interface UploadProjectInput {
   userId: string;
@@ -100,10 +101,10 @@ async function requireQuota(
   try {
     return await checkQuota(userId, limitKey, requested);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Usage governance could not be verified for this upload.";
+    const message = safeErrorMessage(
+      error,
+      "Usage governance could not be verified for this upload.",
+    );
     console.warn("[project-upload] quota verification failed", { limitKey, message });
 
     if (import.meta.env.PROD) {
@@ -131,7 +132,7 @@ async function uploadArchive(input: {
     });
 
   if (error) {
-    console.warn("[project-upload] Supabase Storage upload skipped or failed", error.message);
+    console.warn("[project-upload] Supabase Storage upload skipped or failed", safeErrorLog(error));
     return { storagePath: null, storageAvailable: false };
   }
 
@@ -190,7 +191,9 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
         size_bytes: input.file.size,
         reason: validationError,
       },
-    }).catch((error) => console.warn("[project-upload] security event failed", error));
+    }).catch((error) =>
+      console.warn("[project-upload] security event failed", safeErrorLog(error)),
+    );
     throw new Error(validationError);
   }
 
@@ -203,7 +206,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
     "max_upload_mb",
     Math.ceil(input.file.size / 1024 / 1024),
   ).catch((error) => {
-    const message = error instanceof Error ? error.message : "Upload size quota failed.";
+    const message = safeErrorMessage(error, "Upload size quota failed.");
     console.warn("[project-upload] upload size quota verification failed", message);
     if (import.meta.env.PROD) {
       throw new Error(
@@ -309,7 +312,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
         file_name: input.file.name,
         storage_available: upload.storageAvailable,
       },
-    }).catch((error) => console.warn("[project-upload] usage event failed", error));
+    }).catch((error) => console.warn("[project-upload] usage event failed", safeErrorLog(error)));
     await recordAuditEvent({
       userId: input.userId,
       projectId: project.id,
@@ -324,7 +327,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       storageAvailable: upload.storageAvailable,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Project upload failed.";
+    const message = safeErrorMessage(error, "Project upload failed.");
     await updateProjectStatus(project.id, "failed").catch(() => {});
     await updateIngestionJob(job.id, {
       status: "failed",

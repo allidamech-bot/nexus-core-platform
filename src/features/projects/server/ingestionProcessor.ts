@@ -5,6 +5,7 @@ import type { Project, ProjectIngestionJob, ProjectManifest } from "../types";
 import { generateProjectManifest } from "./manifestGenerator";
 import { generateTextPreviewsFromArchive } from "./textPreviewIndexer";
 import { readZipCentralDirectory, toProjectFileInsert } from "./zipCentralDirectory";
+import { safeErrorLog, safeErrorMessage } from "@/lib/safeLogging";
 
 type ProjectSupabaseClient = SupabaseClient<Database>;
 
@@ -72,7 +73,7 @@ async function logSecurityEvent(
     payload: input.payload,
   });
 
-  if (error) console.warn("[project-ingestion] security event failed", error.message);
+  if (error) console.warn("[project-ingestion] security event failed", safeErrorLog(error));
 }
 
 async function applyPreviewQuota(
@@ -326,7 +327,7 @@ export async function processProjectArchive({
       fileCount: inventory.files.length,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "ZIP manifest extraction failed.";
+    const message = safeErrorMessage(error, "ZIP manifest extraction failed.");
     await updateProjectStatus(supabase, projectId, "failed").catch(() => {});
     await updateJob(supabase, job.id, {
       status: "failed",

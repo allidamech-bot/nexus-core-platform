@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { safeErrorLog } from "@/lib/safeLogging";
 
 type TableName = keyof Database["public"]["Tables"];
 type RpcName = keyof Database["public"]["Functions"];
@@ -156,7 +157,7 @@ async function getDbHealth(): Promise<DbHealthItem[]> {
 
 function dataOrEmpty<T>(result: { data: T[] | null; error: { message?: string } | null }): T[] {
   if (result.error) {
-    console.warn("[admin] dashboard query unavailable", result.error.message);
+    console.warn("[admin] dashboard query unavailable", safeErrorLog(result.error));
     return [];
   }
   return result.data ?? [];

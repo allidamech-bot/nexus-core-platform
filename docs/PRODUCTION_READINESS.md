@@ -106,6 +106,35 @@ Run this checklist before marking a Lovable release ready:
 - The Node `punycode` warning remains a dependency/tooling warning.
 - Credentialed production E2E should run only in a trusted environment with protected credentials and no public logs.
 
+## Production Logging Guidelines
+
+Production logs are for diagnosing operational failures without exposing user data, auth material, project source content, or provider secrets. Logs should be sparse, area-labeled, and tied to failure classes rather than full request payloads.
+
+Allowed in logs:
+
+- Stable area labels such as `[chat]`, `[project-ingestion]`, `[project-upload]`, `[admin]`, and `[root]`.
+- Error names, database error codes, HTTP status numbers, and short redacted messages.
+- Non-sensitive counts, limits, quota keys, byte sizes, and event types.
+- Project, thread, or job identifiers only when needed to diagnose ownership or processing boundaries.
+- Aggregated usage and audit event metadata that does not include prompt text, source contents, tokens, cookies, or raw headers.
+
+Never log:
+
+- Authorization headers, bearer tokens, Supabase sessions, JWTs, cookies, refresh tokens, API keys, service-role keys, or private environment values.
+- Full user prompts, full chat messages, uploaded file contents, raw text preview contents, or full project source files.
+- Raw request bodies from authenticated routes.
+- Raw provider requests/responses if they may include prompts, context snippets, API keys, or auth headers.
+- Screenshots, traces, or console dumps that contain credentials or private user content.
+
+Safe debugging workflow:
+
+- Chat failures: check the `[chat]` area label, the public error code returned to the client, quota/usage rows, and admin health checklist. Use token/byte estimates and selected-preview counts instead of prompt text.
+- Upload failures: check `[project-upload]` and `[project-ingestion]` labels, ingestion job status/stage, file counts, file sizes, skipped reasons, and security event types. Do not inspect or log uploaded source contents.
+- Admin failures: check `[admin]` query availability warnings and the database health checklist. Do not log admin credentials, Supabase sessions, or raw privileged query payloads.
+- Root/runtime failures: check `[root] route error` with redacted error metadata. User-facing runtime messages should stay generic unless they are known safe configuration messages.
+
+External observability vendors such as Sentry, PostHog, and LogRocket are intentionally out of scope for this phase.
+
 ## Release Checklist
 
 Before release:

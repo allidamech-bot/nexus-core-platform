@@ -159,6 +159,8 @@ Browser and network safety:
 - No service-role key is exposed client-side.
 - No JWT, refresh token, cookie, or API key is printed by tests.
 - Network failures produce readable states instead of console floods.
+- Production diagnostics use area-labeled, redacted logs only.
+- Tests must not print full prompts, chat messages, uploaded file contents, raw previews, Authorization headers, cookies, or session values.
 
 ## Controlled Fixtures
 
