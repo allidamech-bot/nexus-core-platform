@@ -17,11 +17,15 @@ export function useIsAdminQuery(enabled = true, userId?: string | null) {
   });
 }
 
-export function useAdminDashboardQuery(enabled: boolean, userId?: string | null) {
+export function useAdminDashboardQuery(
+  enabled: boolean,
+  userId?: string | null,
+  correlationId?: string,
+) {
   return useQuery({
     enabled: enabled && Boolean(userId),
-    queryKey: adminKeys.dashboard(userId),
-    queryFn: getAdminDashboardData,
+    queryKey: [...adminKeys.dashboard(userId), correlationId ?? "no-correlation"] as const,
+    queryFn: () => getAdminDashboardData(correlationId),
     retry: false,
   });
 }

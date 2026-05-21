@@ -47,6 +47,7 @@ export interface QuotaCheckResult {
 export interface UsageEventInput {
   userId: string;
   eventType: string;
+  correlationId?: string;
   quantity?: number;
   sizeBytes?: number;
   tokenEstimate?: number;
@@ -59,6 +60,7 @@ export interface AuditEventInput {
   userId?: string | null;
   actorUserId?: string | null;
   eventType: string;
+  correlationId?: string;
   severity?: "info" | "warning" | "critical";
   projectId?: string | null;
   threadId?: string | null;

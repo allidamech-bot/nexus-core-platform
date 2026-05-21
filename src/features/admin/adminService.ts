@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { safeErrorLog } from "@/lib/safeLogging";
+import { safeErrorLog, withLogContext } from "@/lib/safeLogging";
 
 type TableName = keyof Database["public"]["Tables"];
 type RpcName = keyof Database["public"]["Functions"];
@@ -155,9 +155,17 @@ async function getDbHealth(): Promise<DbHealthItem[]> {
   ]);
 }
 
-function dataOrEmpty<T>(result: { data: T[] | null; error: { message?: string } | null }): T[] {
+function dataOrEmpty<T>(
+  result: { data: T[] | null; error: { message?: string } | null },
+  correlationId?: string,
+): T[] {
   if (result.error) {
-    console.warn("[admin] dashboard query unavailable", safeErrorLog(result.error));
+    console.warn(
+      "[admin] dashboard query unavailable",
+      correlationId
+        ? withLogContext({ correlationId }, safeErrorLog(result.error))
+        : safeErrorLog(result.error),
+    );
     return [];
   }
   return result.data ?? [];
@@ -169,7 +177,7 @@ export async function getIsAdmin(): Promise<boolean> {
   return Boolean(data);
 }
 
-export async function getAdminDashboardData(): Promise<AdminDashboardData> {
+export async function getAdminDashboardData(correlationId?: string): Promise<AdminDashboardData> {
   const [
     roles,
     plans,
@@ -212,14 +220,14 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   ]);
 
   return {
-    roles: dataOrEmpty(roles),
-    plans: dataOrEmpty(plans),
-    subscriptions: dataOrEmpty(subscriptions),
-    projects: dataOrEmpty(projects),
-    securityEvents: dataOrEmpty(securityEvents),
-    contextSelections: dataOrEmpty(contextSelections),
-    usageEvents: dataOrEmpty(usageEvents),
-    auditEvents: dataOrEmpty(auditEvents),
+    roles: dataOrEmpty(roles, correlationId),
+    plans: dataOrEmpty(plans, correlationId),
+    subscriptions: dataOrEmpty(subscriptions, correlationId),
+    projects: dataOrEmpty(projects, correlationId),
+    securityEvents: dataOrEmpty(securityEvents, correlationId),
+    contextSelections: dataOrEmpty(contextSelections, correlationId),
+    usageEvents: dataOrEmpty(usageEvents, correlationId),
+    auditEvents: dataOrEmpty(auditEvents, correlationId),
     dbHealth,
   };
 }

@@ -21,7 +21,12 @@ import {
   recordUsageEvent,
 } from "@/features/governance/governanceService";
 import type { FolderImportSummary } from "./folderImportService";
-import { safeErrorLog, safeErrorMessage } from "@/lib/safeLogging";
+import {
+  createCorrelationId,
+  safeErrorLog,
+  safeErrorMessage,
+  withLogContext,
+} from "@/lib/safeLogging";
 
 export interface UploadProjectInput {
   userId: string;
@@ -139,7 +144,7 @@ async function uploadArchive(input: {
   return { storagePath, storageAvailable: true };
 }
 
-async function requestManifestProcessing(projectId: string): Promise<void> {
+async function requestManifestProcessing(projectId: string, correlationId: string): Promise<void> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("You must be signed in to process the uploaded project.");
@@ -149,6 +154,7 @@ async function requestManifestProcessing(projectId: string): Promise<void> {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "x-correlation-id": correlationId,
     },
     body: JSON.stringify({ projectId }),
   });
@@ -170,11 +176,13 @@ async function requestManifestProcessing(projectId: string): Promise<void> {
 }
 
 export async function uploadProjectZip(input: UploadProjectInput): Promise<UploadProjectResult> {
+  const correlationId = createCorrelationId();
   const validationError = validateProjectZip(input.file);
   if (validationError) {
     await recordAuditEvent({
       userId: input.userId,
       eventType: "blocked_upload",
+      correlationId,
       severity: "warning",
       payload: {
         file_name: input.file.name,
@@ -187,12 +195,16 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       eventType: "project_upload_rejected",
       severity: "warning",
       payload: {
+        correlationId,
         file_name: input.file.name,
         size_bytes: input.file.size,
         reason: validationError,
       },
     }).catch((error) =>
-      console.warn("[project-upload] security event failed", safeErrorLog(error)),
+      console.warn(
+        "[project-upload] security event failed",
+        withLogContext({ correlationId }, safeErrorLog(error)),
+      ),
     );
     throw new Error(validationError);
   }
@@ -207,7 +219,10 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
     Math.ceil(input.file.size / 1024 / 1024),
   ).catch((error) => {
     const message = safeErrorMessage(error, "Upload size quota failed.");
-    console.warn("[project-upload] upload size quota verification failed", message);
+    console.warn(
+      "[project-upload] upload size quota verification failed",
+      withLogContext({ correlationId }, { message }),
+    );
     if (import.meta.env.PROD) {
       throw new Error(
         "Upload size quota could not be verified. Apply governance migrations or try again later.",
@@ -223,6 +238,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
     await recordAuditEvent({
       userId: input.userId,
       eventType: "quota_hit_upload",
+      correlationId,
       severity: "warning",
       payload: {
         limit_key: blockedQuota.limitKey,
@@ -253,6 +269,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       size_bytes: input.file.size,
       mime_type: input.file.type || null,
       checksum,
+      correlationId,
     },
   });
 
@@ -284,6 +301,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
         size_bytes: input.file.size,
         mime_type: input.file.type || null,
         checksum,
+        correlationId,
         storage_path: upload.storagePath,
         storage_bucket: upload.storageAvailable ? PROJECT_UPLOAD_BUCKET : null,
         storage_available: upload.storageAvailable,
@@ -298,7 +316,7 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
     };
 
     if (upload.storageAvailable) {
-      await requestManifestProcessing(project.id);
+      await requestManifestProcessing(project.id, correlationId);
       job = { ...job, status: "completed", stage: "completed" };
     }
 
@@ -306,17 +324,24 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       userId: input.userId,
       projectId: project.id,
       eventType: "project_upload_completed",
+      correlationId,
       quantity: 1,
       sizeBytes: input.file.size,
       metadata: {
         file_name: input.file.name,
         storage_available: upload.storageAvailable,
       },
-    }).catch((error) => console.warn("[project-upload] usage event failed", safeErrorLog(error)));
+    }).catch((error) =>
+      console.warn(
+        "[project-upload] usage event failed",
+        withLogContext({ correlationId }, safeErrorLog(error)),
+      ),
+    );
     await recordAuditEvent({
       userId: input.userId,
       projectId: project.id,
       eventType: "project_upload_completed",
+      correlationId,
       payload: { size_bytes: input.file.size, storage_available: upload.storageAvailable },
     }).catch(() => {});
 
@@ -333,17 +358,20 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       status: "failed",
       stage: "upload_failed",
       error_message: message,
+      metadata: { correlationId },
     }).catch(() => {});
     await recordUsageEvent({
       userId: input.userId,
       projectId: project.id,
       eventType: "ingestion_failed",
+      correlationId,
       metadata: { message },
     }).catch(() => {});
     await recordAuditEvent({
       userId: input.userId,
       projectId: project.id,
       eventType: "ingestion_failed",
+      correlationId,
       severity: "warning",
       payload: { message },
     }).catch(() => {});

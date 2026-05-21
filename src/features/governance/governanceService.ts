@@ -42,6 +42,9 @@ export async function getCurrentUserId(): Promise<string> {
 }
 
 export async function recordUsageEvent(input: UsageEventInput): Promise<void> {
+  const metadata = input.correlationId
+    ? { ...(input.metadata ?? {}), correlationId: input.correlationId }
+    : (input.metadata ?? {});
   const { error } = await supabase.from("usage_events").insert({
     user_id: input.userId,
     event_type: input.eventType,
@@ -50,12 +53,15 @@ export async function recordUsageEvent(input: UsageEventInput): Promise<void> {
     token_estimate: input.tokenEstimate ?? 0,
     project_id: input.projectId ?? null,
     thread_id: input.threadId ?? null,
-    metadata: input.metadata ?? {},
+    metadata,
   });
   if (error) throw error;
 }
 
 export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
+  const payload = input.correlationId
+    ? { ...(input.payload ?? {}), correlationId: input.correlationId }
+    : (input.payload ?? {});
   const { error } = await supabase.from("audit_events").insert({
     user_id: input.userId ?? null,
     actor_user_id: input.actorUserId ?? input.userId ?? null,
@@ -63,7 +69,7 @@ export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
     severity: input.severity ?? "info",
     project_id: input.projectId ?? null,
     thread_id: input.threadId ?? null,
-    payload: input.payload ?? {},
+    payload,
   });
   if (error) throw error;
 }

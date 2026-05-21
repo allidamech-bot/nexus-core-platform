@@ -5,7 +5,7 @@ import type { Project, ProjectIngestionJob, ProjectManifest } from "../types";
 import { generateProjectManifest } from "./manifestGenerator";
 import { generateTextPreviewsFromArchive } from "./textPreviewIndexer";
 import { readZipCentralDirectory, toProjectFileInsert } from "./zipCentralDirectory";
-import { safeErrorLog, safeErrorMessage } from "@/lib/safeLogging";
+import { safeErrorLog, safeErrorMessage, withLogContext } from "@/lib/safeLogging";
 
 type ProjectSupabaseClient = SupabaseClient<Database>;
 
@@ -13,6 +13,7 @@ interface ProcessProjectArchiveInput {
   supabase: ProjectSupabaseClient;
   userId: string;
   projectId: string;
+  correlationId?: string;
 }
 
 interface ProcessProjectArchiveResult {
@@ -63,6 +64,7 @@ async function logSecurityEvent(
     severity: string;
     eventType: string;
     payload: Record<string, Json>;
+    correlationId?: string;
   },
 ) {
   const { error } = await supabase.from("project_security_events").insert({
@@ -70,10 +72,18 @@ async function logSecurityEvent(
     project_id: input.projectId,
     severity: input.severity,
     event_type: input.eventType,
-    payload: input.payload,
+    payload: input.correlationId
+      ? { ...input.payload, correlationId: input.correlationId }
+      : input.payload,
   });
 
-  if (error) console.warn("[project-ingestion] security event failed", safeErrorLog(error));
+  if (error)
+    console.warn(
+      "[project-ingestion] security event failed",
+      input.correlationId
+        ? withLogContext({ correlationId: input.correlationId }, safeErrorLog(error))
+        : safeErrorLog(error),
+    );
 }
 
 async function applyPreviewQuota(
@@ -131,6 +141,7 @@ export async function processProjectArchive({
   supabase,
   userId,
   projectId,
+  correlationId,
 }: ProcessProjectArchiveInput): Promise<ProcessProjectArchiveResult> {
   const { data: project, error: projectError } = await supabase
     .from("projects")
@@ -165,6 +176,7 @@ export async function processProjectArchive({
       error_message: null,
       metadata: {
         ...existingMetadata,
+        ...(correlationId ? { correlationId } : {}),
         pipeline: "zip_manifest_text_preview_v1",
       },
     });
@@ -193,6 +205,7 @@ export async function processProjectArchive({
         projectId,
         severity: "warning",
         eventType: "project_zip_suspicious_entries",
+        correlationId,
         payload: {
           count: inventory.suspicious.length,
           entries: inventory.suspicious.slice(0, 25) as unknown as Json,
@@ -207,6 +220,7 @@ export async function processProjectArchive({
         projectId,
         severity: "warning",
         eventType: "project_text_preview_suspicious_entries",
+        correlationId,
         payload: {
           count: previewIndex.suspicious.length,
           entries: previewIndex.suspicious.slice(0, 25) as unknown as Json,
@@ -276,6 +290,7 @@ export async function processProjectArchive({
             projectId,
             severity: "warning",
             eventType: "preview_quota_limited",
+            correlationId,
             payload: {
               requested: previewRows.length,
               accepted: quotaLimitedPreviewRows.length,
@@ -294,6 +309,7 @@ export async function processProjectArchive({
 
     const completedMetadata = {
       ...existingMetadata,
+      ...(correlationId ? { correlationId } : {}),
       storage_path: storagePath,
       storage_bucket: PROJECT_UPLOAD_BUCKET,
       storage_available: true,
@@ -335,6 +351,7 @@ export async function processProjectArchive({
       error_message: message,
       metadata: {
         ...existingMetadata,
+        ...(correlationId ? { correlationId } : {}),
         pipeline: "zip_manifest_text_preview_v1",
         failure: message,
       },
@@ -344,6 +361,7 @@ export async function processProjectArchive({
       projectId,
       severity: "warning",
       eventType: "project_zip_processing_failed",
+      correlationId,
       payload: { message },
     });
     throw error;

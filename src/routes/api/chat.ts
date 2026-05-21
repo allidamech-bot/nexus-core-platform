@@ -3,7 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
-import { safeErrorLog } from "@/lib/safeLogging";
+import {
+  getRequestCorrelationId,
+  safeErrorLog,
+  withLogContext,
+  type CorrelationContext,
+} from "@/lib/safeLogging";
 import type { Database } from "@/integrations/supabase/types";
 import type {
   ProjectChatMetadata,
@@ -79,8 +84,15 @@ function textResponse(message: string, status: number) {
   return new Response(message, { status });
 }
 
-function jsonResponse(payload: Record<string, unknown>, status: number) {
-  return Response.json(payload, { status });
+function jsonResponse(
+  payload: Record<string, unknown>,
+  status: number,
+  context?: CorrelationContext,
+) {
+  return Response.json(context ? { ...payload, correlationId: context.correlationId } : payload, {
+    status,
+    headers: context ? { "x-correlation-id": context.correlationId } : undefined,
+  });
 }
 
 function isExpectedGovernanceSetupError(error: unknown) {
@@ -134,7 +146,11 @@ function parseManifest(value: unknown): ProjectManifest | null {
   return record as unknown as ProjectManifest;
 }
 
-async function requireThreadAccess(request: Request, threadId: unknown) {
+async function requireThreadAccess(
+  request: Request,
+  threadId: unknown,
+  context: CorrelationContext,
+) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return { response: textResponse("Unauthorized", 401) };
@@ -153,7 +169,7 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
   try {
     env = getSupabaseEnv();
   } catch (error) {
-    console.error("[chat] missing Supabase env", safeErrorLog(error));
+    console.error("[chat] missing Supabase env", withLogContext(context, safeErrorLog(error)));
     return {
       response: jsonResponse(
         {
@@ -161,6 +177,7 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
           message: "Supabase environment variables are required before authenticated chat can run.",
         },
         503,
+        context,
       ),
     };
   }
@@ -188,7 +205,10 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
     .maybeSingle();
 
   if (threadError) {
-    console.error("[chat] thread access check failed", safeErrorLog(threadError));
+    console.error(
+      "[chat] thread access check failed",
+      withLogContext(context, safeErrorLog(threadError)),
+    );
     if (isExpectedGovernanceSetupError(threadError)) {
       return {
         response: jsonResponse(
@@ -198,6 +218,7 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
               "Required database tables or RPCs are unavailable. Apply the Phase 1 through Phase 2E migrations before authenticated chat can run.",
           },
           503,
+          context,
         ),
       };
     }
@@ -208,6 +229,7 @@ async function requireThreadAccess(request: Request, threadId: unknown) {
           message: "Unable to verify thread access.",
         },
         503,
+        context,
       ),
     };
   }
@@ -233,6 +255,7 @@ async function enforceChatQuota(input: {
   threadId: string;
   messages: unknown[];
   project: ProjectChatMetadata | null;
+  correlationId: string;
 }) {
   const selectedPreviews = input.project?.previews?.length ?? 0;
   const contextBytes = byteSize(input.project ?? {});
@@ -272,6 +295,7 @@ async function enforceChatQuota(input: {
     if (isExpectedGovernanceSetupError(error)) {
       console.warn("[chat] governance unavailable", {
         degraded: canDegradeGovernanceLocally(),
+        correlationId: input.correlationId,
         ...safeErrorLog(error),
       });
       if (canDegradeGovernanceLocally()) return null;
@@ -282,6 +306,7 @@ async function enforceChatQuota(input: {
             "Usage governance tables or RPCs are unavailable. Apply Phase 2E migrations before chat can run in production.",
         },
         503,
+        { correlationId: input.correlationId },
       );
     }
     throw error;
@@ -299,18 +324,24 @@ async function enforceChatQuota(input: {
       event_type: "quota_hit_ai_request",
       severity: "warning",
       payload: {
+        correlationId: input.correlationId,
         plan_id: planId ?? "starter",
         used: aiUsed,
         limit: limits.max_ai_requests_monthly,
       },
     });
-    if (error) console.warn("[chat] quota audit write failed", safeErrorLog(error));
+    if (error)
+      console.warn(
+        "[chat] quota audit write failed",
+        withLogContext({ correlationId: input.correlationId }, safeErrorLog(error)),
+      );
     return jsonResponse(
       {
         error: "quota_exceeded",
         message: "AI request quota exceeded. Upgrade required.",
       },
       402,
+      { correlationId: input.correlationId },
     );
   }
 
@@ -321,6 +352,7 @@ async function enforceChatQuota(input: {
         message: "Selected preview quota exceeded.",
       },
       413,
+      { correlationId: input.correlationId },
     );
   }
 
@@ -334,6 +366,7 @@ async function enforceChatQuota(input: {
         message: "Project context payload is too large for this plan.",
       },
       413,
+      { correlationId: input.correlationId },
     );
   }
 
@@ -345,7 +378,11 @@ async function enforceChatQuota(input: {
       quantity: 1,
       token_estimate: estimateTokens(input.messages),
       size_bytes: byteSize(input.messages),
-      metadata: { selected_previews: selectedPreviews, plan_id: planId ?? "starter" },
+      metadata: {
+        correlationId: input.correlationId,
+        selected_previews: selectedPreviews,
+        plan_id: planId ?? "starter",
+      },
     },
     {
       user_id: input.userId,
@@ -354,18 +391,37 @@ async function enforceChatQuota(input: {
       quantity: selectedPreviews,
       token_estimate: estimateTokens(input.project ?? {}),
       size_bytes: contextBytes,
-      metadata: { selected_previews: selectedPreviews },
+      metadata: { correlationId: input.correlationId, selected_previews: selectedPreviews },
     },
   ]);
   if (usageError) {
     if (isExpectedGovernanceSetupError(usageError) && canDegradeGovernanceLocally()) {
       console.warn(
         "[chat] usage metering skipped in local degraded mode",
-        safeErrorLog(usageError),
+        withLogContext({ correlationId: input.correlationId }, safeErrorLog(usageError)),
       );
       return null;
     }
     throw usageError;
+  }
+
+  const { error: auditError } = await input.supabase.from("audit_events").insert({
+    user_id: input.userId,
+    actor_user_id: input.userId,
+    thread_id: input.threadId,
+    event_type: "chat_request_started",
+    severity: "info",
+    payload: {
+      correlationId: input.correlationId,
+      selected_previews: selectedPreviews,
+      plan_id: planId ?? "starter",
+    },
+  });
+  if (auditError) {
+    console.warn(
+      "[chat] request audit write failed",
+      withLogContext({ correlationId: input.correlationId }, safeErrorLog(auditError)),
+    );
   }
 
   return null;
@@ -449,6 +505,8 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
+        const correlationId = getRequestCorrelationId(request);
+        const context = { correlationId };
         let body: Body;
         try {
           body = (await request.json()) as Body;
@@ -461,7 +519,7 @@ export const Route = createFileRoute("/api/chat")({
           return textResponse("Messages required", 400);
         }
 
-        const access = await requireThreadAccess(request, id);
+        const access = await requireThreadAccess(request, id, context);
         if (access.response) return access.response;
 
         let project: ProjectChatMetadata | null = null;
@@ -473,13 +531,17 @@ export const Route = createFileRoute("/api/chat")({
             selectedPreviewIds: parseSelectedPreviewIds(body.selectedPreviewIds),
           });
         } catch (error) {
-          console.error("[chat] trusted project context failed", safeErrorLog(error));
+          console.error(
+            "[chat] trusted project context failed",
+            withLogContext(context, safeErrorLog(error)),
+          );
           return jsonResponse(
             {
               error: "project_context_unavailable",
               message: "Unable to load trusted project context for this session.",
             },
             503,
+            context,
           );
         }
 
@@ -490,10 +552,14 @@ export const Route = createFileRoute("/api/chat")({
             threadId: id as string,
             messages,
             project,
+            correlationId,
           });
           if (quotaError) return quotaError;
         } catch (error) {
-          console.error("[chat] quota enforcement failed", safeErrorLog(error));
+          console.error(
+            "[chat] quota enforcement failed",
+            withLogContext(context, safeErrorLog(error)),
+          );
           return jsonResponse(
             {
               error: "quota_enforcement_failed",
@@ -501,18 +567,20 @@ export const Route = createFileRoute("/api/chat")({
                 "Unable to verify chat usage limits. Try again after governance setup is verified.",
             },
             503,
+            context,
           );
         }
 
         const key = process.env.LOVABLE_API_KEY;
         if (!key) {
-          console.error("[chat] missing LOVABLE_API_KEY");
+          console.error("[chat] missing LOVABLE_API_KEY", withLogContext(context));
           return jsonResponse(
             {
               error: "ai_gateway_env_missing",
               message: "LOVABLE_API_KEY is required before chat streaming can run.",
             },
             503,
+            context,
           );
         }
 
@@ -531,19 +599,25 @@ export const Route = createFileRoute("/api/chat")({
             messages: await convertToModelMessages(messages as UIMessage[]),
           });
         } catch (error) {
-          console.error("[chat] stream initialization failed", safeErrorLog(error));
+          console.error(
+            "[chat] stream initialization failed",
+            withLogContext(context, safeErrorLog(error)),
+          );
           return jsonResponse(
             {
               error: "ai_stream_initialization_failed",
               message: "Unable to initialize the AI stream.",
             },
             502,
+            context,
           );
         }
 
-        return result.toUIMessageStreamResponse({
+        const response = result.toUIMessageStreamResponse({
           originalMessages: messages as UIMessage[],
         });
+        response.headers.set("x-correlation-id", correlationId);
+        return response;
       },
     },
   },

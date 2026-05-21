@@ -2,6 +2,12 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import {
+  applyCorrelationHeader,
+  getRequestCorrelationId,
+  safeErrorLog,
+  withLogContext,
+} from "./lib/safeLogging";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -18,10 +24,13 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function brandedErrorResponse(): Response {
+function brandedErrorResponse(correlationId?: string): Response {
   return new Response(renderErrorPage(), {
     status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      ...(correlationId ? { "x-correlation-id": correlationId } : {}),
+    },
   });
 }
 
@@ -52,7 +61,10 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(
+  response: Response,
+  correlationId: string,
+): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -62,19 +74,29 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return brandedErrorResponse();
+  console.error(
+    "[server] catastrophic SSR response",
+    withLogContext({ correlationId }, safeErrorLog(consumeLastCapturedError() ?? new Error(body))),
+  );
+  return brandedErrorResponse(correlationId);
 }
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const correlationId = getRequestCorrelationId(request);
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return applyCorrelationHeader(
+        await normalizeCatastrophicSsrResponse(response, correlationId),
+        correlationId,
+      );
     } catch (error) {
-      console.error(error);
-      return brandedErrorResponse();
+      console.error(
+        "[server] request failed",
+        withLogContext({ correlationId }, safeErrorLog(error)),
+      );
+      return brandedErrorResponse(correlationId);
     }
   },
 };

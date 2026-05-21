@@ -3,7 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { processProjectArchive } from "@/features/projects/server/ingestionProcessor";
-import { safeErrorLog, safeErrorMessage } from "@/lib/safeLogging";
+import {
+  getRequestCorrelationId,
+  safeErrorLog,
+  safeErrorMessage,
+  withLogContext,
+  type CorrelationContext,
+} from "@/lib/safeLogging";
 
 type Body = {
   projectId?: unknown;
@@ -13,8 +19,15 @@ function textResponse(message: string, status: number) {
   return new Response(message, { status });
 }
 
-function jsonResponse(payload: Record<string, unknown>, status: number) {
-  return Response.json(payload, { status });
+function jsonResponse(
+  payload: Record<string, unknown>,
+  status: number,
+  context?: CorrelationContext,
+) {
+  return Response.json(context ? { ...payload, correlationId: context.correlationId } : payload, {
+    status,
+    headers: context ? { "x-correlation-id": context.correlationId } : undefined,
+  });
 }
 
 function isExpectedSetupError(error: unknown) {
@@ -48,7 +61,7 @@ function getSupabaseEnv() {
   return { url, key };
 }
 
-async function createAuthenticatedClient(request: Request) {
+async function createAuthenticatedClient(request: Request, context: CorrelationContext) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return { response: textResponse("Unauthorized", 401) };
@@ -61,7 +74,10 @@ async function createAuthenticatedClient(request: Request) {
   try {
     env = getSupabaseEnv();
   } catch (error) {
-    console.error("[project-ingestion] missing Supabase env", safeErrorLog(error));
+    console.error(
+      "[project-ingestion] missing Supabase env",
+      withLogContext(context, safeErrorLog(error)),
+    );
     return {
       response: jsonResponse(
         {
@@ -69,6 +85,7 @@ async function createAuthenticatedClient(request: Request) {
           message: "Supabase environment variables are required before project ingestion can run.",
         },
         503,
+        context,
       ),
     };
   }
@@ -98,6 +115,8 @@ export const Route = createFileRoute("/api/projects/process-zip")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
+        const correlationId = getRequestCorrelationId(request);
+        const context = { correlationId };
         let body: Body;
         try {
           body = (await request.json()) as Body;
@@ -109,7 +128,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
           return textResponse("Project id required", 400);
         }
 
-        const auth = await createAuthenticatedClient(request);
+        const auth = await createAuthenticatedClient(request, context);
         if (auth.response) return auth.response;
 
         try {
@@ -117,6 +136,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
             supabase: auth.supabase,
             userId: auth.userId,
             projectId: body.projectId,
+            correlationId,
           });
           const metadata =
             result.job.metadata &&
@@ -137,7 +157,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
               project_id: body.projectId,
               event_type: "manifest_generated",
               quantity: result.fileCount,
-              metadata: { status: result.project.status },
+              metadata: { correlationId, status: result.project.status },
             },
             {
               user_id: auth.userId,
@@ -145,22 +165,33 @@ export const Route = createFileRoute("/api/projects/process-zip")({
               event_type: "preview_indexed",
               quantity: Number(textPreview.indexed_count ?? 0),
               size_bytes: Number(textPreview.indexed_bytes ?? 0),
+              metadata: { correlationId },
             },
           ]);
           if (usageError) {
-            console.warn("[project-ingestion] usage metering skipped", safeErrorLog(usageError));
+            console.warn(
+              "[project-ingestion] usage metering skipped",
+              withLogContext(context, safeErrorLog(usageError)),
+            );
           }
 
-          return Response.json({
-            projectId: result.project.id,
-            jobId: result.job.id,
-            status: result.project.status,
-            ingestionStatus: result.job.status,
-            fileCount: result.fileCount,
-            manifest: result.manifest,
-          });
+          return Response.json(
+            {
+              projectId: result.project.id,
+              jobId: result.job.id,
+              status: result.project.status,
+              ingestionStatus: result.job.status,
+              fileCount: result.fileCount,
+              manifest: result.manifest,
+              correlationId,
+            },
+            { headers: { "x-correlation-id": correlationId } },
+          );
         } catch (error) {
-          console.error("[project-ingestion] processing failed", safeErrorLog(error));
+          console.error(
+            "[project-ingestion] processing failed",
+            withLogContext(context, safeErrorLog(error)),
+          );
           if (isExpectedSetupError(error)) {
             return jsonResponse(
               {
@@ -169,6 +200,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
                   "Required project ingestion or governance tables/RPCs are unavailable. Apply Phase 2A through Phase 2E migrations before ZIP processing can run.",
               },
               503,
+              context,
             );
           }
           const message = safeErrorMessage(error, "Project manifest extraction failed.");
@@ -178,13 +210,13 @@ export const Route = createFileRoute("/api/projects/process-zip")({
                 user_id: auth.userId,
                 project_id: body.projectId,
                 event_type: "ingestion_failed",
-                metadata: { message },
+                metadata: { correlationId, message },
               });
             } catch {
               // Best-effort metering should not mask the ingestion error.
             }
           }
-          return jsonResponse({ error: "project_ingestion_failed", message }, 422);
+          return jsonResponse({ error: "project_ingestion_failed", message }, 422, context);
         }
       },
     },
