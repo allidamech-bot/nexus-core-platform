@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Send, Upload, GitBranch, Loader2, Terminal } from "lucide-react";
+import { Send, Upload, GitBranch, Loader2, Terminal, PanelRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { agentModes, mockExecutionSteps, mockFileTree, mockVerification } from "@/lib/mock-data";
@@ -28,6 +28,7 @@ import {
   recordAuditEvent,
   recordUsageEvent,
 } from "@/features/governance/governanceService";
+import { useLocale } from "@/features/i18n/localeContext";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -61,6 +62,8 @@ function ThreadView() {
   const { threadId } = Route.useParams();
   const { session } = useAuth();
   const qc = useQueryClient();
+  const { t } = useLocale();
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [mode, setMode] = useState<AgentMode>("engineering");
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -325,6 +328,16 @@ function ThreadView() {
             >
               <GitBranch className="size-3" /> Connect Repo
             </button>
+            <button
+              onClick={() => setIsInspectorOpen((o) => !o)}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md border flex items-center gap-1.5 transition-colors ${
+                isInspectorOpen
+                  ? "bg-accent/10 border-accent/20 text-accent"
+                  : "border-border text-muted-foreground hover:bg-white/5"
+              }`}
+            >
+              <PanelRight className="size-3" /> Inspector
+            </button>
           </div>
         </div>
 
@@ -389,178 +402,177 @@ function ThreadView() {
               </button>
             </div>
             <div className="mt-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-              Cmd/Ctrl + Enter to send
+              Cmd/Ctrl + Enter to send · {t("nexusHelperText")}
             </div>
           </div>
         </div>
       </section>
 
-      <aside className="w-80 shrink-0 bg-surface/40 flex flex-col">
-        <DrawerSection title="Active Project">
-          {activeProject ? (
-            <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="truncate text-xs font-semibold text-zinc-200">
-                  {activeProject.name}
-                </div>
-                <ProjectStatusBadge
-                  status={activeProject.latest_job?.status ?? activeProject.status}
-                />
-              </div>
-              <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                {activeProject.source_type} / ingestion{" "}
-                {activeProject.latest_job?.status.replace("_", " ") ?? "not started"}
-              </div>
-              <button
-                type="button"
-                onClick={handleAttachProject}
-                disabled={threadProjectId === activeProject.id}
-                className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {threadProjectId === activeProject.id ? "Attached to session" : "Attach to session"}
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
-              No project attached. Upload a ZIP to give Nexus Core safe project metadata.
-            </div>
-          )}
-        </DrawerSection>
-
-        <DrawerSection title="Project Summary">
-          <ProjectManifestCard manifest={activeProjectManifest} />
-        </DrawerSection>
-
-        {activeProject && (
-          <DrawerSection title="Project Health">
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <StatusMetric
-                label="Files"
-                value={projectFilesLoading ? "..." : projectFiles.length.toString()}
-              />
-              <StatusMetric
-                label="Previews"
-                value={
-                  activeProjectPreviewsLoading ? "..." : activeProjectPreviews.length.toString()
-                }
-              />
-              <StatusMetric
-                label="Ingestion"
-                value={activeProject.latest_job?.status.replace("_", " ") ?? activeProject.status}
-              />
-              <StatusMetric label="Context" value={`${selectedPreviewIds.length} selected`} />
-            </div>
-            <div className="mt-3 rounded-md border border-border bg-background/40 p-3">
-              <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Ingestion timeline
-              </div>
-              {["uploaded", "manifest", "safe previews", "ready"].map((step, index) => (
-                <div key={step} className="flex items-center gap-2 py-1 text-[11px]">
-                  <span
-                    className={`size-1.5 rounded-full ${
-                      index <= 2 && activeProject.latest_job?.status === "completed"
-                        ? "bg-emerald-400"
-                        : "bg-muted-foreground"
-                    }`}
+      {isInspectorOpen && (
+        <aside className="w-72 shrink-0 bg-surface/40 flex flex-col border-l border-border overflow-y-auto">
+          <DrawerSection title="Active Project">
+            {activeProject ? (
+              <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="truncate text-xs font-semibold text-zinc-200">
+                    {activeProject.name}
+                  </div>
+                  <ProjectStatusBadge
+                    status={activeProject.latest_job?.status ?? activeProject.status}
                   />
-                  <span className="text-muted-foreground">{step}</span>
+                </div>
+                <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {activeProject.source_type} / ingestion{" "}
+                  {activeProject.latest_job?.status.replace("_", " ") ?? "not started"}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAttachProject}
+                  disabled={threadProjectId === activeProject.id}
+                  className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {threadProjectId === activeProject.id
+                    ? "Attached to session"
+                    : "Attach to session"}
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
+                No project attached. Upload a ZIP to give Nexus Core safe project metadata.
+              </div>
+            )}
+          </DrawerSection>
+
+          <DrawerSection title="Project Summary">
+            <ProjectManifestCard manifest={activeProjectManifest} />
+          </DrawerSection>
+
+          {activeProject && (
+            <DrawerSection title="Project Health">
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <StatusMetric
+                  label="Files"
+                  value={projectFilesLoading ? "..." : projectFiles.length.toString()}
+                />
+                <StatusMetric
+                  label="Previews"
+                  value={
+                    activeProjectPreviewsLoading ? "..." : activeProjectPreviews.length.toString()
+                  }
+                />
+                <StatusMetric
+                  label="Ingestion"
+                  value={activeProject.latest_job?.status.replace("_", " ") ?? activeProject.status}
+                />
+                <StatusMetric label="Context" value={`${selectedPreviewIds.length} selected`} />
+              </div>
+              <div className="mt-3 rounded-md border border-border bg-background/40 p-3">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Ingestion timeline
+                </div>
+                {["uploaded", "manifest", "safe previews", "ready"].map((step, index) => (
+                  <div key={step} className="flex items-center gap-2 py-1 text-[11px]">
+                    <span
+                      className={`size-1.5 rounded-full ${
+                        index <= 2 && activeProject.latest_job?.status === "completed"
+                          ? "bg-emerald-400"
+                          : "bg-muted-foreground"
+                      }`}
+                    />
+                    <span className="text-muted-foreground">{step}</span>
+                  </div>
+                ))}
+              </div>
+            </DrawerSection>
+          )}
+
+          <DrawerSection title={activeProject ? "File Inventory" : "Example file scope"}>
+            {activeProject ? (
+              <ProjectFileInventory files={projectFiles} loading={projectFilesLoading} />
+            ) : (
+              <FileTree nodes={mockFileTree} depth={0} />
+            )}
+          </DrawerSection>
+
+          {activeProject && (
+            <DrawerSection title="Safe Text Previews">
+              <ProjectTextPreviewPanel
+                previews={activeProjectPreviews}
+                loading={activeProjectPreviewsLoading}
+                selectedPreviewIds={selectedPreviewIds}
+                onTogglePreview={handleTogglePreview}
+              />
+            </DrawerSection>
+          )}
+
+          <DrawerSection title="Planning Pipeline">
+            <div className="space-y-3 relative ml-1.5 mt-1">
+              <div className="absolute left-[-9px] top-1 bottom-1 w-px bg-border" />
+              {mockExecutionSteps.map((s) => (
+                <div key={s.id} className="relative flex items-center gap-3">
+                  <div
+                    className={`size-2 rounded-full ring-4 ring-background ${statusDot(s.status)}`}
+                  />
+                  <span
+                    className={`text-[11px] ${s.status === "completed" ? "text-zinc-400" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}
+                  >
+                    {s.title}
+                  </span>
                 </div>
               ))}
             </div>
           </DrawerSection>
-        )}
 
-        <DrawerSection title={activeProject ? "File Inventory" : "Example file scope"}>
-          {activeProject ? (
-            <ProjectFileInventory files={projectFiles} loading={projectFilesLoading} />
-          ) : (
-            <FileTree nodes={mockFileTree} depth={0} />
-          )}
-        </DrawerSection>
-
-        {activeProject && (
-          <DrawerSection title="Safe Text Previews">
-            <ProjectTextPreviewPanel
-              previews={activeProjectPreviews}
-              loading={activeProjectPreviewsLoading}
-              selectedPreviewIds={selectedPreviewIds}
-              onTogglePreview={handleTogglePreview}
-            />
-          </DrawerSection>
-        )}
-
-        <DrawerSection title="Planning Pipeline">
-          <div className="space-y-3 relative ml-1.5 mt-1">
-            <div className="absolute left-[-9px] top-1 bottom-1 w-px bg-border" />
-            {mockExecutionSteps.map((s) => (
-              <div key={s.id} className="relative flex items-center gap-3">
-                <div
-                  className={`size-2 rounded-full ring-4 ring-background ${statusDot(s.status)}`}
-                />
-                <span
-                  className={`text-[11px] ${s.status === "completed" ? "text-zinc-400" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}
-                >
-                  {s.title}
-                </span>
-              </div>
-            ))}
-          </div>
-        </DrawerSection>
-
-        <DrawerSection title="Readiness checks">
-          <div className="space-y-2">
-            {mockVerification.map((v) => (
-              <div key={v.id} className="flex items-center justify-between">
-                <span className="text-xs text-zinc-300">{v.type}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(v.status)}`}
-                >
-                  {v.status.replace("_", " ")}
-                </span>
-              </div>
-            ))}
-          </div>
-        </DrawerSection>
-
-        <DrawerSection title="Guardrails">
-          <div className="p-3 rounded-md border border-border bg-background/40">
-            <div className="text-[11px] font-semibold text-zinc-200 mb-1">Pre-execution mode</div>
-            <div className="text-[11px] leading-relaxed text-muted-foreground">
-              Nexus can analyze manifest and preview context, but cannot execute commands, install
-              dependencies, modify files, or open pull requests in this phase.
+          <DrawerSection title="Readiness checks">
+            <div className="space-y-2">
+              {mockVerification.map((v) => (
+                <div key={v.id} className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-300">{v.type}</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(v.status)}`}
+                  >
+                    {v.status.replace("_", " ")}
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
-        </DrawerSection>
-      </aside>
+          </DrawerSection>
+
+          <DrawerSection title="Guardrails">
+            <div className="p-3 rounded-md border border-border bg-background/40">
+              <div className="text-[11px] font-semibold text-zinc-200 mb-1">Pre-execution mode</div>
+              <div className="text-[11px] leading-relaxed text-muted-foreground">
+                Nexus can analyze manifest and preview context, but cannot execute commands, install
+                dependencies, modify files, or open pull requests in this phase.
+              </div>
+            </div>
+          </DrawerSection>
+        </aside>
+      )}
     </div>
   );
 }
 
 function EmptyChat() {
+  const { t } = useLocale();
   return (
     <div className="py-12 text-center">
       <div className="mx-auto mb-4 grid size-10 place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
         <Terminal className="size-4" />
       </div>
-      <h2 className="mb-2 text-xl font-semibold tracking-tight">Start with a scoped request.</h2>
-      <div className="text-sm text-muted-foreground">
-        Nexus will answer with structured planning, risks, file scope, and verification guidance. It
-        will not execute code or mutate your project.
-      </div>
+      <h2 className="mb-2 text-xl font-semibold tracking-tight">{t("tellNexusToChange")}</h2>
+      <div className="text-sm text-muted-foreground font-medium">{t("nexusHelperText")}</div>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl mx-auto text-left">
-        {[
-          "Analyze this repository and propose a refactor of the auth layer.",
-          "Generate a customer onboarding workflow for a B2B SaaS.",
-          "Summarize the selected preview files and identify architecture risks.",
-          "Draft a safe Phase 2 implementation plan from the active project manifest.",
-        ].map((p) => (
-          <div
-            key={p}
-            className="p-3 rounded-lg border border-border bg-surface text-xs text-zinc-400"
-          >
-            {p}
-          </div>
-        ))}
+        {[t("examplePrompt1"), t("examplePrompt2"), t("examplePrompt3"), t("examplePrompt4")].map(
+          (p, i) => (
+            <div
+              key={i}
+              className="p-3 rounded-lg border border-border bg-surface text-xs text-zinc-400 text-start"
+            >
+              {p}
+            </div>
+          ),
+        )}
       </div>
     </div>
   );

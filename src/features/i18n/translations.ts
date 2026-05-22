@@ -65,6 +65,13 @@ export const translations = {
     welcomeTitle: "Welcome to your AI operations workspace.",
     welcomeSubtitle:
       "Upload a project, inspect the safe manifest, select preview context, then open a session for structured AI planning. Execution remains disabled until the sandbox phase.",
+    tellNexusToChange: "Tell Nexus what to change in your project.",
+    nexusHelperText:
+      "Nexus can plan and prepare project changes. Direct execution is not enabled yet.",
+    examplePrompt1: "Fix the login redirect issue",
+    examplePrompt2: "Review this project and find risks",
+    examplePrompt3: "Add a pricing section",
+    examplePrompt4: "Create an implementation plan for Project Memory",
     uploadOrImport: "Upload or import project",
     createAiSession: "Create AI session",
     ingestionReady: "Project ingestion foundation is ready.",
@@ -262,6 +269,13 @@ export const translations = {
     welcomeTitle: "أهلًا بك في مساحة عمليات الذكاء الاصطناعي.",
     welcomeSubtitle:
       "ارفع مشروعك، وراجع البيان الآمن، واختر سياق المعاينة، ثم افتح جلسة للتخطيط المنظّم بالذكاء الاصطناعي. يبقى التنفيذ معطّلًا حتى مرحلة البيئة المعزولة.",
+    tellNexusToChange: "اكتب هنا ماذا تريد من Nexus أن يفعل في مشروعك.",
+    nexusHelperText:
+      "يمكن لـ Nexus التخطيط وتحضير التغييرات في المشروع. التنفيذ المباشر غير مفعّل بعد.",
+    examplePrompt1: "إصلاح مشكلة إعادة التوجيه عند تسجيل الدخول",
+    examplePrompt2: "مراجعة هذا المشروع والبحث عن المخاطر",
+    examplePrompt3: "إضافة قسم للأسعار",
+    examplePrompt4: "إنشاء خطة تنفيذ لميزة ذاكرة المشروع",
     uploadOrImport: "رفع أو استيراد مشروع",
     createAiSession: "إنشاء جلسة ذكاء اصطناعي",
     ingestionReady: "أساس استيعاب المشاريع جاهز.",

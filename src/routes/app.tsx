@@ -1,39 +1,13 @@
-import {
-  Link,
-  Navigate,
-  Outlet,
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Plus,
-  LogOut,
-  Boxes,
-  Workflow as WorkflowIcon,
-  Loader2,
-  Settings,
-  LayoutDashboard,
-} from "lucide-react";
+import { Link, Navigate, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { LogOut, Boxes, Loader2, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import type { ThreadRow } from "@/lib/types";
-import { ProjectList } from "@/features/projects/ProjectList";
-import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { useIsAdminQuery } from "@/features/admin/adminQueries";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useLocale } from "@/features/i18n/localeContext";
-import { UsageMeters } from "@/features/governance/UsageMeters";
-import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
-import {
-  checkQuota,
-  recordAuditEvent,
-  recordUsageEvent,
-} from "@/features/governance/governanceService";
+import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -82,226 +56,68 @@ function AppWorkspace({
   userEmail: string | null;
 }) {
   const navigate = useNavigate();
-  const params = useParams({ strict: false }) as { threadId?: string };
   const qc = useQueryClient();
-  const { projects, projectsLoading, selectedProjectId, setSelectedProjectId } =
-    useProjectWorkspace();
+  const { activeProject } = useProjectWorkspace();
   const { data: isAdmin = false } = useIsAdminQuery(!!session, session.user.id);
-  const { data: usageOverview } = useUsageOverviewQuery(session.user.id);
   const { t } = useLocale();
 
-  const { data: threads } = useQuery({
-    enabled: !!session,
-    queryKey: ["threads"],
-    queryFn: async (): Promise<ThreadRow[]> => {
-      const { data, error } = await supabase
-        .from("threads")
-        .select("*")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return data as ThreadRow[];
-    },
-  });
-
-  async function newSession() {
-    if (!session) return;
-    const quota = await checkQuota(session.user.id, "max_active_threads").catch(() => null);
-    if (quota && !quota.allowed) {
-      toast.error("Active thread limit reached. Upgrade to Pro for higher limits.");
-      await recordAuditEvent({
-        userId: session.user.id,
-        eventType: "quota_hit_thread_create",
-        severity: "warning",
-        payload: { limit: quota.limit, used: quota.used, plan: quota.planId },
-      }).catch(() => {});
-      return;
-    }
-    const { data, error } = await supabase
-      .from("threads")
-      .insert({ user_id: session.user.id, title: "New Session", mode: "engineering" })
-      .select()
-      .single();
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    await recordUsageEvent({
-      userId: session.user.id,
-      eventType: "thread_created",
-      threadId: data.id,
-    }).catch(() => {});
-    qc.invalidateQueries({ queryKey: ["threads"] });
-    navigate({ to: "/app/$threadId", params: { threadId: data.id } });
-  }
-
   return (
-    <div className="h-screen w-screen flex bg-background text-foreground overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 shrink-0 border-r border-border flex flex-col bg-surface">
-        <div className="px-4 h-14 flex items-center justify-between border-b border-border">
-          <Link to="/" className="flex items-center gap-2">
+    <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden">
+      {/* Top Navigation */}
+      <header className="h-14 shrink-0 px-6 border-b border-border flex items-center justify-between bg-surface/30">
+        <div className="flex items-center gap-4">
+          <Link to="/app" className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
               <span className="font-mono text-[11px] font-bold">NX</span>
             </div>
             <span className="text-sm font-bold tracking-tighter uppercase">Nexus</span>
           </Link>
-          <LanguageSwitcher />
-        </div>
-
-        <div className="p-3">
-          <button
-            onClick={newSession}
-            className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-semibold rounded-md py-2 text-sm hover:bg-zinc-200 transition-colors"
-          >
-            <Plus className="size-4 shrink-0" /> {t("newSession")}
-          </button>
-        </div>
-
-        <div className="px-3 mt-2">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
-            {t("quickActions")}
-          </div>
-          <div className="space-y-0.5">
-            <ActionLink to="/app" icon={LayoutDashboard} label={t("workspace")} />
-            <ProjectUploadDialog
-              userId={session.user.id}
-              trigger={
-                <button
-                  type="button"
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 text-start"
-                >
-                  <Boxes className="size-3.5 shrink-0" /> {t("uploadZip")}
-                </button>
-              }
-            />
-            {isAdmin && <ActionLink to="/app/admin" icon={Boxes} label={t("adminControl")} />}
-            <ActionLink to="/app/settings" icon={Settings} label={t("settings")} />
-            <ActionRow
-              icon={WorkflowIcon}
-              label={t("businessWorkflow")}
-              disabled
-              soonLabel={t("soon")}
-            />
-          </div>
-        </div>
-
-        {usageOverview && (
-          <div className="px-3 mt-6">
-            <UsageMeters overview={usageOverview} />
-          </div>
-        )}
-
-        <div className="px-3 mt-6">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
-            {t("projects")}
-          </div>
-          <ProjectList
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-            loading={projectsLoading}
-            onSelect={setSelectedProjectId}
-          />
-        </div>
-
-        <div className="px-3 mt-6 flex-1 overflow-y-auto">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-2">
-            {t("sessions")}
-          </div>
-          <div className="space-y-0.5">
-            {threads?.length === 0 && (
-              <div className="px-2 py-3 text-xs text-muted-foreground">{t("noSessions")}</div>
-            )}
-            {threads?.map((th) => {
-              const active = params.threadId === th.id;
-              return (
-                <Link
-                  key={th.id}
-                  to="/app/$threadId"
-                  params={{ threadId: th.id }}
-                  className={`block px-3 py-2 rounded-md text-sm truncate transition-colors ${
-                    active
-                      ? "bg-accent/10 text-accent border border-accent/20"
-                      : "text-zinc-300 hover:bg-white/5 border border-transparent"
-                  }`}
-                >
-                  {th.title || t("untitled")}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="border-t border-border p-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs font-medium truncate" dir="ltr">
-              {userEmail}
+          {activeProject && (
+            <div className="flex items-center gap-3 pl-4 border-l border-border/50">
+              <span className="text-sm font-medium truncate max-w-[200px]">
+                {activeProject.name}
+              </span>
+              <ProjectStatusBadge
+                status={activeProject.latest_job?.status ?? activeProject.status}
+              />
             </div>
-            <div className="text-[10px] text-muted-foreground">{t("workspaceOwner")}</div>
-          </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          {isAdmin && (
+            <Link
+              to="/app/admin"
+              className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+            >
+              <Boxes className="size-3.5" /> {t("adminControl")}
+            </Link>
+          )}
+          <Link
+            to="/app/settings"
+            className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+          >
+            <Settings className="size-3.5" /> {t("settings")}
+          </Link>
           <button
             onClick={async () => {
               await signOut();
               qc.clear();
               navigate({ to: "/" });
             }}
-            className="size-7 shrink-0 grid place-items-center rounded-md border border-border hover:bg-white/5"
+            className="size-8 shrink-0 grid place-items-center rounded-md border border-border hover:bg-white/5 ml-2 transition-colors"
             title={t("signOut")}
             aria-label={t("signOut")}
           >
             <LogOut className="size-3.5" />
           </button>
         </div>
-      </aside>
+      </header>
 
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <Outlet />
       </main>
     </div>
-  );
-}
-
-function ActionLink({
-  to,
-  icon: Icon,
-  label,
-}: {
-  to: "/app" | "/app/admin" | "/app/settings";
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-start text-sm text-muted-foreground hover:bg-white/5"
-    >
-      <Icon className="size-3.5 shrink-0" /> {label}
-    </Link>
-  );
-}
-
-function ActionRow({
-  icon: Icon,
-  label,
-  disabled,
-  soonLabel,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  disabled?: boolean;
-  soonLabel?: string;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed text-start"
-    >
-      <Icon className="size-3.5 shrink-0" /> <span className="flex-1 text-start">{label}</span>
-      {disabled && (
-        <span className="ms-auto text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-          {soonLabel ?? "Soon"}
-        </span>
-      )}
-    </button>
   );
 }
