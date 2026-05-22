@@ -74,6 +74,15 @@ export const translations = {
     examplePrompt4: "Create an implementation plan for Project Memory",
     uploadOrImport: "Upload or import project",
     createAiSession: "Create AI session",
+    creatingSession: "Creating session...",
+    sessionQuotaReached:
+      "Active thread limit reached. Open an existing session or upgrade your plan.",
+    sessionCreateFailed: "Failed to create session. Please retry or open an existing session.",
+    sessionMessageSaveFailed:
+      "Session created, but your first message could not be saved. Please retry before opening it.",
+    sessionAuthRequired: "Sign in again before creating a session.",
+    openExistingSession: "Open existing session",
+    openRecentSession: "Open recent session",
     ingestionReady: "Project ingestion foundation is ready.",
     ingestionReadyBody:
       "Upload a ZIP or select a local folder to create project records, ingestion jobs, safe file inventory, and manifest context. Nexus never executes imported code.",
@@ -278,6 +287,14 @@ export const translations = {
     examplePrompt4: "إنشاء خطة تنفيذ لميزة ذاكرة المشروع",
     uploadOrImport: "رفع أو استيراد مشروع",
     createAiSession: "إنشاء جلسة ذكاء اصطناعي",
+    creatingSession: "جارٍ إنشاء الجلسة...",
+    sessionQuotaReached: "تم بلوغ حد الجلسات النشطة. افتح جلسة موجودة أو قم بترقية خطتك.",
+    sessionCreateFailed: "تعذر إنشاء الجلسة. حاول مرة أخرى أو افتح جلسة موجودة.",
+    sessionMessageSaveFailed:
+      "تم إنشاء الجلسة، لكن تعذر حفظ رسالتك الأولى. حاول مرة أخرى قبل فتحها.",
+    sessionAuthRequired: "سجّل الدخول مرة أخرى قبل إنشاء جلسة.",
+    openExistingSession: "فتح جلسة موجودة",
+    openRecentSession: "فتح جلسة حديثة",
     ingestionReady: "أساس استيعاب المشاريع جاهز.",
     ingestionReadyBody:
       "ارفع ملف ZIP أو اختر مجلدًا محليًا لإنشاء سجلات المشاريع ومهام الاستيعاب وفهرس الملفات الآمن وسياق البيان. لا تنفّذ Nexus أي شيفرة مستوردة.",
