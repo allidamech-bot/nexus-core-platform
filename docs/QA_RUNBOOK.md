@@ -47,6 +47,8 @@ Notes:
 - `LOVABLE_API_KEY` is required only for successful chat streaming QA. Without it, chat tests should assert the expected setup boundary.
 - Never commit environment files containing real values.
 
+Project Memory database/RLS probes must use a verified non-production Supabase target only. Before applying any Project Memory migration outside local app tests, follow [STAGING_SUPABASE_SETUP.md](D:/nexus-core-platform-main/docs/STAGING_SUPABASE_SETUP.md).
+
 ## Running E2E QA
 
 Install dependencies:
@@ -174,12 +176,14 @@ The fixture directory is ignored by Git and should not be committed.
 
 ## Known Blockers
 
-- No non-admin test account is configured yet.
+- Manual production non-admin admin-denial QA passed with a dedicated non-admin account. Automated credentialed non-admin E2E still skips unless protected credentials are configured.
 - No local `LOVABLE_API_KEY` is configured yet.
 - Starter quota may block ZIP upload validation.
 - Credentialed tests intentionally skip when E2E environment variables are missing.
 - Playwright-managed Chromium may need `pnpm exec playwright install chromium`; on Windows, the harness defaults to installed Chrome.
 - Large Vite chunk warning remains a performance follow-up.
+- Fast refresh lint warnings remain in shared UI component files and are currently non-blocking warnings.
+- Node `punycode` deprecation warning remains a dependency/tooling warning during build.
 
 ## Release Gate
 
@@ -266,11 +270,43 @@ When running against production, the following environment variables must be sec
 - Logout/private data clearing
 - Arabic/RTL persistence
 - Authenticated chat smoke
+- `x-correlation-id` visible on authenticated `/api/chat`
+- `x-correlation-id` visible on unauthenticated `/api/chat` `401`
+- `x-correlation-id` visible on unauthenticated `/api/projects/process-zip` `401`
 - Valid tiny ZIP upload (only if quota allows)
 - Invalid ZIP rejection
 - Suspicious path traversal ZIP rejection
 - Usage metering check
 - Admin dashboard does not leak after logout
+
+### Post-Deploy Lovable Smoke
+
+Use this checklist after each Lovable publish:
+
+- Load `https://nexus-core-ai-os.lovable.app` with cache disabled and a cache-bust query.
+- Confirm production serves the expected asset generation and no stale pre-publish hashes are active.
+- Confirm split vendor chunks are present for React, Supabase, AI, icons, and route chunks.
+- Open `/login` and sign in manually with the admin account.
+- Verify `/app`, `/app/settings`, `/app/admin`, and one existing `/app/$threadId` route.
+- Send one safe chat smoke prompt and confirm `/api/chat` returns `200`.
+- Inspect only safe network response metadata:
+  - response status
+  - presence of `x-correlation-id`
+  - route/chunk names
+- Do not print or copy cookies, Authorization headers, JWTs, API keys, auth headers, request bodies, or environment values.
+- Check unauthenticated `/api/chat` and `/api/projects/process-zip` with valid JSON request bodies; both should return `401` and include `x-correlation-id`.
+- Open the upload dialog only unless a safe quota/test account is explicitly available.
+- Log out and confirm `/app/admin` redirects to `/login`.
+- Confirm no browser console runtime errors, hydration errors, chunk load errors, or visible secrets.
+
+### Safe Error Review
+
+When reviewing production logs or browser output:
+
+- Expected safe fields: area label, status code, database error code, short redacted message, event type, route, and `correlationId`.
+- Never capture or share passwords, tokens, cookies, JWTs, Authorization headers, API keys, service-role keys, raw prompts, uploaded source content, or full request bodies.
+- Root runtime failures should show generic UI and a trace ID only.
+- Chat/upload/admin failures should be traced by `correlationId` across usage events, audit/security events, and redacted server logs.
 
 ### Running Playwright Against Production
 

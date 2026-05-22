@@ -8,6 +8,8 @@ Nexus Core is still pre-execution. Production readiness covers authentication, r
 
 - Official deployment target: Lovable.
 - Production URL: https://nexus-core-ai-os.lovable.app
+- Production baseline tag: `production-baseline-2026-05-21`.
+- Release-ready tag: `release-ready-2026-05-21`.
 - GitHub CI must be green before release.
 - Vercel is not the official deployment target for this phase.
 - Ignore Vercel-specific deployment failures unless they reveal a real app bug.
@@ -99,12 +101,54 @@ Run this checklist before marking a Lovable release ready:
 
 ## Remaining QA Gaps
 
-- Non-admin admin-denial QA still needs a dedicated non-admin production test account.
+- Non-admin admin-denial QA has passed with a dedicated non-admin production account.
 - Full ZIP upload E2E needs a safe quota/test account or plan that can tolerate repeated tiny fixture uploads.
 - Production upload tests must avoid destructive data, large ZIPs, and quota-consuming loops.
 - The Vite bundle-size warning remains a performance follow-up.
 - The Node `punycode` warning remains a dependency/tooling warning.
 - Credentialed production E2E should run only in a trusted environment with protected credentials and no public logs.
+
+## Production Ready State v1
+
+Production Ready State v1 was verified on May 21, 2026 against the official Lovable deployment:
+
+- Production URL: https://nexus-core-ai-os.lovable.app
+- Baseline tag: `production-baseline-2026-05-21`
+- Release-ready tag: `release-ready-2026-05-21`
+- GitHub CI: green before release handoff.
+- Lovable deployment: verified after the bundle split and correlation ID publish.
+
+Verified capabilities:
+
+- Authentication: login, session restore, protected-route redirects, and logout protection passed.
+- Admin access: `allidamech@gmail.com` can access `/app/admin` after admin validation.
+- Non-admin denial: a true non-admin account was redirected away from `/app/admin`; no admin nav, dashboard, checklist, or metrics remained after refresh.
+- Chat: authenticated chat returned a safe response in production.
+- Arabic/RTL: `lang="ar"` and `dir="rtl"` persisted after refresh.
+- Logout protection: `/app/admin` redirected to `/login` after logout and private/admin UI cleared.
+- Split bundles: production serves split `vendor-react`, `vendor-supabase`, `vendor-ai`, and smaller main app chunks.
+- Traceability: `x-correlation-id` is visible on authenticated `/api/chat` responses and unauthenticated `401` responses for `/api/chat` and `/api/projects/process-zip`.
+
+Operator post-deploy checklist:
+
+- Confirm production HTML with cache disabled and a cache-bust query.
+- Confirm old asset hashes are no longer active after publish.
+- Confirm current HTML references the expected release asset shape, including split vendor chunks.
+- Open `/login`, sign in manually with the admin account, and verify `/app`, `/app/admin`, and one existing thread route.
+- Send one safe chat smoke message and confirm `/api/chat` returns `200`.
+- In the browser network panel, check only safe response metadata: status code and presence of `x-correlation-id`.
+- Do not copy or print request headers, cookies, Authorization headers, Supabase sessions, JWTs, API keys, or environment values.
+- Test unauthenticated `/api/chat` and `/api/projects/process-zip` with valid JSON bodies and confirm `401` plus `x-correlation-id`.
+- Open the upload dialog only unless an explicit safe upload quota/test account is available.
+- Log out and confirm `/app/admin` redirects to `/login`.
+- Check console/network for runtime errors, hydration errors, chunk load errors, and visible secret leaks.
+
+Safe production error expectations:
+
+- Server logs should include area labels and correlation IDs where available.
+- Error entries must remain redacted by `safeLogging`.
+- User-facing root/runtime failures should stay generic and may include a trace ID.
+- Logs must never include JWTs, cookies, Authorization headers, API keys, service-role keys, raw prompt text, uploaded file contents, or raw project source content.
 
 ## Production Logging Guidelines
 
