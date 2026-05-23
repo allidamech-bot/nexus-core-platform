@@ -160,7 +160,7 @@ function ThreadView() {
     [mode, selectedPreviewIds],
   );
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, setMessages, sendMessage, status } = useChat({
     id: threadId,
     messages: initialMessages,
     transport,
@@ -177,6 +177,19 @@ function ThreadView() {
     onError: (err) => toast.error(friendlyChatError(err)),
   });
 
+  const hydratedThreadRef = useRef<string | null>(null);
+  const busy = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    hydratedThreadRef.current = null;
+  }, [threadId]);
+
+  useEffect(() => {
+    if (!initialMessages || hydratedThreadRef.current === threadId || busy) return;
+    setMessages(initialMessages);
+    hydratedThreadRef.current = threadId;
+  }, [busy, initialMessages, setMessages, threadId]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, status]);
@@ -184,8 +197,6 @@ function ThreadView() {
   useEffect(() => {
     textareaRef.current?.focus();
   }, [threadId, status]);
-
-  const busy = status === "submitted" || status === "streaming";
 
   async function handleArchiveThread() {
     if (!session || !thread || isArchived) return;
@@ -672,13 +683,18 @@ function MessageBlock({ message }: { message: UIMessage }) {
 }
 
 const SECTION_NAMES = [
+  "Implementation Plan",
+  "Files Likely Affected",
+  "Patch Preview / Proposed Changes",
+  "Verification Checklist",
+  "Limitations / Not Applied Yet",
+  "Readiness log",
   "Understanding",
   "Plan",
   "Risks",
   "Files to inspect or change",
   "Proposed actions",
   "Execution log",
-  "Readiness log",
   "Verification",
   "Final result",
 ];
@@ -717,7 +733,8 @@ function StructuredAssistant({ text }: { text: string }) {
 function SectionBlock({ name, body }: { name: string; body: string }) {
   const isRisk = name.toLowerCase().startsWith("risk");
   const isLog = ["execution log", "readiness log"].includes(name.toLowerCase());
-  const isVerif = name.toLowerCase() === "verification";
+  const isPatchPreview = name.toLowerCase() === "patch preview / proposed changes";
+  const isVerif = ["verification", "verification checklist"].includes(name.toLowerCase());
 
   return (
     <section
@@ -733,7 +750,11 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
         {name}
       </header>
       <div className="p-4">
-        {isLog ? (
+        {isPatchPreview ? (
+          <pre className="overflow-x-auto rounded border border-white/5 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-wrap">
+            {stripCodeFence(body)}
+          </pre>
+        ) : isLog ? (
           <pre className="font-mono text-[11px] text-zinc-300 whitespace-pre-wrap leading-relaxed bg-black/40 rounded p-3 border border-white/5">
             {stripCodeFence(body)}
           </pre>
