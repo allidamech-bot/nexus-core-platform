@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
+import { useLocale } from "@/features/i18n/localeContext";
+import type { TranslationKey } from "@/features/i18n/translations";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -12,6 +14,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const { session, error: authError } = useAuth();
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +27,7 @@ function LoginPage() {
     e.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !password) {
-      toast.error("Email and password are required.");
+      toast.error(t("authEmailPasswordRequired"));
       return;
     }
 
@@ -35,26 +38,23 @@ function LoginPage() {
         password,
       });
       if (error) {
-        toast.error(friendlyAuthError(error));
+        toast.error(friendlyAuthError(error, t));
         return;
       }
       navigate({ to: "/app" });
     } catch (error) {
-      toast.error(friendlyAuthError(error));
+      toast.error(friendlyAuthError(error, t));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <AuthShell
-      title="Sign in to Nexus Core"
-      subtitle="Resume your sessions and continue project-aware planning."
-    >
-      {authError && <AuthNotice message={authError} />}
+    <AuthShell title={t("loginTitle")} subtitle={t("loginSubtitle")}>
+      {authError && <AuthNotice message={friendlyAuthError(authError, t)} />}
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
-          label="Email"
+          label={t("emailLabel")}
           type="email"
           value={email}
           onChange={setEmail}
@@ -62,7 +62,7 @@ function LoginPage() {
           required
         />
         <Field
-          label="Password"
+          label={t("passwordLabel")}
           type="password"
           value={password}
           onChange={setPassword}
@@ -73,38 +73,51 @@ function LoginPage() {
           disabled={loading}
           className="w-full bg-foreground text-background font-semibold rounded-md py-2.5 text-sm disabled:opacity-50"
         >
-          {loading ? "Authenticating..." : "Sign in"}
+          {loading ? t("signingIn") : t("signIn")}
         </button>
       </form>
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        No account?{" "}
+        {t("noAccount")}{" "}
         <Link to="/signup" className="text-accent hover:underline">
-          Create one
+          {t("createOne")}
         </Link>
       </p>
     </AuthShell>
   );
 }
 
-export function friendlyAuthError(error: unknown) {
+type AuthTranslator = (key: TranslationKey) => string;
+
+export function friendlyAuthError(error: unknown, t?: AuthTranslator) {
+  const pick = (key: TranslationKey, fallback: string) => (t ? t(key) : fallback);
   const message = error instanceof Error ? error.message : String(error ?? "");
   if (
     message.includes("Missing Supabase environment variable") ||
+    message.includes("Supabase is not configured") ||
     message.includes("SUPABASE_URL") ||
     message.includes("SUPABASE_PUBLISHABLE_KEY")
   ) {
-    return "Supabase is not configured. Connect Supabase in Lovable Cloud or add the required environment variables.";
+    return pick(
+      "authSupabaseMissing",
+      "Supabase is not configured. Connect Supabase in Lovable Cloud or add the required environment variables.",
+    );
   }
   if (message.includes("Invalid login credentials")) {
-    return "Email or password is incorrect.";
+    return pick("authInvalidCredentials", "Email or password is incorrect.");
   }
   if (message.includes("Email not confirmed")) {
-    return "Confirm your email before signing in.";
+    return pick("authEmailNotConfirmed", "Confirm your email before signing in.");
   }
   if (message.includes("Failed to fetch") || message.includes("NetworkError")) {
-    return "Authentication service is unreachable. Check your connection and Supabase configuration.";
+    return pick(
+      "authServiceUnreachable",
+      "Authentication service is unreachable. Check your connection and Supabase configuration.",
+    );
   }
-  return message || "Authentication failed. Please try again.";
+  if (message.includes("Authentication is temporarily unavailable")) {
+    return pick("authFailed", "Authentication failed. Please try again.");
+  }
+  return message || pick("authFailed", "Authentication failed. Please try again.");
 }
 
 export function AuthNotice({ message }: { message: string }) {

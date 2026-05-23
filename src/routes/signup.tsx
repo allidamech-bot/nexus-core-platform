@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { AuthNotice, AuthShell, Field, friendlyAuthError } from "./login";
+import { useLocale } from "@/features/i18n/localeContext";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/signup")({
 function SignupPage() {
   const navigate = useNavigate();
   const { session, error: authError } = useAuth();
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,11 +26,11 @@ function SignupPage() {
     e.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !password) {
-      toast.error("Email and password are required.");
+      toast.error(t("authEmailPasswordRequired"));
       return;
     }
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+      toast.error(t("authPasswordMinLength"));
       return;
     }
 
@@ -41,26 +43,23 @@ function SignupPage() {
         options: { emailRedirectTo: redirectUrl },
       });
       if (error) {
-        toast.error(friendlyAuthError(error));
+        toast.error(friendlyAuthError(error, t));
         return;
       }
-      toast.success("Check your inbox to confirm your account.");
+      toast.success(t("signupSuccess"));
     } catch (error) {
-      toast.error(friendlyAuthError(error));
+      toast.error(friendlyAuthError(error, t));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <AuthShell
-      title="Create your workspace"
-      subtitle="Create your first project-aware planning workspace in under a minute."
-    >
-      {authError && <AuthNotice message={authError} />}
+    <AuthShell title={t("signupTitle")} subtitle={t("signupSubtitle")}>
+      {authError && <AuthNotice message={friendlyAuthError(authError, t)} />}
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
-          label="Work email"
+          label={t("workEmailLabel")}
           type="email"
           value={email}
           onChange={setEmail}
@@ -68,7 +67,7 @@ function SignupPage() {
           required
         />
         <Field
-          label="Password"
+          label={t("passwordLabel")}
           type="password"
           value={password}
           onChange={setPassword}
@@ -80,13 +79,13 @@ function SignupPage() {
           disabled={loading}
           className="w-full bg-foreground text-background font-semibold rounded-md py-2.5 text-sm disabled:opacity-50"
         >
-          {loading ? "Provisioning..." : "Create account"}
+          {loading ? t("creatingAccount") : t("createAccount")}
         </button>
       </form>
       <p className="mt-6 text-sm text-muted-foreground text-center">
-        Already have an account?{" "}
+        {t("alreadyHaveAccount")}{" "}
         <Link to="/login" className="text-accent hover:underline">
-          Sign in
+          {t("signIn")}
         </Link>
       </p>
     </AuthShell>
