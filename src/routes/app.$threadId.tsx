@@ -683,10 +683,12 @@ function MessageBlock({ message }: { message: UIMessage }) {
 }
 
 const SECTION_NAMES = [
+  "Project Context Used",
   "Implementation Plan",
   "Files Likely Affected",
   "Patch Preview / Proposed Changes",
   "Verification Checklist",
+  "Risks / Notes",
   "Limitations / Not Applied Yet",
   "Readiness log",
   "Understanding",

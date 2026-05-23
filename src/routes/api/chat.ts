@@ -12,6 +12,7 @@ import {
 import type { Database } from "@/integrations/supabase/types";
 import type {
   ProjectChatMetadata,
+  ProjectContextFile,
   ProjectIngestionStatus,
   ProjectManifest,
   ProjectSourceType,
@@ -32,6 +33,9 @@ Nexus Core is currently a truthful proposal experience. It can analyze, plan, in
 
 Every response for coding, product, debugging, or implementation tasks MUST be structured into the following markdown sections, in order, with bold section headers.
 
+**Project Context Used**
+Bulleted list of known project facts that informed the proposal. Separate confirmed context from assumptions. Say what context was unavailable.
+
 **Implementation Plan**
 A numbered list of concrete steps you would take. Keep it practical and scoped.
 
@@ -42,7 +46,10 @@ Bulleted list of likely file paths, modules, or components with a short reason f
 An illustrative, non-applied preview of the proposed edits. Use a fenced diff block when useful. Make clear the preview is a proposal, not an applied patch.
 
 **Verification Checklist**
-Bulleted list of checks to run later, such as Typecheck, Lint, Build, Tests, Security Scan. Mark them NOT RUN unless the user explicitly supplied verified results in the conversation.
+Bulleted list of checks to run later. Prefer project-specific commands when available. For this Nexus-style app, include pnpm run lint, pnpm exec tsc -p tsconfig.json --noEmit, pnpm build, and pnpm test:e2e when relevant. Mark them NOT RUN unless the user explicitly supplied verified results in the conversation.
+
+**Risks / Notes**
+Call out risk areas suggested by the actual project context, such as auth, RLS, admin isolation, i18n, RTL, archive lifecycle, quota/governance, migrations, protected routes, or production smoke risk.
 
 **Limitations / Not Applied Yet**
 State clearly that no code was executed, files were not modified, terminal commands were not run, patches were not applied, and deployment was not performed. Mention any context gaps.
@@ -50,27 +57,193 @@ State clearly that no code was executed, files were not modified, terminal comma
 For non-implementation questions, still use the closest helpful version of these sections unless it would be genuinely awkward; never claim execution. Tone: precise, senior-engineer, business-grade. Never refuse without giving a structured alternative. Never produce filler.`;
 const MAX_CONTEXT_PREVIEWS = 6;
 const MAX_CONTEXT_BYTES = 8_000;
+const MAX_CONTEXT_FILES = 80;
 
-function projectContextPrompt(project: ProjectChatMetadata | null) {
+function uniqueList(items: Array<string | null | undefined>, limit = 12) {
+  return Array.from(new Set(items.filter((item): item is string => Boolean(item)))).slice(0, limit);
+}
+
+function pathIncludes(path: string, needles: string[]) {
+  const lower = path.toLowerCase();
+  return needles.some((needle) => lower.includes(needle));
+}
+
+function priorityForFile(path: string) {
+  const lower = path.toLowerCase();
+  if (
+    [
+      "package.json",
+      "vite.config",
+      "tsconfig",
+      "tanstack",
+      "src/routes/api/chat",
+      "src/routes/app.",
+      "src/routes/app/",
+      "src/features/projects",
+      "src/features/i18n",
+      "src/lib/auth",
+      "src/routes/app.admin",
+      "tests/e2e",
+    ].some((needle) => lower.includes(needle))
+  ) {
+    return 0;
+  }
+  if (pathIncludes(lower, ["src/routes", "src/components", "src/features"])) return 1;
+  if (pathIncludes(lower, ["supabase/migrations", "migrations"])) return 2;
+  return 3;
+}
+
+function rankFiles(files: ProjectContextFile[]) {
+  return [...files]
+    .sort(
+      (a, b) => priorityForFile(a.path) - priorityForFile(b.path) || a.path.localeCompare(b.path),
+    )
+    .slice(0, MAX_CONTEXT_FILES);
+}
+
+function topDirectories(files: ProjectContextFile[]) {
+  const counts = new Map<string, number>();
+  for (const file of files) {
+    const parts = file.path.split("/");
+    for (let depth = 1; depth < Math.min(parts.length, 4); depth += 1) {
+      const directory = parts.slice(0, depth).join("/");
+      counts.set(directory, (counts.get(directory) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 12)
+    .map(([path, count]) => `${path} (${count})`);
+}
+
+function knownRoutes(files: ProjectContextFile[]) {
+  return uniqueList(
+    files
+      .map((file) => file.path)
+      .filter(
+        (path) => path.includes("src/routes/") || path.includes("app/") || path.includes("pages/"),
+      )
+      .slice(0, 30),
+    16,
+  );
+}
+
+function knownComponents(files: ProjectContextFile[]) {
+  return uniqueList(
+    files
+      .map((file) => file.path)
+      .filter(
+        (path) => path.includes("src/components/") || /(^|\/)[A-Z][^/]+\.(tsx|jsx)$/.test(path),
+      )
+      .slice(0, 30),
+    16,
+  );
+}
+
+function inferRiskAreas(files: ProjectContextFile[]) {
+  const paths = files.map((file) => file.path.toLowerCase());
+  const risks: string[] = [];
+  if (paths.some((path) => path.includes("auth") || path.includes("login")))
+    risks.push("auth/session behavior");
+  if (paths.some((path) => path.includes("admin"))) risks.push("admin isolation");
+  if (
+    paths.some(
+      (path) => path.includes("supabase") || path.includes("rls") || path.includes("migration"),
+    )
+  )
+    risks.push("Supabase/RLS and migration safety");
+  if (paths.some((path) => path.includes("i18n") || path.includes("translation")))
+    risks.push("i18n/RTL copy and layout");
+  if (paths.some((path) => path.includes("quota") || path.includes("governance")))
+    risks.push("quota/governance accounting");
+  if (paths.some((path) => path.includes("thread") || path.includes("archive")))
+    risks.push("thread archive/read-only lifecycle");
+  if (paths.some((path) => path.includes("api/chat"))) risks.push("chat API and prompt behavior");
+  if (paths.some((path) => path.includes("test") || path.includes("playwright")))
+    risks.push("E2E protected-route coverage");
+  return risks.length ? risks : ["No specific risk areas inferred from file inventory."];
+}
+
+function inferCommands(project: ProjectChatMetadata) {
+  const text = (project.previews ?? [])
+    .filter((preview) => preview.path.toLowerCase().endsWith("package.json"))
+    .map((preview) => preview.preview_text)
+    .join("\n");
+
+  const commands = new Set<string>();
+  if (project.manifest?.package_managers.includes("pnpm")) {
+    commands.add("pnpm run lint");
+    commands.add("pnpm exec tsc -p tsconfig.json --noEmit");
+    commands.add("pnpm build");
+    commands.add("pnpm test:e2e");
+  }
+
+  for (const match of text.matchAll(/"([^"]+)":\s*"([^"]+)"/g)) {
+    const [script, command] = [match[1], match[2]];
+    if (!script || !command) continue;
+    if (/^(lint|build|test|test:e2e|typecheck|verify)$/.test(script)) {
+      commands.add(
+        `${project.manifest?.package_managers.includes("pnpm") ? "pnpm" : "npm run"} ${script}`,
+      );
+    }
+  }
+
+  if (commands.size === 0) {
+    commands.add("pnpm run lint");
+    commands.add("pnpm exec tsc -p tsconfig.json --noEmit");
+    commands.add("pnpm build");
+    commands.add("pnpm test:e2e");
+  }
+
+  return Array.from(commands).slice(0, 8);
+}
+
+function buildProjectContextPrompt(project: ProjectChatMetadata | null) {
   if (!project?.name) return "";
-  const previews = (project.previews ?? [])
-    .slice(0, 6)
+
+  const files = rankFiles(project.files ?? []);
+  const previewBlocks = (project.previews ?? [])
+    .slice(0, MAX_CONTEXT_PREVIEWS)
     .map((preview) => {
       const text = String(preview.preview_text ?? "").slice(0, 1_500);
       return `- ${String(preview.path ?? "unknown").slice(0, 220)} (${String(preview.summary ?? "preview").slice(0, 120)}):\n${text}`;
     })
     .join("\n\n");
 
-  return `\n\nActive project metadata:
-- name: ${String(project.name).slice(0, 160)}
-- source_type: ${String(project.source_type ?? "unknown").slice(0, 40)}
-- project_status: ${String(project.status ?? "unknown").slice(0, 40)}
+  return `\n\nProject Context v1 available to this response:
+- projectName: ${String(project.name).slice(0, 160)}
+- projectId: ${String(project.id ?? "not provided").slice(0, 80)}
+- source: ${String(project.source_type ?? "unknown").slice(0, 40)}
+- status: ${String(project.status ?? "unknown").slice(0, 40)}
 - ingestion_status: ${String(project.ingestion_status ?? "none").slice(0, 40)}
+- description: ${String(project.description ?? "not provided").slice(0, 220)}
 - ${manifestContextLine(project.manifest)}
-- safe_text_previews: ${project.previews?.length ?? 0}
-${previews ? `\nSelected safe preview snippets:\n${previews}\n` : ""}
+- repositoryType/frameworks: ${project.manifest?.frameworks.join(", ") || "unknown"}
+- packageManager: ${project.manifest?.package_managers.join(", ") || "unknown"}
+- rootConfigFiles: ${project.manifest?.root_config_files.join(", ") || "none indexed"}
+- likelyEntryPoints: ${project.manifest?.likely_entry_points.join(", ") || "none indexed"}
+- importantDirectories: ${
+    topDirectories(project.files ?? []).join("; ") ||
+    project.manifest?.directories
+      .map((dir) => `${dir.path} (${dir.file_count})`)
+      .slice(0, 12)
+      .join("; ") ||
+    "not available"
+  }
+- knownRoutes: ${knownRoutes(files).join(", ") || "not available"}
+- knownComponents: ${knownComponents(files).join(", ") || "not available"}
+- importantFiles: ${
+    files
+      .map((file) => file.path)
+      .slice(0, 30)
+      .join(", ") || "not available"
+  }
+- buildAndTestCommands: ${inferCommands(project).join("; ")}
+- inferredRiskAreas: ${inferRiskAreas(project.files ?? []).join("; ")}
+- selectedSafePreviews: ${project.previews?.length ?? 0}
+- unavailableContext: raw repository access, full file contents, secret files, node_modules, dist/build artifacts, lockfile contents unless safely previewed, terminal execution, file mutation, patch application, deployment.
 
-Do not claim access to raw project files or entire repositories. Phase 2C provides only capped, redacted, allowlisted preview snippets and manifest metadata; execution, embeddings, deep indexing, and verification are not available.`;
+Use this context before proposing changes. Prefer real paths from knownRoutes, knownComponents, importantFiles, rootConfigFiles, and preview paths. If exact files are missing, say "likely" or "needs inspection"; do not pretend to have read unavailable files.${previewBlocks ? `\n\nSelected safe preview snippets:\n${previewBlocks}\n` : ""}`;
 }
 
 function textResponse(message: string, status: number) {
@@ -429,7 +602,7 @@ async function fetchTrustedProjectContext(input: {
 
   const { data: project, error: projectError } = await input.supabase
     .from("projects")
-    .select("id,name,source_type,status")
+    .select("id,name,description,source_type,status")
     .eq("id", input.threadProjectId)
     .maybeSingle();
   if (projectError) throw projectError;
@@ -447,49 +620,79 @@ async function fetchTrustedProjectContext(input: {
   const jobMetadata = asRecord(latestJob?.metadata);
   const manifest = parseManifest(jobMetadata.manifest);
 
-  let previews: ProjectChatMetadata["previews"] = [];
-  if (input.selectedPreviewIds.length > 0) {
-    const { data: previewRows, error: previewError } = await input.supabase
-      .from("project_text_previews")
-      .select("id,file_id,preview_text,summary,detected_language,truncated,token_estimate")
-      .eq("project_id", project.id)
-      .in("id", input.selectedPreviewIds)
-      .limit(MAX_CONTEXT_PREVIEWS);
-    if (previewError) throw previewError;
+  const { data: fileRows, error: filesError } = await input.supabase
+    .from("project_files")
+    .select("id,path,name,extension,size_bytes,mime_type")
+    .eq("project_id", project.id)
+    .order("path", { ascending: true })
+    .limit(250);
+  if (filesError) throw filesError;
 
-    const fileIds = Array.from(new Set((previewRows ?? []).map((preview) => preview.file_id)));
-    const { data: fileRows, error: fileError } =
-      fileIds.length > 0
-        ? await input.supabase.from("project_files").select("id,path").in("id", fileIds)
-        : { data: [], error: null };
-    if (fileError) throw fileError;
+  const files = (fileRows ?? []).map((file) => ({
+    path: file.path,
+    name: file.name,
+    extension: file.extension,
+    size_bytes: file.size_bytes,
+    mime_type: file.mime_type,
+  }));
 
-    const pathByFileId = new Map((fileRows ?? []).map((file) => [file.id, file.path]));
-    let usedBytes = 0;
-    previews = (previewRows ?? []).flatMap((preview) => {
-      const remaining = MAX_CONTEXT_BYTES - usedBytes;
-      if (remaining <= 0) return [];
-      const previewText = String(preview.preview_text ?? "").slice(0, Math.min(1_500, remaining));
-      usedBytes += new TextEncoder().encode(previewText).length;
-      return [
-        {
-          path: pathByFileId.get(preview.file_id) ?? "unknown",
-          summary: String(preview.summary ?? "Safe text preview"),
-          detected_language: preview.detected_language,
-          preview_text: previewText,
-          truncated: Boolean(preview.truncated) || preview.preview_text.length > previewText.length,
-          token_estimate: Math.ceil(previewText.length / 4),
-        },
-      ];
-    });
-  }
+  const selectedPreviewIds = input.selectedPreviewIds;
+  const previewQuery = input.supabase
+    .from("project_text_previews")
+    .select("id,file_id,preview_text,summary,detected_language,truncated,token_estimate")
+    .eq("project_id", project.id);
+
+  const { data: previewRows, error: previewError } =
+    selectedPreviewIds.length > 0
+      ? await previewQuery.in("id", selectedPreviewIds).limit(MAX_CONTEXT_PREVIEWS)
+      : await previewQuery.order("indexed_at", { ascending: false }).limit(24);
+  if (previewError) throw previewError;
+
+  const previewFileIds = Array.from(new Set((previewRows ?? []).map((preview) => preview.file_id)));
+  const previewPathRows =
+    previewFileIds.length > 0
+      ? (fileRows ?? []).filter((file) => previewFileIds.includes(file.id))
+      : [];
+  const pathByFileId = new Map(previewPathRows.map((file) => [file.id, file.path]));
+
+  const rankedPreviewRows =
+    selectedPreviewIds.length > 0
+      ? (previewRows ?? [])
+      : [...(previewRows ?? [])]
+          .sort((a, b) => {
+            const aPath = pathByFileId.get(a.file_id) ?? "";
+            const bPath = pathByFileId.get(b.file_id) ?? "";
+            return priorityForFile(aPath) - priorityForFile(bPath) || aPath.localeCompare(bPath);
+          })
+          .slice(0, MAX_CONTEXT_PREVIEWS);
+
+  let usedBytes = 0;
+  const previews = rankedPreviewRows.flatMap((preview) => {
+    const remaining = MAX_CONTEXT_BYTES - usedBytes;
+    if (remaining <= 0) return [];
+    const previewText = String(preview.preview_text ?? "").slice(0, Math.min(1_500, remaining));
+    usedBytes += new TextEncoder().encode(previewText).length;
+    return [
+      {
+        path: pathByFileId.get(preview.file_id) ?? "unknown",
+        summary: String(preview.summary ?? "Safe text preview"),
+        detected_language: preview.detected_language,
+        preview_text: previewText,
+        truncated: Boolean(preview.truncated) || preview.preview_text.length > previewText.length,
+        token_estimate: Math.ceil(previewText.length / 4),
+      },
+    ];
+  });
 
   return {
+    id: project.id,
     name: project.name,
+    description: project.description,
     source_type: project.source_type as ProjectSourceType,
     status: project.status as ProjectStatus,
     ingestion_status: (latestJob?.status as ProjectIngestionStatus | undefined) ?? "none",
     manifest,
+    files,
     previews,
   };
 }
@@ -581,8 +784,8 @@ export const Route = createFileRoute("/api/chat")({
         const model = gateway("google/gemini-3-flash-preview");
 
         const system = mode
-          ? `${SYSTEM_PROMPT}\n\nActive agent mode: ${mode.toUpperCase()}. Bias the response toward this discipline.${projectContextPrompt(project)}`
-          : `${SYSTEM_PROMPT}${projectContextPrompt(project)}`;
+          ? `${SYSTEM_PROMPT}\n\nActive agent mode: ${mode.toUpperCase()}. Bias the response toward this discipline.${buildProjectContextPrompt(project)}`
+          : `${SYSTEM_PROMPT}${buildProjectContextPrompt(project)}`;
 
         let result: ReturnType<typeof streamText>;
         try {

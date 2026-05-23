@@ -48,7 +48,9 @@ export function ProjectWorkspaceProvider({
         ? []
         : activeProjectPreviews.filter((preview) => selectedPreviewIds.includes(preview.id));
     return {
+      id: activeProject.id,
       name: activeProject.name,
+      description: activeProject.description,
       source_type: activeProject.source_type,
       status: activeProject.status,
       ingestion_status: activeProject.latest_job?.status ?? "none",

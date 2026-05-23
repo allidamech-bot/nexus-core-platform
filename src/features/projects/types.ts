@@ -95,12 +95,23 @@ export interface ProjectWithLatestJob extends Project {
 }
 
 export interface ProjectChatMetadata {
+  id?: string;
   name: string;
+  description?: string | null;
   source_type: ProjectSourceType;
   status: ProjectStatus;
   ingestion_status: ProjectIngestionStatus | "none";
   manifest?: ProjectManifest | null;
+  files?: ProjectContextFile[];
   previews?: ProjectContextPreview[];
+}
+
+export interface ProjectContextFile {
+  path: string;
+  name: string;
+  extension: string | null;
+  size_bytes: number | null;
+  mime_type: string | null;
 }
 
 export interface ProjectManifestDirectory {
