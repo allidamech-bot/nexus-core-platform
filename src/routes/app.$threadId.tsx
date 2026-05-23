@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Send, Upload, GitBranch, Loader2, Terminal, PanelRight } from "lucide-react";
+import { Archive, Send, Upload, GitBranch, Loader2, Terminal, PanelRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { agentModes, mockExecutionSteps, mockFileTree, mockVerification } from "@/lib/mock-data";
@@ -22,7 +22,7 @@ import {
   logThreadContextSelection,
 } from "@/features/projects/projectService";
 import type { ProjectTextPreviewWithPath } from "@/features/projects/types";
-import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
+import { governanceKeys, useUsageOverviewQuery } from "@/features/governance/governanceQueries";
 import {
   estimateByteSize,
   recordAuditEvent,
@@ -60,6 +60,7 @@ function friendlyChatError(error: unknown) {
 
 function ThreadView() {
   const { threadId } = Route.useParams();
+  const navigate = useNavigate();
   const { session } = useAuth();
   const qc = useQueryClient();
   const { t } = useLocale();
@@ -96,6 +97,11 @@ function ThreadView() {
   });
 
   const threadProjectId = typeof thread?.project_id === "string" ? thread.project_id : null;
+  const hasThreadLifecycle = thread
+    ? "status" in thread && "archived_at" in thread && "archived_by" in thread
+    : false;
+  const isArchived =
+    hasThreadLifecycle && (thread?.status === "archived" || Boolean(thread?.archived_at));
 
   useEffect(() => {
     if (threadProjectId) setSelectedProjectId(threadProjectId);
@@ -181,8 +187,38 @@ function ThreadView() {
 
   const busy = status === "submitted" || status === "streaming";
 
+  async function handleArchiveThread() {
+    if (!session || !thread || isArchived) return;
+    if (!window.confirm(t("archiveSessionConfirm"))) return;
+
+    const archivedAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("threads")
+      .update({
+        status: "archived",
+        archived_at: archivedAt,
+        archived_by: session.user.id,
+        updated_at: archivedAt,
+      })
+      .eq("id", threadId);
+
+    if (error) {
+      toast.error(t("archiveSessionFailed"));
+      return;
+    }
+
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["thread", threadId] }),
+      qc.invalidateQueries({ queryKey: ["threads"] }),
+      qc.invalidateQueries({ queryKey: ["threads", "recent", session.user.id] }),
+      qc.invalidateQueries({ queryKey: governanceKeys.usage(session.user.id) }),
+    ]);
+    toast.success(t("sessionArchived"));
+    navigate({ to: "/app" });
+  }
+
   async function handleAttachProject() {
-    if (!session || !activeProject) return;
+    if (!session || !activeProject || isArchived) return;
     try {
       await attachProjectToThread({
         threadId,
@@ -212,7 +248,7 @@ function ThreadView() {
   }
 
   async function handleTogglePreview(preview: ProjectTextPreviewWithPath) {
-    if (!session || !activeProject) return;
+    if (!session || !activeProject || isArchived) return;
     const selected = selectedPreviewIds.includes(preview.id);
     const previewLimit = usageOverview?.limits?.max_context_previews ?? 6;
     if (!selected && selectedPreviewIds.length >= previewLimit) {
@@ -262,6 +298,10 @@ function ThreadView() {
   async function handleSend() {
     const text = input.trim();
     if (!text || busy || !session) return;
+    if (isArchived) {
+      toast.error(t("thisSessionIsArchived"));
+      return;
+    }
     setInput("");
 
     const userMsg: UIMessage = {
@@ -306,6 +346,7 @@ function ThreadView() {
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Agent #{threadId.slice(0, 6)} / {mode}
               {activeProject ? ` / ${activeProject.name}` : ""}
+              {isArchived ? ` / ${t("archivedSession")}` : ""}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -328,6 +369,15 @@ function ThreadView() {
             >
               <GitBranch className="size-3" /> Connect Repo
             </button>
+            {hasThreadLifecycle && !isArchived && (
+              <button
+                type="button"
+                onClick={handleArchiveThread}
+                className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
+              >
+                <Archive className="size-3" /> {t("archiveSession")}
+              </button>
+            )}
             <button
               onClick={() => setIsInspectorOpen((o) => !o)}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md border flex items-center gap-1.5 transition-colors ${
@@ -343,6 +393,12 @@ function ThreadView() {
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+            {isArchived && (
+              <div className="rounded-md border border-border bg-surface/70 px-3 py-2 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{t("thisSessionIsArchived")}</span>{" "}
+                {t("startNewTaskAfterArchiving")}
+              </div>
+            )}
             {loadingMsgs && (
               <div className="text-xs text-muted-foreground font-mono">Loading session...</div>
             )}
@@ -366,12 +422,13 @@ function ThreadView() {
                 return (
                   <button
                     key={m.id}
+                    disabled={isArchived}
                     onClick={() => setMode(m.id as AgentMode)}
                     className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap border transition-colors ${
                       active
                         ? "bg-accent/10 text-accent border-accent/30"
                         : "bg-white/5 text-muted-foreground border-border hover:text-foreground"
-                    }`}
+                    } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     {m.label}
                   </button>
@@ -390,11 +447,12 @@ function ThreadView() {
                   }
                 }}
                 placeholder="Ask Nexus Core to analyze, plan, scope, or review..."
-                className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none"
+                disabled={isArchived}
+                className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-60"
               />
               <button
                 onClick={handleSend}
-                disabled={busy || !input.trim()}
+                disabled={busy || !input.trim() || isArchived}
                 className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-md text-[12px] font-bold disabled:opacity-50"
               >
                 {busy ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
@@ -428,7 +486,7 @@ function ThreadView() {
                 <button
                   type="button"
                   onClick={handleAttachProject}
-                  disabled={threadProjectId === activeProject.id}
+                  disabled={threadProjectId === activeProject.id || isArchived}
                   className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {threadProjectId === activeProject.id

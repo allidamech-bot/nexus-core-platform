@@ -83,6 +83,14 @@ export const translations = {
     sessionAuthRequired: "Sign in again before creating a session.",
     openExistingSession: "Open existing session",
     openRecentSession: "Open recent session",
+    archiveSession: "Archive session",
+    archiveSessionConfirm: "Archive this session?",
+    sessionArchived: "Session archived. You can start a new task now.",
+    archiveSessionFailed: "Failed to archive session.",
+    archivedSession: "Archived session",
+    thisSessionIsArchived: "This session is archived.",
+    archiveExistingSessionToStartNewTask: "Archive an existing session to start a new task.",
+    startNewTaskAfterArchiving: "Start a new task after archiving an old session.",
     ingestionReady: "Project ingestion foundation is ready.",
     ingestionReadyBody:
       "Upload a ZIP or select a local folder to create project records, ingestion jobs, safe file inventory, and manifest context. Nexus never executes imported code.",
@@ -295,6 +303,20 @@ export const translations = {
     sessionAuthRequired: "سجّل الدخول مرة أخرى قبل إنشاء جلسة.",
     openExistingSession: "فتح جلسة موجودة",
     openRecentSession: "فتح جلسة حديثة",
+    archiveSession: "\u0623\u0631\u0634\u0641 \u0627\u0644\u062c\u0644\u0633\u0629",
+    archiveSessionConfirm:
+      "\u0647\u0644 \u062a\u0631\u064a\u062f \u0623\u0631\u0634\u0641\u0629 \u0647\u0630\u0647 \u0627\u0644\u062c\u0644\u0633\u0629\u061f",
+    sessionArchived:
+      "\u062a\u0645\u062a \u0623\u0631\u0634\u0641\u0629 \u0627\u0644\u062c\u0644\u0633\u0629. \u064a\u0645\u0643\u0646\u0643 \u0628\u062f\u0621 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629 \u0627\u0644\u0622\u0646.",
+    archiveSessionFailed:
+      "\u062a\u0639\u0630\u0631\u062a \u0623\u0631\u0634\u0641\u0629 \u0627\u0644\u062c\u0644\u0633\u0629.",
+    archivedSession: "\u062c\u0644\u0633\u0629 \u0645\u0624\u0631\u0634\u0641\u0629",
+    thisSessionIsArchived:
+      "\u0647\u0630\u0647 \u0627\u0644\u062c\u0644\u0633\u0629 \u0645\u0624\u0631\u0634\u0641\u0629.",
+    archiveExistingSessionToStartNewTask:
+      "\u0623\u0631\u0634\u0641 \u062c\u0644\u0633\u0629 \u0645\u0648\u062c\u0648\u062f\u0629 \u0644\u0628\u062f\u0621 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629.",
+    startNewTaskAfterArchiving:
+      "\u0627\u0628\u062f\u0623 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629 \u0628\u0639\u062f \u0623\u0631\u0634\u0641\u0629 \u062c\u0644\u0633\u0629 \u0642\u062f\u064a\u0645\u0629.",
     ingestionReady: "أساس استيعاب المشاريع جاهز.",
     ingestionReadyBody:
       "ارفع ملف ZIP أو اختر مجلدًا محليًا لإنشاء سجلات المشاريع ومهام الاستيعاب وفهرس الملفات الآمن وسياق البيان. لا تنفّذ Nexus أي شيفرة مستوردة.",

@@ -27,6 +27,19 @@ export async function useAnonymousBrowserState(context: BrowserContext) {
   });
 }
 
+export async function expectProtectedRouteRedirectsToLogin(page: Page, route: string) {
+  await page.context().clearCookies();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+
+  await page.goto(route, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Sign in to Nexus Core" })).toBeVisible();
+}
+
 export async function login(page: Page, credentials: { email?: string; password?: string }) {
   if (!hasCredentials(credentials)) {
     throw new Error("E2E credentials are not configured.");

@@ -481,31 +481,40 @@ export type Database = {
       };
       threads: {
         Row: {
+          archived_at: string | null;
+          archived_by: string | null;
           created_at: string;
           id: string;
           mode: string;
           project_id: string | null;
           project_name: string | null;
+          status: string;
           title: string;
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          archived_at?: string | null;
+          archived_by?: string | null;
           created_at?: string;
           id?: string;
           mode?: string;
           project_id?: string | null;
           project_name?: string | null;
+          status?: string;
           title?: string;
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          archived_at?: string | null;
+          archived_by?: string | null;
           created_at?: string;
           id?: string;
           mode?: string;
           project_id?: string | null;
           project_name?: string | null;
+          status?: string;
           title?: string;
           updated_at?: string;
           user_id?: string;

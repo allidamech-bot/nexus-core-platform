@@ -41,6 +41,9 @@ export interface ThreadRow {
   mode: string;
   project_id: string | null;
   project_name: string | null;
+  status: "active" | "archived";
+  archived_at: string | null;
+  archived_by: string | null;
   created_at: string;
   updated_at: string;
 }

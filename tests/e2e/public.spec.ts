@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { useAnonymousBrowserState } from "./helpers";
+import { expectProtectedRouteRedirectsToLogin, useAnonymousBrowserState } from "./helpers";
 
 test.describe("public routes and unauthenticated boundaries", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -24,9 +24,7 @@ test.describe("public routes and unauthenticated boundaries", () => {
 
   for (const route of ["/app", "/app/settings", "/app/admin", "/app/test-thread-id"]) {
     test(`protects ${route} for unauthenticated users`, async ({ page }) => {
-      await page.goto(route);
-      await expect(page).toHaveURL(/\/login$/);
-      await expect(page.getByRole("heading", { name: "Sign in to Nexus Core" })).toBeVisible();
+      await expectProtectedRouteRedirectsToLogin(page, route);
     });
   }
 

@@ -32,6 +32,12 @@ function friendlyCreateSessionError(error: unknown) {
   return "sessionCreateFailed" as const;
 }
 
+function isMissingThreadLifecycleColumns(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const lower = message.toLowerCase();
+  return lower.includes("status") || lower.includes("archived_at");
+}
+
 function AppIndex() {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -52,8 +58,20 @@ function AppIndex() {
         .from("threads")
         .select("id,title,updated_at")
         .eq("user_id", session.user.id)
+        .eq("status", "active")
+        .is("archived_at", null)
         .order("updated_at", { ascending: false })
-        .limit(3);
+        .limit(5);
+      if (error && isMissingThreadLifecycleColumns(error)) {
+        const fallback = await supabase
+          .from("threads")
+          .select("id,title,updated_at")
+          .eq("user_id", session.user.id)
+          .order("updated_at", { ascending: false })
+          .limit(5);
+        if (fallback.error) throw fallback.error;
+        return fallback.data ?? [];
+      }
       if (error) throw error;
       return data ?? [];
     },
@@ -82,7 +100,7 @@ function AppIndex() {
     try {
       const quota = await checkQuota(session.user.id, "max_active_threads", 1);
       if (!quota.allowed) {
-        const message = t("sessionQuotaReached");
+        const message = `${t("sessionQuotaReached")} ${t("archiveExistingSessionToStartNewTask")}`;
         setComposerStatus("quota", message);
         toast.error(message);
         return;
