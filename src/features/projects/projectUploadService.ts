@@ -408,6 +408,7 @@ export async function importProjectFolder(input: ImportFolderInput): Promise<Upl
     name: input.projectName?.trim() || input.summary.rootName,
     description: input.description,
     status: "indexed_manifest",
+    sourceType: "local",
   });
 
   const job = await createIngestionJob({

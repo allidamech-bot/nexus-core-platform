@@ -80,6 +80,7 @@ export async function createProject(input: {
   name: string;
   description?: string;
   status?: ProjectStatus;
+  sourceType?: Project["source_type"];
 }): Promise<Project> {
   const { data, error } = await supabase
     .from("projects")
@@ -87,7 +88,7 @@ export async function createProject(input: {
       user_id: input.userId,
       name: input.name,
       description: input.description?.trim() || null,
-      source_type: "zip",
+      source_type: input.sourceType ?? "zip",
       status: input.status ?? "pending",
     })
     .select()

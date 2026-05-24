@@ -55,9 +55,14 @@ export const translations = {
       "Create a real project record, manifest, and safe text preview index from a ZIP archive or local folder.",
     selectZipArchive: "Select a .zip archive",
     zipOnly:
-      "ZIP only, max {max}MB. Nexus Core reads small allowlisted text previews only and never executes project code.",
+      "ZIP only, max {max}MB. Nexus Core reads small allowlisted text previews only and never executes project code. Use ZIP upload to enable safe file previews and grounded patch previews.",
     folderImportHint:
-      "Folder import creates a safe metadata inventory only. Raw file contents are not uploaded and text previews are not generated from folders. ZIP remains the real server-side ingestion and preview path.",
+      "Folder import creates safe metadata inventory only. Raw file contents are not uploaded, text previews are not generated, and patch previews will stay inferred or illustrative. Use ZIP upload to enable safe file previews.",
+    zipPreviewPath: "ZIP upload enables safe file previews for grounded proposal confidence.",
+    folderInventoryOnly:
+      "Folder import is inventory-only. Use ZIP upload when you need safe previews and grounded patch previews.",
+    projectLimitReachedForUpload:
+      "Project limit reached. Archive an existing project when project lifecycle is available, use a QA account with an open project slot, or upgrade your plan before uploading another ZIP.",
     selectFolderFirst: "Select a project folder first.",
     folderImportSuccess: "Folder manifest imported. Safe file inventory is ready.",
     selectZipFirst: "Select a .zip archive first.",
@@ -327,6 +332,11 @@ export const translations = {
       "ملفات ZIP فقط، بحد أقصى {max} ميغابايت. تقرأ منصة Nexus Core معاينات نصية محدودة ومصرّحًا بها فقط، ولا تنفّذ أي شيفرة من المشروع.",
     folderImportHint:
       "استيراد المجلد ينشئ فهرسًا آمنًا للبيانات الوصفية فقط. لا يتم رفع محتويات الملفات الخام ولا يتم إنشاء معاينات نصية من المجلدات. يبقى ZIP هو مسار الاستيعاب والمعاينة الخادمي.",
+    zipPreviewPath: "رفع ZIP يفعّل معاينات ملفات آمنة لثقة مقترحات grounded.",
+    folderInventoryOnly:
+      "استيراد المجلد يوفر فهرسًا فقط. استخدم رفع ZIP عند الحاجة إلى معاينات آمنة ومقترحات grounded.",
+    projectLimitReachedForUpload:
+      "تم بلوغ حد المشاريع. أرشف مشروعًا موجودًا عندما تتوفر دورة حياة المشاريع، أو استخدم حساب QA لديه مساحة مشروع، أو قم بترقية الخطة قبل رفع ZIP آخر.",
     selectFolderFirst: "يرجى اختيار مجلد المشروع أولًا.",
     folderImportSuccess: "تم استيراد بيان المجلد. فهرس الملفات الآمن جاهز.",
     selectZipFirst: "يرجى اختيار أرشيف ZIP أولًا.",

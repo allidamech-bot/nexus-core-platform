@@ -39,6 +39,12 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
       ? Boolean(file && !validationError)
       : Boolean(folderSummary && !folderSummary.error);
 
+  function friendlyUploadError(error: unknown) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("max_projects")) return t("projectLimitReachedForUpload");
+    return message || t("uploadSuccess");
+  }
+
   function resetForm() {
     setFile(null);
     setFolderSummary(null);
@@ -71,7 +77,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
         setOpen(false);
         resetForm();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : t("folderImportSuccess"));
+        toast.error(friendlyUploadError(error));
       }
       return;
     }
@@ -98,7 +104,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
       setOpen(false);
       resetForm();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("uploadSuccess"));
+      toast.error(friendlyUploadError(error));
     }
   }
 
@@ -134,6 +140,9 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
                 {option === "zip" ? t("uploadZip") : t("folderImport")}
               </button>
             ))}
+          </div>
+          <div className="rounded-md border border-border bg-background/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+            {mode === "zip" ? t("zipPreviewPath") : t("folderInventoryOnly")}
           </div>
 
           <button

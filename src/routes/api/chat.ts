@@ -436,6 +436,10 @@ When answering coding or project-change requests, include **Project Context Used
 
   const files = project.files ?? [];
   const budget = project.context_budget;
+  const safePreviewStatus =
+    (project.previews?.length ?? 0) > 0
+      ? "safePreviewStatus: safe preview snippets are included for the files listed in filesWithSafePreviews."
+      : "safePreviewStatus: no safe preview snippets are included in this prompt. File inventory or manifest context may still be available, but Patch Preview confidence must be inferred or illustrative. For grounded confidence, upload or reprocess a ZIP project that has safe previews.";
   const trimmedLine = budget?.contextWasTrimmed
     ? `contextWasTrimmed: true; Project context was trimmed to fit the safe prompt budget. The proposal is based on the included indexed context. Some files may require manual inspection before implementation.
 - includedFileCount: ${budget.includedFileCount}; omittedFileCount: ${budget.omittedFileCount}; includedPreviewCount: ${budget.includedPreviewCount}; omittedPreviewCount: ${budget.omittedPreviewCount}; approximateContextChars: ${budget.approximateContextChars}`
@@ -477,6 +481,7 @@ When answering coding or project-change requests, include **Project Context Used
       .join(", ") || "not available"
   }
 - filesWithSafePreviews: ${previewPaths(project).join(", ") || "none included"}
+- ${safePreviewStatus}
 - patchPreviewFileConfidenceHints: ${fileConfidenceHints(project).join("; ") || "not available"}
 - buildAndTestCommands: ${inferCommands(project).join("; ")}
 - inferredRiskAreas: ${inferRiskAreas(project.files ?? []).join("; ")}
@@ -494,6 +499,7 @@ For **Patch Preview / Proposed Changes**, make the preview file-aware:
 - Add "Context confidence: illustrative" when the exact file path or current contents are not available.
 - Do not label a file grounded only because its path exists, route name is known, or component name is known.
 - If no preview-backed file is relevant, use inferred files and explicitly say the current contents were not included.
+- If filesWithSafePreviews is "none included", explicitly say safe preview snippets are not available, file inventory may be available, and grounded Patch Preview confidence is not available for this response.
 - Use approximate deletions only when current contents were not included; label them approximate in prose.
 
 If contextWasTrimmed is true, include these exact sentences in **Project Context Used** or **Limitations / Not Applied Yet**:
