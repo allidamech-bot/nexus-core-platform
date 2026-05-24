@@ -43,7 +43,17 @@ A numbered list of concrete steps you would take. Keep it practical and scoped.
 Bulleted list of likely file paths, modules, or components with a short reason for each. If the exact path is unknown, say so and name the likely area.
 
 **Patch Preview / Proposed Changes**
-An illustrative, non-applied preview of the proposed edits. Use a fenced diff block when useful. Make clear the preview is a proposal, not an applied patch.
+An illustrative, non-applied preview of the proposed edits. Use real indexed paths when available. For each file-specific proposal, use this shape:
+
+### path/to/file.tsx
+Context confidence: grounded | inferred | illustrative
+
+\`\`\`diff
+- approximate current shape or known snippet
++ proposed new shape
+\`\`\`
+
+Use "grounded" only when safe preview snippets or explicit context for that file are included. Use "inferred" when the path is known from inventory/manifest but contents were not included. Use "illustrative" when the exact path or current contents are unknown. Make clear the preview is a proposal, not an applied patch.
 
 **Verification Checklist**
 Bulleted list of checks to run later. Prefer project-specific commands when available. For this Nexus-style app, include pnpm run lint, pnpm exec tsc -p tsconfig.json --noEmit, pnpm build, and pnpm test:e2e when relevant. Mark them NOT RUN unless the user explicitly supplied verified results in the conversation.
@@ -248,6 +258,33 @@ function inferCommands(project: ProjectChatMetadata) {
   return Array.from(commands).slice(0, 8);
 }
 
+function previewPaths(project: ProjectChatMetadata) {
+  return uniqueList(
+    (project.previews ?? []).map((preview) => preview.path),
+    12,
+  );
+}
+
+function pathConfidence(path: string, project: ProjectChatMetadata) {
+  if (previewPaths(project).includes(path)) return "grounded";
+  if ((project.files ?? []).some((file) => file.path === path)) return "inferred";
+  return "illustrative";
+}
+
+function fileConfidenceHints(project: ProjectChatMetadata) {
+  const paths = uniqueList(
+    [
+      ...previewPaths(project),
+      ...(project.files ?? []).map((file) => file.path).slice(0, 16),
+      ...(project.manifest?.likely_entry_points ?? []),
+      ...(project.manifest?.root_config_files ?? []),
+    ],
+    24,
+  );
+
+  return paths.map((path) => `${path} (${pathConfidence(path, project)})`);
+}
+
 function compactManifest(manifest: ProjectManifest | null | undefined): ProjectManifest | null {
   if (!manifest) return null;
   return {
@@ -408,13 +445,27 @@ When answering coding or project-change requests, include **Project Context Used
       .slice(0, 30)
       .join(", ") || "not available"
   }
+- filesWithSafePreviews: ${previewPaths(project).join(", ") || "none included"}
+- patchPreviewFileConfidenceHints: ${fileConfidenceHints(project).join("; ") || "not available"}
 - buildAndTestCommands: ${inferCommands(project).join("; ")}
 - inferredRiskAreas: ${inferRiskAreas(project.files ?? []).join("; ")}
 - selectedSafePreviews: ${project.previews?.length ?? 0}
 - ${trimmedLine}
 - unavailableContext: raw repository access, full file contents, secret files, node_modules, dist/build artifacts, lockfile contents unless safely previewed, terminal execution, file mutation, patch application, deployment.
 
-Use this context before proposing changes. Prefer real paths from knownRoutes, knownComponents, importantFiles, rootConfigFiles, and preview paths. If exact files are missing, say "likely" or "needs inspection"; do not pretend to have read unavailable files. If contextWasTrimmed is true, say "Project context was trimmed to fit the safe prompt budget" in **Project Context Used** and note that the proposal is based on included indexed context only.${previewBlocks ? `\n\nSelected safe preview snippets:\n${previewBlocks}\n` : ""}`;
+Use this context before proposing changes. Prefer real paths from knownRoutes, knownComponents, importantFiles, rootConfigFiles, and preview paths. If exact files are missing, say "likely" or "needs inspection"; do not pretend to have read unavailable files.
+
+For **Patch Preview / Proposed Changes**, make the preview file-aware:
+- Create one subsection per proposed file using "### path/to/file".
+- Add "Context confidence: grounded" only for files listed in filesWithSafePreviews or backed by selected safe preview snippets.
+- Add "Context confidence: inferred" for files known only from file inventory, manifest, routes, components, or entry points.
+- Add "Context confidence: illustrative" when the exact file path or current contents are not available.
+- Use approximate deletions only when current contents were not included; label them approximate in prose.
+
+If contextWasTrimmed is true, include these exact sentences in **Project Context Used** or **Limitations / Not Applied Yet**:
+"Project context was trimmed to fit the safe prompt budget."
+"Some files may require manual inspection before implementation."
+Also note that the proposal is based on included indexed context only.${previewBlocks ? `\n\nSelected safe preview snippets:\n${previewBlocks}\n` : ""}`;
 }
 
 function textResponse(message: string, status: number) {
