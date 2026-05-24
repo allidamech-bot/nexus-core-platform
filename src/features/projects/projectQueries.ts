@@ -12,6 +12,7 @@ import {
   listProjects,
   listProjectTextPreviews,
 } from "./projectService";
+import { governanceKeys } from "@/features/governance/governanceQueries";
 import type {
   ProjectFile,
   ProjectIngestionJob,
@@ -56,6 +57,7 @@ export function useUploadProjectMutation() {
       qc.invalidateQueries({ queryKey: projectKeys.all });
       qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });
       qc.invalidateQueries({ queryKey: projectKeys.previews(result.project.id) });
+      qc.invalidateQueries({ queryKey: governanceKeys.all });
     },
   });
 }
@@ -68,6 +70,7 @@ export function useImportFolderMutation() {
       qc.invalidateQueries({ queryKey: projectKeys.all });
       qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });
       qc.invalidateQueries({ queryKey: projectKeys.previews(result.project.id) });
+      qc.invalidateQueries({ queryKey: governanceKeys.all });
     },
   });
 }
@@ -76,10 +79,11 @@ export function useArchiveProjectMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (projectId: string) => archiveProject(projectId),
-    onSuccess: (_result, projectId) => {
+    onSuccess: (project) => {
       qc.invalidateQueries({ queryKey: projectKeys.all });
-      qc.invalidateQueries({ queryKey: projectKeys.files(projectId) });
-      qc.invalidateQueries({ queryKey: projectKeys.previews(projectId) });
+      qc.invalidateQueries({ queryKey: projectKeys.files(project.id) });
+      qc.invalidateQueries({ queryKey: projectKeys.previews(project.id) });
+      qc.invalidateQueries({ queryKey: governanceKeys.all });
     },
   });
 }

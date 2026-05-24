@@ -108,14 +108,20 @@ export async function updateProjectStatus(projectId: string, status: ProjectStat
   if (error) throw error;
 }
 
-export async function archiveProject(projectId: string): Promise<void> {
+export async function archiveProject(projectId: string): Promise<Project> {
   const archivedAt = new Date().toISOString();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .update({ status: "archived", updated_at: archivedAt })
-    .eq("id", projectId);
+    .eq("id", projectId)
+    .select()
+    .single();
 
   if (error) throw error;
+  if (!data || data.status !== "archived") {
+    throw new Error("Project archive could not be confirmed.");
+  }
+  return data as Project;
 }
 
 export async function createIngestionJob(input: {

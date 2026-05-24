@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getUsageOverview } from "./governanceService";
 
 export const governanceKeys = {
+  all: ["governance"] as const,
   usage: (userId: string) => ["governance", "usage", userId] as const,
 };
 
