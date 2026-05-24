@@ -104,6 +104,16 @@ export interface ProjectChatMetadata {
   manifest?: ProjectManifest | null;
   files?: ProjectContextFile[];
   previews?: ProjectContextPreview[];
+  context_budget?: ProjectContextBudget;
+}
+
+export interface ProjectContextBudget {
+  contextWasTrimmed: boolean;
+  includedFileCount: number;
+  omittedFileCount: number;
+  includedPreviewCount: number;
+  omittedPreviewCount: number;
+  approximateContextChars: number;
 }
 
 export interface ProjectContextFile {

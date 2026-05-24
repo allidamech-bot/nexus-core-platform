@@ -58,6 +58,23 @@ For non-implementation questions, still use the closest helpful version of these
 const MAX_CONTEXT_PREVIEWS = 6;
 const MAX_CONTEXT_BYTES = 8_000;
 const MAX_CONTEXT_FILES = 80;
+const MAX_CONTEXT_PAYLOAD_BYTES = 7_000;
+const MAX_PREVIEW_CHARS = 1_000;
+
+const DEFAULT_CONTEXT_KEYWORDS = [
+  "header",
+  "layout",
+  "component",
+  "route",
+  "app",
+  "i18n",
+  "auth",
+  "admin",
+  "archive",
+  "quota",
+  "project",
+  "chat",
+];
 
 function uniqueList(items: Array<string | null | undefined>, limit = 12) {
   return Array.from(new Set(items.filter((item): item is string => Boolean(item)))).slice(0, limit);
@@ -68,8 +85,9 @@ function pathIncludes(path: string, needles: string[]) {
   return needles.some((needle) => lower.includes(needle));
 }
 
-function priorityForFile(path: string) {
+function priorityForFile(path: string, requestKeywords: string[] = []) {
   const lower = path.toLowerCase();
+  if (requestKeywords.some((keyword) => lower.includes(keyword))) return -1;
   if (
     [
       "package.json",
@@ -93,10 +111,42 @@ function priorityForFile(path: string) {
   return 3;
 }
 
-function rankFiles(files: ProjectContextFile[]) {
-  return [...files]
+function isSafeContextPath(path: string) {
+  const lower = path.toLowerCase();
+  if (
+    lower.includes("node_modules/") ||
+    lower.includes("/dist/") ||
+    lower.includes("/build/") ||
+    lower.includes(".env") ||
+    lower.endsWith("package-lock.json") ||
+    lower.endsWith("pnpm-lock.yaml") ||
+    lower.endsWith("yarn.lock")
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function requestKeywords(text: string) {
+  const words = text
+    .toLowerCase()
+    .split(/[^a-z0-9_/.-]+/g)
+    .filter((word) => word.length >= 3)
+    .slice(0, 30);
+  return uniqueList([...DEFAULT_CONTEXT_KEYWORDS, ...words], 40);
+}
+
+function rankFiles(files: ProjectContextFile[], keywords: string[] = []) {
+  return files
+    .filter((file) => isSafeContextPath(file.path))
+    .filter(
+      (file, index, array) =>
+        array.findIndex((candidate) => candidate.path === file.path) === index,
+    )
     .sort(
-      (a, b) => priorityForFile(a.path) - priorityForFile(b.path) || a.path.localeCompare(b.path),
+      (a, b) =>
+        priorityForFile(a.path, keywords) - priorityForFile(b.path, keywords) ||
+        a.path.localeCompare(b.path),
     )
     .slice(0, MAX_CONTEXT_FILES);
 }
@@ -198,6 +248,113 @@ function inferCommands(project: ProjectChatMetadata) {
   return Array.from(commands).slice(0, 8);
 }
 
+function compactManifest(manifest: ProjectManifest | null | undefined): ProjectManifest | null {
+  if (!manifest) return null;
+  return {
+    ...manifest,
+    languages: manifest.languages.slice(0, 12),
+    frameworks: manifest.frameworks.slice(0, 12),
+    package_managers: manifest.package_managers.slice(0, 8),
+    root_config_files: manifest.root_config_files.slice(0, 16),
+    likely_entry_points: manifest.likely_entry_points.slice(0, 16),
+    directories: manifest.directories.slice(0, 16),
+    stack_hints: manifest.stack_hints.slice(0, 16),
+    skipped_reasons: Object.fromEntries(Object.entries(manifest.skipped_reasons).slice(0, 8)),
+  };
+}
+
+function budgetPreviews(
+  previews: ProjectChatMetadata["previews"] = [],
+  keywords: string[],
+  maxPreviews: number,
+  maxPreviewChars: number,
+) {
+  const ranked = [...previews]
+    .filter((preview) => isSafeContextPath(preview.path))
+    .sort(
+      (a, b) =>
+        priorityForFile(a.path, keywords) - priorityForFile(b.path, keywords) ||
+        a.path.localeCompare(b.path),
+    )
+    .slice(0, maxPreviews);
+
+  return ranked.map((preview) => {
+    const previewText = String(preview.preview_text ?? "").slice(0, maxPreviewChars);
+    return {
+      ...preview,
+      summary: String(preview.summary ?? "Safe text preview").slice(0, 180),
+      preview_text: previewText,
+      truncated: preview.truncated || preview.preview_text.length > previewText.length,
+      token_estimate: Math.ceil(previewText.length / 4),
+    };
+  });
+}
+
+function withBudgetMetadata(
+  project: ProjectChatMetadata,
+  source: ProjectChatMetadata,
+): ProjectChatMetadata {
+  return {
+    ...project,
+    context_budget: {
+      contextWasTrimmed:
+        (source.files?.length ?? 0) > (project.files?.length ?? 0) ||
+        (source.previews?.length ?? 0) > (project.previews?.length ?? 0) ||
+        byteSize(source.manifest ?? null) > byteSize(project.manifest ?? null),
+      includedFileCount: project.files?.length ?? 0,
+      omittedFileCount: Math.max(0, (source.files?.length ?? 0) - (project.files?.length ?? 0)),
+      includedPreviewCount: project.previews?.length ?? 0,
+      omittedPreviewCount: Math.max(
+        0,
+        (source.previews?.length ?? 0) - (project.previews?.length ?? 0),
+      ),
+      approximateContextChars: JSON.stringify(project).length,
+    },
+  };
+}
+
+function budgetProjectContext(
+  project: ProjectChatMetadata | null,
+  requestText: string,
+): ProjectChatMetadata | null {
+  if (!project) return null;
+  const keywords = requestKeywords(requestText);
+  const rankedFiles = rankFiles(project.files ?? [], keywords);
+  const stages = [
+    { files: 80, previews: 6, previewChars: MAX_PREVIEW_CHARS, manifest: true },
+    { files: 60, previews: 5, previewChars: 800, manifest: true },
+    { files: 40, previews: 4, previewChars: 600, manifest: true },
+    { files: 25, previews: 3, previewChars: 450, manifest: true },
+    { files: 16, previews: 2, previewChars: 320, manifest: false },
+  ];
+
+  let best: ProjectChatMetadata | null = null;
+  for (const stage of stages) {
+    const candidate: ProjectChatMetadata = {
+      ...project,
+      description: project.description ? project.description.slice(0, 220) : project.description,
+      manifest: stage.manifest ? compactManifest(project.manifest) : null,
+      files: rankedFiles.slice(0, stage.files),
+      previews: budgetPreviews(project.previews, keywords, stage.previews, stage.previewChars),
+    };
+    best = withBudgetMetadata(candidate, project);
+    if (byteSize(best) <= MAX_CONTEXT_PAYLOAD_BYTES) return best;
+  }
+
+  const identityOnly = withBudgetMetadata(
+    {
+      ...project,
+      description: project.description ? project.description.slice(0, 160) : project.description,
+      manifest: null,
+      files: [],
+      previews: [],
+    },
+    project,
+  );
+
+  return byteSize(identityOnly) <= MAX_CONTEXT_PAYLOAD_BYTES ? identityOnly : best;
+}
+
 function buildProjectContextPrompt(project: ProjectChatMetadata | null) {
   if (!project?.name) {
     return `\n\nProject Context v1 status:
@@ -209,7 +366,12 @@ function buildProjectContextPrompt(project: ProjectChatMetadata | null) {
 When answering coding or project-change requests, include **Project Context Used** and explicitly state that no project is attached to this session. Separate known facts from assumptions and do not imply file-specific inspection beyond the context provided in this prompt.`;
   }
 
-  const files = rankFiles(project.files ?? []);
+  const files = project.files ?? [];
+  const budget = project.context_budget;
+  const trimmedLine = budget?.contextWasTrimmed
+    ? `contextWasTrimmed: true; Project context was trimmed to fit the safe prompt budget. The proposal is based on the included indexed context. Some files may require manual inspection before implementation.
+- includedFileCount: ${budget.includedFileCount}; omittedFileCount: ${budget.omittedFileCount}; includedPreviewCount: ${budget.includedPreviewCount}; omittedPreviewCount: ${budget.omittedPreviewCount}; approximateContextChars: ${budget.approximateContextChars}`
+    : "contextWasTrimmed: false";
   const previewBlocks = (project.previews ?? [])
     .slice(0, MAX_CONTEXT_PREVIEWS)
     .map((preview) => {
@@ -249,9 +411,10 @@ When answering coding or project-change requests, include **Project Context Used
 - buildAndTestCommands: ${inferCommands(project).join("; ")}
 - inferredRiskAreas: ${inferRiskAreas(project.files ?? []).join("; ")}
 - selectedSafePreviews: ${project.previews?.length ?? 0}
+- ${trimmedLine}
 - unavailableContext: raw repository access, full file contents, secret files, node_modules, dist/build artifacts, lockfile contents unless safely previewed, terminal execution, file mutation, patch application, deployment.
 
-Use this context before proposing changes. Prefer real paths from knownRoutes, knownComponents, importantFiles, rootConfigFiles, and preview paths. If exact files are missing, say "likely" or "needs inspection"; do not pretend to have read unavailable files.${previewBlocks ? `\n\nSelected safe preview snippets:\n${previewBlocks}\n` : ""}`;
+Use this context before proposing changes. Prefer real paths from knownRoutes, knownComponents, importantFiles, rootConfigFiles, and preview paths. If exact files are missing, say "likely" or "needs inspection"; do not pretend to have read unavailable files. If contextWasTrimmed is true, say "Project context was trimmed to fit the safe prompt budget" in **Project Context Used** and note that the proposal is based on included indexed context only.${previewBlocks ? `\n\nSelected safe preview snippets:\n${previewBlocks}\n` : ""}`;
 }
 
 function textResponse(message: string, status: number) {
@@ -421,6 +584,30 @@ function estimateTokens(value: unknown): number {
 
 function byteSize(value: unknown): number {
   return new TextEncoder().encode(JSON.stringify(value ?? "")).length;
+}
+
+function textFromMessage(message: unknown) {
+  if (!message || typeof message !== "object") return "";
+  const record = message as Record<string, unknown>;
+  if (typeof record.content === "string") return record.content;
+  if (!Array.isArray(record.parts)) return "";
+  return record.parts
+    .map((part) => {
+      if (!part || typeof part !== "object") return "";
+      const partRecord = part as Record<string, unknown>;
+      return typeof partRecord.text === "string" ? partRecord.text : "";
+    })
+    .join("\n");
+}
+
+function latestUserRequest(messages: unknown[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (!message || typeof message !== "object") continue;
+    const role = (message as Record<string, unknown>).role;
+    if (role === "user") return textFromMessage(message);
+  }
+  return "";
 }
 
 async function enforceChatQuota(input: {
@@ -605,6 +792,7 @@ async function fetchTrustedProjectContext(input: {
   supabase: ReturnType<typeof createClient<Database>>;
   threadProjectId: string | null;
   selectedPreviewIds: string[];
+  requestText: string;
 }): Promise<ProjectChatMetadata | null> {
   if (!input.threadProjectId) return null;
 
@@ -692,17 +880,20 @@ async function fetchTrustedProjectContext(input: {
     ];
   });
 
-  return {
-    id: project.id,
-    name: project.name,
-    description: project.description,
-    source_type: project.source_type as ProjectSourceType,
-    status: project.status as ProjectStatus,
-    ingestion_status: (latestJob?.status as ProjectIngestionStatus | undefined) ?? "none",
-    manifest,
-    files,
-    previews,
-  };
+  return budgetProjectContext(
+    {
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      source_type: project.source_type as ProjectSourceType,
+      status: project.status as ProjectStatus,
+      ingestion_status: (latestJob?.status as ProjectIngestionStatus | undefined) ?? "none",
+      manifest,
+      files,
+      previews,
+    },
+    input.requestText,
+  );
 }
 
 export const Route = createFileRoute("/api/chat")({
@@ -727,26 +918,21 @@ export const Route = createFileRoute("/api/chat")({
         if (access.response) return access.response;
 
         let project: ProjectChatMetadata | null = null;
+        const requestText = latestUserRequest(messages);
         try {
           project = await fetchTrustedProjectContext({
             supabase: access.supabase,
             threadProjectId:
               typeof access.thread?.project_id === "string" ? access.thread.project_id : null,
             selectedPreviewIds: parseSelectedPreviewIds(body.selectedPreviewIds),
+            requestText,
           });
         } catch (error) {
-          console.error(
+          console.warn(
             "[chat] trusted project context failed",
             withLogContext(context, safeErrorLog(error)),
           );
-          return jsonResponse(
-            {
-              error: "project_context_unavailable",
-              message: "Unable to load trusted project context for this session.",
-            },
-            503,
-            context,
-          );
+          project = null;
         }
 
         try {
