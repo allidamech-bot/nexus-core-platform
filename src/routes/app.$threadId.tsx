@@ -29,6 +29,7 @@ import {
   recordUsageEvent,
 } from "@/features/governance/governanceService";
 import { useLocale } from "@/features/i18n/localeContext";
+import type { TranslationKey } from "@/features/i18n/translations";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -97,6 +98,13 @@ function ThreadView() {
   });
 
   const threadProjectId = typeof thread?.project_id === "string" ? thread.project_id : null;
+  const attachedProjectName =
+    typeof thread?.project_name === "string" && thread.project_name.trim()
+      ? thread.project_name
+      : activeProject && threadProjectId === activeProject.id
+        ? activeProject.name
+        : null;
+  const projectContextState = threadProjectId ? "attached" : activeProject ? "detached" : "none";
   const hasThreadLifecycle = thread
     ? "status" in thread && "archived_at" in thread && "archived_by" in thread
     : false;
@@ -356,7 +364,7 @@ function ThreadView() {
             <div className="text-sm font-semibold truncate">{thread?.title ?? "Session"}</div>
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Agent #{threadId.slice(0, 6)} / {mode}
-              {activeProject ? ` / ${activeProject.name}` : ""}
+              {attachedProjectName ? ` / ${attachedProjectName}` : ""}
               {isArchived ? ` / ${t("archivedSession")}` : ""}
             </div>
           </div>
@@ -410,6 +418,13 @@ function ThreadView() {
                 {t("startNewTaskAfterArchiving")}
               </div>
             )}
+            <ProjectContextStatus
+              state={projectContextState}
+              projectName={attachedProjectName ?? activeProject?.name ?? null}
+              isArchived={isArchived}
+              onAttach={handleAttachProject}
+              t={t}
+            />
             {loadingMsgs && (
               <div className="text-xs text-muted-foreground font-mono">Loading session...</div>
             )}
@@ -501,13 +516,15 @@ function ThreadView() {
                   className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {threadProjectId === activeProject.id
-                    ? "Attached to session"
-                    : "Attach to session"}
+                    ? t("projectContextAttached")
+                    : t("attachThisProject")}
                 </button>
               </div>
             ) : (
               <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                No project attached. Upload a ZIP to give Nexus Core safe project metadata.
+                <span className="font-medium text-zinc-200">{t("noProjectContextAvailable")}</span>
+                <br />
+                {t("responsesMayBeGeneralWithoutProjectContext")}
               </div>
             )}
           </DrawerSection>
@@ -641,6 +658,71 @@ function EmptyChat() {
               {p}
             </div>
           ),
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProjectContextStatus({
+  state,
+  projectName,
+  isArchived,
+  onAttach,
+  t,
+}: {
+  state: "attached" | "detached" | "none";
+  projectName: string | null;
+  isArchived: boolean;
+  onAttach: () => void;
+  t: (key: TranslationKey, values?: Record<string, string | number>) => string;
+}) {
+  const isAttached = state === "attached";
+  const title =
+    state === "attached"
+      ? t("projectContextAttached")
+      : state === "detached"
+        ? t("projectContextNotAttached")
+        : t("noProjectContextAvailable");
+  const body = isAttached
+    ? t("assistantCanUseIndexedProjectContext")
+    : state === "detached"
+      ? t("attachProjectToImproveProposals")
+      : t("responsesMayBeGeneralWithoutProjectContext");
+
+  return (
+    <div
+      className={`rounded-md border px-3 py-2 text-xs ${
+        isAttached ? "border-accent/30 bg-accent/5" : "border-border bg-surface/50"
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className={isAttached ? "font-semibold text-accent" : "font-semibold text-zinc-200"}>
+            {title}
+          </div>
+          <div className="mt-1 text-muted-foreground">
+            {projectName ? (
+              <>
+                <span className="font-medium text-zinc-300">
+                  {isAttached ? t("attachedProject") : t("activeProject")}:
+                </span>{" "}
+                {projectName}
+              </>
+            ) : (
+              body
+            )}
+          </div>
+          {projectName && <div className="mt-1 text-muted-foreground">{body}</div>}
+        </div>
+        {state === "detached" && !isArchived && (
+          <button
+            type="button"
+            onClick={onAttach}
+            className="shrink-0 rounded border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
+          >
+            {t("attachThisProject")}
+          </button>
         )}
       </div>
     </div>

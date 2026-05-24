@@ -199,7 +199,15 @@ function inferCommands(project: ProjectChatMetadata) {
 }
 
 function buildProjectContextPrompt(project: ProjectChatMetadata | null) {
-  if (!project?.name) return "";
+  if (!project?.name) {
+    return `\n\nProject Context v1 status:
+- No project is attached to this session.
+- Proposal is based on general app/chat context only.
+- Attach a project to improve file-specific recommendations.
+- unavailableContext: project identity, indexed file inventory, manifest, safe text previews, raw repository access, secret files, terminal execution, file mutation, patch application, deployment.
+
+When answering coding or project-change requests, include **Project Context Used** and explicitly state that no project is attached to this session. Separate known facts from assumptions and do not imply file-specific inspection beyond the context provided in this prompt.`;
+  }
 
   const files = rankFiles(project.files ?? []);
   const previewBlocks = (project.previews ?? [])
