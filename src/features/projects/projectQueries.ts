@@ -6,6 +6,7 @@ import {
   type UploadProjectInput,
 } from "./projectUploadService";
 import {
+  archiveProject,
   listLatestIngestionJobs,
   listProjectFiles,
   listProjects,
@@ -67,6 +68,18 @@ export function useImportFolderMutation() {
       qc.invalidateQueries({ queryKey: projectKeys.all });
       qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });
       qc.invalidateQueries({ queryKey: projectKeys.previews(result.project.id) });
+    },
+  });
+}
+
+export function useArchiveProjectMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => archiveProject(projectId),
+    onSuccess: (_result, projectId) => {
+      qc.invalidateQueries({ queryKey: projectKeys.all });
+      qc.invalidateQueries({ queryKey: projectKeys.files(projectId) });
+      qc.invalidateQueries({ queryKey: projectKeys.previews(projectId) });
     },
   });
 }

@@ -14,6 +14,7 @@ export async function listProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from("projects")
     .select("*")
+    .neq("status", "archived")
     .order("updated_at", { ascending: false });
 
   if (error) throw error;
@@ -102,6 +103,16 @@ export async function updateProjectStatus(projectId: string, status: ProjectStat
   const { error } = await supabase
     .from("projects")
     .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
+export async function archiveProject(projectId: string): Promise<void> {
+  const archivedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("projects")
+    .update({ status: "archived", updated_at: archivedAt })
     .eq("id", projectId);
 
   if (error) throw error;

@@ -440,6 +440,10 @@ When answering coding or project-change requests, include **Project Context Used
     (project.previews?.length ?? 0) > 0
       ? "safePreviewStatus: safe preview snippets are included for the files listed in filesWithSafePreviews."
       : "safePreviewStatus: no safe preview snippets are included in this prompt. File inventory or manifest context may still be available, but Patch Preview confidence must be inferred or illustrative. For grounded confidence, upload or reprocess a ZIP project that has safe previews.";
+  const lifecycleStatus =
+    project.status === "archived"
+      ? "projectLifecycle: archived; this project is preserved for existing session context and should be treated as read-only historical context, not an active project for new work."
+      : "projectLifecycle: active; this project may be used for current planning context.";
   const trimmedLine = budget?.contextWasTrimmed
     ? `contextWasTrimmed: true; Project context was trimmed to fit the safe prompt budget. The proposal is based on the included indexed context. Some files may require manual inspection before implementation.
 - includedFileCount: ${budget.includedFileCount}; omittedFileCount: ${budget.omittedFileCount}; includedPreviewCount: ${budget.includedPreviewCount}; omittedPreviewCount: ${budget.omittedPreviewCount}; approximateContextChars: ${budget.approximateContextChars}`
@@ -458,6 +462,7 @@ When answering coding or project-change requests, include **Project Context Used
 - source: ${String(project.source_type ?? "unknown").slice(0, 40)}
 - status: ${String(project.status ?? "unknown").slice(0, 40)}
 - ingestion_status: ${String(project.ingestion_status ?? "none").slice(0, 40)}
+- ${lifecycleStatus}
 - description: ${String(project.description ?? "not provided").slice(0, 220)}
 - ${manifestContextLine(project.manifest)}
 - repositoryType/frameworks: ${project.manifest?.frameworks.join(", ") || "unknown"}
