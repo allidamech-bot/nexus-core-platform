@@ -43,7 +43,7 @@ A numbered list of concrete steps you would take. Keep it practical and scoped.
 Bulleted list of likely file paths, modules, or components with a short reason for each. If the exact path is unknown, say so and name the likely area.
 
 **Patch Preview / Proposed Changes**
-An illustrative, non-applied preview of the proposed edits. Use real indexed paths when available. For each file-specific proposal, use this shape:
+An illustrative, non-applied preview of the proposed edits. Prefer files with included safe preview snippets before inventory-only files when they are relevant to the request. Use real indexed paths when available. For each file-specific proposal, use this shape:
 
 ### path/to/file.tsx
 Context confidence: grounded | inferred | illustrative
@@ -53,7 +53,7 @@ Context confidence: grounded | inferred | illustrative
 + proposed new shape
 \`\`\`
 
-Use "grounded" only when safe preview snippets or explicit context for that file are included. Use "inferred" when the path is known from inventory/manifest but contents were not included. Use "illustrative" when the exact path or current contents are unknown. Make clear the preview is a proposal, not an applied patch.
+Use "grounded" only when safe preview snippets or explicit content excerpt for that exact file are included in this prompt. Use "inferred" when the path is known from inventory/manifest but contents were not included. Use "illustrative" when the exact path or current contents are unknown. Make clear the preview is a proposal, not an applied patch.
 
 **Verification Checklist**
 Bulleted list of checks to run later. Prefer project-specific commands when available. For this Nexus-style app, include pnpm run lint, pnpm exec tsc -p tsconfig.json --noEmit, pnpm build, and pnpm test:e2e when relevant. Mark them NOT RUN unless the user explicitly supplied verified results in the conversation.
@@ -260,29 +260,42 @@ function inferCommands(project: ProjectChatMetadata) {
 
 function previewPaths(project: ProjectChatMetadata) {
   return uniqueList(
-    (project.previews ?? []).map((preview) => preview.path),
+    (project.previews ?? [])
+      .filter((preview) => String(preview.preview_text ?? "").trim().length > 0)
+      .map((preview) => preview.path),
     12,
   );
 }
 
-function pathConfidence(path: string, project: ProjectChatMetadata) {
+function pathConfidenceReason(path: string, project: ProjectChatMetadata) {
   if (previewPaths(project).includes(path)) return "grounded";
   if ((project.files ?? []).some((file) => file.path === path)) return "inferred";
   return "illustrative";
 }
 
 function fileConfidenceHints(project: ProjectChatMetadata) {
-  const paths = uniqueList(
-    [
-      ...previewPaths(project),
-      ...(project.files ?? []).map((file) => file.path).slice(0, 16),
-      ...(project.manifest?.likely_entry_points ?? []),
-      ...(project.manifest?.root_config_files ?? []),
-    ],
-    24,
-  );
+  const previewBackedPaths = previewPaths(project);
+  const inventoryPaths = (project.files ?? [])
+    .map((file) => file.path)
+    .filter((path) => !previewBackedPaths.includes(path))
+    .slice(0, 16);
+  const manifestPaths = [
+    ...(project.manifest?.likely_entry_points ?? []),
+    ...(project.manifest?.root_config_files ?? []),
+  ].filter((path) => !previewBackedPaths.includes(path) && !inventoryPaths.includes(path));
 
-  return paths.map((path) => `${path} (${pathConfidence(path, project)})`);
+  const paths = uniqueList([...previewBackedPaths, ...inventoryPaths, ...manifestPaths], 24);
+
+  return paths.map((path) => {
+    const confidence = pathConfidenceReason(path, project);
+    const reason =
+      confidence === "grounded"
+        ? "preview included"
+        : confidence === "inferred"
+          ? "path-only inventory or manifest hint"
+          : "conceptual fallback";
+    return `${path} (${confidence}; ${reason})`;
+  });
 }
 
 function compactManifest(manifest: ProjectManifest | null | undefined): ProjectManifest | null {
@@ -457,9 +470,12 @@ Use this context before proposing changes. Prefer real paths from knownRoutes, k
 
 For **Patch Preview / Proposed Changes**, make the preview file-aware:
 - Create one subsection per proposed file using "### path/to/file".
-- Add "Context confidence: grounded" only for files listed in filesWithSafePreviews or backed by selected safe preview snippets.
+- Prefer relevant files listed in filesWithSafePreviews before path-only files. For header/layout requests, first look for preview-backed paths containing app, layout, header, navigation, route, component, css, tailwind, or i18n.
+- Add "Context confidence: grounded" only for files listed in filesWithSafePreviews or backed by selected safe preview snippets for that exact file. Grounded means you saw a content excerpt, not just a path.
 - Add "Context confidence: inferred" for files known only from file inventory, manifest, routes, components, or entry points.
 - Add "Context confidence: illustrative" when the exact file path or current contents are not available.
+- Do not label a file grounded only because its path exists, route name is known, or component name is known.
+- If no preview-backed file is relevant, use inferred files and explicitly say the current contents were not included.
 - Use approximate deletions only when current contents were not included; label them approximate in prose.
 
 If contextWasTrimmed is true, include these exact sentences in **Project Context Used** or **Limitations / Not Applied Yet**:
