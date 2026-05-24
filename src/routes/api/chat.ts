@@ -161,6 +161,24 @@ function rankFiles(files: ProjectContextFile[], keywords: string[] = []) {
     .slice(0, MAX_CONTEXT_FILES);
 }
 
+function rankPreviewRows<T extends { file_id: string }>(
+  previews: T[],
+  pathByFileId: Map<string, string>,
+  keywords: string[] = [],
+) {
+  return [...previews].sort((a, b) => {
+    const aPath = pathByFileId.get(a.file_id) ?? "";
+    const bPath = pathByFileId.get(b.file_id) ?? "";
+    const aHasPath = aPath && aPath !== "unknown" ? 0 : 1;
+    const bHasPath = bPath && bPath !== "unknown" ? 0 : 1;
+    return (
+      aHasPath - bHasPath ||
+      priorityForFile(aPath, keywords) - priorityForFile(bPath, keywords) ||
+      aPath.localeCompare(bPath)
+    );
+  });
+}
+
 function topDirectories(files: ProjectContextFile[]) {
   const counts = new Map<string, number>();
   for (const file of files) {
@@ -900,18 +918,37 @@ async function fetchTrustedProjectContext(input: {
   }));
 
   const selectedPreviewIds = input.selectedPreviewIds;
+  const keywords = requestKeywords(input.requestText);
+  const rankedFileRows = [...(fileRows ?? [])].sort(
+    (a, b) =>
+      priorityForFile(a.path, keywords) - priorityForFile(b.path, keywords) ||
+      a.path.localeCompare(b.path),
+  );
+  const priorityFileIds = rankedFileRows.slice(0, 80).map((file) => file.id);
   const previewQuery = input.supabase
     .from("project_text_previews")
     .select("id,file_id,preview_text,summary,detected_language,truncated,token_estimate")
     .eq("project_id", project.id);
 
-  const { data: previewRows, error: previewError } =
-    selectedPreviewIds.length > 0
-      ? await previewQuery.in("id", selectedPreviewIds).limit(MAX_CONTEXT_PREVIEWS)
+  const { data: preferredPreviewRows, error: previewError } = selectedPreviewIds.length
+    ? await previewQuery.in("id", selectedPreviewIds).limit(MAX_CONTEXT_PREVIEWS)
+    : priorityFileIds.length
+      ? await previewQuery.in("file_id", priorityFileIds).limit(48)
       : await previewQuery.order("indexed_at", { ascending: false }).limit(24);
   if (previewError) throw previewError;
+  let previewRows = preferredPreviewRows ?? [];
+  if (!selectedPreviewIds.length && previewRows.length === 0) {
+    const { data: fallbackPreviewRows, error: fallbackPreviewError } = await input.supabase
+      .from("project_text_previews")
+      .select("id,file_id,preview_text,summary,detected_language,truncated,token_estimate")
+      .eq("project_id", project.id)
+      .order("indexed_at", { ascending: false })
+      .limit(24);
+    if (fallbackPreviewError) throw fallbackPreviewError;
+    previewRows = fallbackPreviewRows ?? [];
+  }
 
-  const previewFileIds = Array.from(new Set((previewRows ?? []).map((preview) => preview.file_id)));
+  const previewFileIds = Array.from(new Set(previewRows.map((preview) => preview.file_id)));
   const previewPathRows =
     previewFileIds.length > 0
       ? (fileRows ?? []).filter((file) => previewFileIds.includes(file.id))
@@ -920,14 +957,8 @@ async function fetchTrustedProjectContext(input: {
 
   const rankedPreviewRows =
     selectedPreviewIds.length > 0
-      ? (previewRows ?? [])
-      : [...(previewRows ?? [])]
-          .sort((a, b) => {
-            const aPath = pathByFileId.get(a.file_id) ?? "";
-            const bPath = pathByFileId.get(b.file_id) ?? "";
-            return priorityForFile(aPath) - priorityForFile(bPath) || aPath.localeCompare(bPath);
-          })
-          .slice(0, MAX_CONTEXT_PREVIEWS);
+      ? previewRows
+      : rankPreviewRows(previewRows, pathByFileId, keywords).slice(0, MAX_CONTEXT_PREVIEWS);
 
   let usedBytes = 0;
   const previews = rankedPreviewRows.flatMap((preview) => {

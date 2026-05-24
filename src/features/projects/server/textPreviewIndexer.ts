@@ -61,6 +61,27 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
+function previewPriority(path: string): number {
+  const lower = path.toLowerCase();
+  if (lower.endsWith("package.json")) return 0;
+  if (lower.endsWith("src/app.tsx") || lower.endsWith("src/app.jsx")) return 1;
+  if (lower.endsWith("src/main.tsx") || lower.endsWith("src/main.jsx")) return 2;
+  if (lower.includes("/header") || lower.includes("/navigation") || lower.includes("/layout")) {
+    return 3;
+  }
+  if (lower.includes("/src/routes/") || lower.includes("/src/components/")) return 4;
+  if (lower.includes("/src/features/")) return 5;
+  if (lower.includes("vite.config") || lower.includes("tailwind.config")) return 6;
+  if (lower.includes("/tests/") || lower.includes("/e2e/")) return 7;
+  return 8;
+}
+
+function sortPreviewCandidates(files: ZipInventoryFile[]): ZipInventoryFile[] {
+  return [...files].sort(
+    (a, b) => previewPriority(a.path) - previewPriority(b.path) || a.path.localeCompare(b.path),
+  );
+}
+
 function buildPreviewText(text: string): {
   preview: string;
   truncated: boolean;
@@ -89,7 +110,7 @@ export async function generateTextPreviewsFromArchive(
   const suspicious: Array<{ path: string; reason: string }> = [];
   let totalIndexedBytes = 0;
 
-  for (const file of files) {
+  for (const file of sortPreviewCandidates(files)) {
     if (previews.length >= TEXT_PREVIEW_LIMITS.maxPreviewRows) {
       increment(skipped, "preview_count_limit");
       continue;
