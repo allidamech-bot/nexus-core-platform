@@ -137,7 +137,11 @@ async function uploadArchive(input: {
     });
 
   if (error) {
-    console.warn("[project-upload] Supabase Storage upload skipped or failed", safeErrorLog(error));
+    const message = "ZIP upload could not be stored. Safe previews were not generated.";
+    console.warn("[project-upload] Supabase Storage upload failed", safeErrorLog(error));
+    if (import.meta.env.PROD) {
+      throw new Error(message);
+    }
     return { storagePath: null, storageAvailable: false };
   }
 

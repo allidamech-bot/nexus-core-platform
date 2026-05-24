@@ -63,6 +63,8 @@ export const translations = {
       "Folder import is inventory-only. Use ZIP upload when you need safe previews and grounded patch previews.",
     projectLimitReachedForUpload:
       "Project limit reached. Archive an existing project when project lifecycle is available, use a QA account with an open project slot, or upgrade your plan before uploading another ZIP.",
+    zipUploadProcessingFailed:
+      "ZIP upload could not be processed. Safe previews were not generated.",
     archiveProject: "Archive project",
     archiveProjectConfirm: "Archive this project?",
     archiveProjectWarning:
@@ -348,6 +350,7 @@ export const translations = {
       "استيراد المجلد يوفر فهرسًا فقط. استخدم رفع ZIP عند الحاجة إلى معاينات آمنة ومقترحات grounded.",
     projectLimitReachedForUpload:
       "تم بلوغ حد المشاريع. أرشف مشروعًا موجودًا عندما تتوفر دورة حياة المشاريع، أو استخدم حساب QA لديه مساحة مشروع، أو قم بترقية الخطة قبل رفع ZIP آخر.",
+    zipUploadProcessingFailed: "تعذرت معالجة رفع ZIP. لم يتم إنشاء معاينات آمنة.",
     archiveProject: "أرشفة المشروع",
     archiveProjectConfirm: "هل تريد أرشفة هذا المشروع؟",
     archiveProjectWarning:
