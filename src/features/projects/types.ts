@@ -1,4 +1,19 @@
 import type { Json } from "@/integrations/supabase/types";
+import type {
+  GroundedPatchChange,
+  GroundedPatchFile,
+  GroundedPatchPreview,
+  GroundedPatchPreviewStatus,
+  PatchPreviewWarning,
+} from "./patchPreviewTypes";
+
+export type {
+  GroundedPatchChange,
+  GroundedPatchFile,
+  GroundedPatchPreview,
+  GroundedPatchPreviewStatus,
+  PatchPreviewWarning,
+} from "./patchPreviewTypes";
 
 export type ProjectSourceType = "zip" | "github" | "local" | "manual";
 
@@ -168,4 +183,21 @@ export interface ProjectContextPreview {
   preview_text: string;
   truncated: boolean;
   token_estimate: number;
+}
+
+export interface ProjectPatchPreviewRow {
+  id: string;
+  project_id: string;
+  ingestion_job_id: string | null;
+  created_by: string;
+  title: string | null;
+  status: GroundedPatchPreviewStatus;
+  source: string;
+  summary: string | null;
+  grounded_files: GroundedPatchFile[];
+  diff: GroundedPatchChange[];
+  warnings: PatchPreviewWarning[];
+  metadata: Json;
+  created_at: string;
+  updated_at: string;
 }

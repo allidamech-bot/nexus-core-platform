@@ -15,6 +15,7 @@ import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext
 import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
 import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewPanel";
 import { ProjectSafePreviewPanel } from "@/features/projects/ProjectSafePreviewPanel";
+import { ProjectPatchPreviewPanel } from "@/features/projects/ProjectPatchPreviewPanel";
 import { getProjectManifest } from "@/features/projects/projectManifest";
 import { useProjectFilesQuery } from "@/features/projects/projectQueries";
 import {
@@ -593,6 +594,17 @@ function ThreadView() {
                 loading={activeProjectPreviewsLoading}
                 selectedPreviewIds={selectedPreviewIds}
                 onTogglePreview={handleTogglePreview}
+              />
+            </DrawerSection>
+          )}
+
+          {activeProject && session && (
+            <DrawerSection title={t("groundedPatchPreview")}>
+              <ProjectPatchPreviewPanel
+                projectId={activeProject.id}
+                userId={session.user.id}
+                previews={activeProjectPreviews}
+                disabled={isArchived}
               />
             </DrawerSection>
           )}

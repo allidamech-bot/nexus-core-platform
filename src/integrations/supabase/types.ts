@@ -308,6 +308,72 @@ export type Database = {
           },
         ];
       };
+      project_patch_previews: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          diff: Json;
+          grounded_files: Json;
+          id: string;
+          ingestion_job_id: string | null;
+          metadata: Json;
+          project_id: string;
+          source: string;
+          status: string;
+          summary: string | null;
+          title: string | null;
+          updated_at: string;
+          warnings: Json;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          diff?: Json;
+          grounded_files?: Json;
+          id?: string;
+          ingestion_job_id?: string | null;
+          metadata?: Json;
+          project_id: string;
+          source?: string;
+          status?: string;
+          summary?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          warnings?: Json;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          diff?: Json;
+          grounded_files?: Json;
+          id?: string;
+          ingestion_job_id?: string | null;
+          metadata?: Json;
+          project_id?: string;
+          source?: string;
+          status?: string;
+          summary?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          warnings?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_patch_previews_ingestion_job_id_fkey";
+            columns: ["ingestion_job_id"];
+            isOneToOne: false;
+            referencedRelation: "project_ingestion_jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_patch_previews_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_security_events: {
         Row: {
           created_at: string;

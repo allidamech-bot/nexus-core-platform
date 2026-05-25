@@ -12,8 +12,15 @@ import {
   listProjects,
   listProjectTextPreviews,
 } from "./projectService";
+import {
+  createManualPatchPreview,
+  getPatchPreviews,
+  getPreviewablePatchTargets,
+  type CreateManualPatchPreviewInput,
+} from "./projectPatchPreviewService";
 import { governanceKeys } from "@/features/governance/governanceQueries";
 import type {
+  GroundedPatchPreview,
   ProjectFile,
   ProjectIngestionJob,
   ProjectTextPreviewWithPath,
@@ -24,6 +31,8 @@ export const projectKeys = {
   all: ["projects"] as const,
   files: (projectId: string) => ["projects", projectId, "files"] as const,
   previews: (projectId: string) => ["projects", projectId, "text-previews"] as const,
+  patchPreviews: (projectId: string) => ["projects", projectId, "patch-previews"] as const,
+  patchTargets: (projectId: string) => ["projects", projectId, "patch-targets"] as const,
 };
 
 export function useProjectsQuery(enabled = true) {
@@ -108,6 +117,42 @@ export function useProjectFilesQuery(projectId: string | null) {
     queryFn: async (): Promise<ProjectFile[]> => {
       if (!projectId) return [];
       return listProjectFiles(projectId);
+    },
+  });
+}
+
+export function usePatchPreviewsQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId
+      ? projectKeys.patchPreviews(projectId)
+      : ["projects", "patch-previews", "disabled"],
+    queryFn: async (): Promise<GroundedPatchPreview[]> => {
+      if (!projectId) return [];
+      return getPatchPreviews(projectId);
+    },
+  });
+}
+
+export function usePreviewablePatchTargetsQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId
+      ? projectKeys.patchTargets(projectId)
+      : ["projects", "patch-targets", "disabled"],
+    queryFn: async (): Promise<ProjectFile[]> => {
+      if (!projectId) return [];
+      return getPreviewablePatchTargets(projectId);
+    },
+  });
+}
+
+export function useCreatePatchPreviewMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateManualPatchPreviewInput) => createManualPatchPreview(input),
+    onSuccess: (preview) => {
+      qc.invalidateQueries({ queryKey: projectKeys.patchPreviews(preview.projectId) });
     },
   });
 }
