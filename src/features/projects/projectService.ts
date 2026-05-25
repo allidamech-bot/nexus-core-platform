@@ -173,6 +173,13 @@ export async function createProjectFile(input: {
   sizeBytes: number;
   mimeType: string | null;
   checksum: string | null;
+  contentSha256?: string | null;
+  ingestionJobId?: string | null;
+  isText?: boolean;
+  isPreviewable?: boolean;
+  skipped?: boolean;
+  skipReason?: string | null;
+  indexedAt?: string | null;
 }): Promise<ProjectFile> {
   const { data, error } = await supabase
     .from("project_files")
@@ -186,6 +193,13 @@ export async function createProjectFile(input: {
         size_bytes: input.sizeBytes,
         mime_type: input.mimeType,
         checksum: input.checksum,
+        content_sha256: input.contentSha256 ?? null,
+        ingestion_job_id: input.ingestionJobId ?? null,
+        is_text: input.isText ?? false,
+        is_previewable: input.isPreviewable ?? false,
+        skipped: input.skipped ?? false,
+        skip_reason: input.skipReason ?? null,
+        indexed_at: input.indexedAt ?? null,
       },
       { onConflict: "project_id,path" },
     )

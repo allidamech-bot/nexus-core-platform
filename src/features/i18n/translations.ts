@@ -67,6 +67,16 @@ export const translations = {
       "Monthly successful ZIP upload limit reached. Wait for the monthly reset, use a QA account or plan with available uploads, upgrade your plan, or continue with an existing ZIP-backed project that already has safe previews.",
     zipUploadProcessingFailed:
       "ZIP upload could not be processed. Safe previews were not generated.",
+    zipProcessingStarted: "ZIP processing started.",
+    zipProcessedSuccessfully:
+      "ZIP processed successfully. Indexed {indexed} files and skipped {skipped} files.",
+    zipRejectedUnsafePaths: "ZIP rejected because it contains unsafe paths.",
+    zipRejectedSizeLimits: "ZIP rejected because it exceeds file or size limits.",
+    zipProcessingFailed: "ZIP processing failed.",
+    indexedFiles: "Indexed files",
+    skippedFiles: "Skipped files",
+    unsupportedFilesSkippedSafely: "Unsupported files were skipped safely.",
+    safeProjectPreviewReady: "Safe project preview is ready.",
     archiveProject: "Archive project",
     archiveProjectConfirm: "Archive this project?",
     archiveProjectWarning:
@@ -355,6 +365,24 @@ export const translations = {
     monthlyUploadLimitReached:
       "\u062a\u0645 \u0628\u0644\u0648\u063a \u062d\u062f \u0631\u0641\u0639\u0627\u062a ZIP \u0627\u0644\u0646\u0627\u062c\u062d\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0646\u062a\u0638\u0631 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u0634\u0647\u0631\u064a\u0629\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u062d\u0633\u0627\u0628 QA \u0623\u0648 \u062e\u0637\u0629 \u0628\u0647\u0627 \u0631\u0641\u0639\u0627\u062a \u0645\u062a\u0627\u062d\u0629\u060c \u0623\u0648 \u0631\u0642\u0651 \u0627\u0644\u062e\u0637\u0629\u060c \u0623\u0648 \u062a\u0627\u0628\u0639 \u0628\u0645\u0634\u0631\u0648\u0639 ZIP \u0645\u0648\u062c\u0648\u062f \u0644\u062f\u064a\u0647 \u0645\u0639\u0627\u064a\u0646\u0627\u062a \u0622\u0645\u0646\u0629.",
     zipUploadProcessingFailed: "تعذرت معالجة رفع ZIP. لم يتم إنشاء معاينات آمنة.",
+    zipProcessingStarted:
+      "\u0628\u062f\u0623\u062a \u0645\u0639\u0627\u0644\u062c\u0629 \u0645\u0644\u0641 ZIP.",
+    zipProcessedSuccessfully:
+      "\u062a\u0645\u062a \u0645\u0639\u0627\u0644\u062c\u0629 \u0645\u0644\u0641 ZIP \u0628\u0646\u062c\u0627\u062d. \u062a\u0645\u062a \u0641\u0647\u0631\u0633\u0629 {indexed} \u0645\u0644\u0641\u0627\u062a \u0648\u062a\u062c\u0627\u0647\u0644 {skipped} \u0645\u0644\u0641\u0627\u062a.",
+    zipRejectedUnsafePaths:
+      "\u062a\u0645 \u0631\u0641\u0636 \u0645\u0644\u0641 ZIP \u0644\u0623\u0646\u0647 \u064a\u062d\u062a\u0648\u064a \u0639\u0644\u0649 \u0645\u0633\u0627\u0631\u0627\u062a \u063a\u064a\u0631 \u0622\u0645\u0646\u0629.",
+    zipRejectedSizeLimits:
+      "\u062a\u0645 \u0631\u0641\u0636 \u0645\u0644\u0641 ZIP \u0644\u0623\u0646\u0647 \u064a\u062a\u062c\u0627\u0648\u0632 \u062d\u062f\u0648\u062f \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0623\u0648 \u0627\u0644\u062d\u062c\u0645.",
+    zipProcessingFailed:
+      "\u0641\u0634\u0644\u062a \u0645\u0639\u0627\u0644\u062c\u0629 \u0645\u0644\u0641 ZIP.",
+    indexedFiles:
+      "\u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u0641\u0647\u0631\u0633\u0629",
+    skippedFiles:
+      "\u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u062a\u062c\u0627\u0647\u0644\u0629",
+    unsupportedFilesSkippedSafely:
+      "\u062a\u0645 \u062a\u062c\u0627\u0647\u0644 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u063a\u064a\u0631 \u0627\u0644\u0645\u062f\u0639\u0648\u0645\u0629 \u0628\u0623\u0645\u0627\u0646.",
+    safeProjectPreviewReady:
+      "\u0623\u0635\u0628\u062d\u062a \u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0622\u0645\u0646\u0629 \u062c\u0627\u0647\u0632\u0629.",
     archiveProject: "أرشفة المشروع",
     archiveProjectConfirm: "هل تريد أرشفة هذا المشروع؟",
     archiveProjectWarning:

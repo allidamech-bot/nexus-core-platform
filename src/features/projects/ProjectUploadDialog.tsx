@@ -43,6 +43,10 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
     const message = error instanceof Error ? error.message : "";
     if (message.includes("max_projects")) return t("projectLimitReachedForUpload");
     if (message.includes("max_uploads_monthly")) return t("monthlyUploadLimitReached");
+    if (message.includes("unsafe paths")) return t("zipRejectedUnsafePaths");
+    if (message.includes("file or size limits") || message.includes("more than")) {
+      return t("zipRejectedSizeLimits");
+    }
     if (message.includes("Safe previews were not generated")) {
       return t("zipUploadProcessingFailed");
     }
@@ -97,6 +101,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
     }
 
     try {
+      toast.message(t("zipProcessingStarted"));
       const result = await uploadProject.mutateAsync({
         userId,
         file,
@@ -104,7 +109,16 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
         description,
       });
 
-      toast.success(result.storageAvailable ? t("uploadSuccess") : t("uploadStaged"));
+      toast.success(
+        result.processingSummary
+          ? t("zipProcessedSuccessfully", {
+              indexed: result.processingSummary.indexedFiles,
+              skipped: result.processingSummary.skippedFiles,
+            })
+          : result.storageAvailable
+            ? t("uploadSuccess")
+            : t("uploadStaged"),
+      );
       setOpen(false);
       resetForm();
     } catch (error) {

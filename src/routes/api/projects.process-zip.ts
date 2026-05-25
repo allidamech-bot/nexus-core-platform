@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { processProjectArchive } from "@/features/projects/server/ingestionProcessor";
+import { ZipRejectedError } from "@/features/projects/server/zipSafety";
 import {
   getRequestCorrelationId,
   safeErrorLog,
@@ -182,7 +183,9 @@ export const Route = createFileRoute("/api/projects/process-zip")({
               status: result.project.status,
               ingestionStatus: result.job.status,
               fileCount: result.fileCount,
+              summary: result.summary,
               manifest: result.manifest,
+              message: result.summary.message,
               correlationId,
             },
             { headers: { "x-correlation-id": correlationId } },
@@ -204,6 +207,7 @@ export const Route = createFileRoute("/api/projects/process-zip")({
             );
           }
           const message = safeErrorMessage(error, "Project manifest extraction failed.");
+          const rejected = error instanceof ZipRejectedError;
           if (auth.supabase && auth.userId && typeof body.projectId === "string") {
             try {
               await auth.supabase.from("usage_events").insert({
@@ -216,7 +220,24 @@ export const Route = createFileRoute("/api/projects/process-zip")({
               // Best-effort metering should not mask the ingestion error.
             }
           }
-          return jsonResponse({ error: "project_ingestion_failed", message }, 422, context);
+          return jsonResponse(
+            {
+              error: rejected ? "project_zip_rejected" : "project_ingestion_failed",
+              message,
+              summary: {
+                status: rejected ? "rejected" : "failed",
+                totalFilesSeen: 0,
+                indexedFiles: 0,
+                skippedFiles: 0,
+                rejectedFiles: rejected ? 1 : 0,
+                totalSafeTextBytes: 0,
+                warnings: rejected ? [error.reason] : ["processing_failed"],
+                message,
+              },
+            },
+            422,
+            context,
+          );
         }
       },
     },

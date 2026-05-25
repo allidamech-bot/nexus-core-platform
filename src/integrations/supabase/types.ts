@@ -192,41 +192,69 @@ export type Database = {
       project_files: {
         Row: {
           checksum: string | null;
+          content_sha256: string | null;
           created_at: string;
           extension: string | null;
           id: string;
+          indexed_at: string | null;
+          ingestion_job_id: string | null;
+          is_previewable: boolean;
+          is_text: boolean;
           mime_type: string | null;
           name: string;
           path: string;
           project_id: string;
+          skip_reason: string | null;
+          skipped: boolean;
           size_bytes: number | null;
           user_id: string;
         };
         Insert: {
           checksum?: string | null;
+          content_sha256?: string | null;
           created_at?: string;
           extension?: string | null;
           id?: string;
+          indexed_at?: string | null;
+          ingestion_job_id?: string | null;
+          is_previewable?: boolean;
+          is_text?: boolean;
           mime_type?: string | null;
           name: string;
           path: string;
           project_id: string;
+          skip_reason?: string | null;
+          skipped?: boolean;
           size_bytes?: number | null;
           user_id: string;
         };
         Update: {
           checksum?: string | null;
+          content_sha256?: string | null;
           created_at?: string;
           extension?: string | null;
           id?: string;
+          indexed_at?: string | null;
+          ingestion_job_id?: string | null;
+          is_previewable?: boolean;
+          is_text?: boolean;
           mime_type?: string | null;
           name?: string;
           path?: string;
           project_id?: string;
+          skip_reason?: string | null;
+          skipped?: boolean;
           size_bytes?: number | null;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "project_files_ingestion_job_id_fkey";
+            columns: ["ingestion_job_id"];
+            isOneToOne: false;
+            referencedRelation: "project_ingestion_jobs";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "project_files_project_id_fkey";
             columns: ["project_id"];

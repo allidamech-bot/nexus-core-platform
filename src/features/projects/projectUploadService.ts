@@ -40,6 +40,18 @@ export interface UploadProjectResult {
   job: ProjectIngestionJob;
   storagePath: string | null;
   storageAvailable: boolean;
+  processingSummary?: ZipProcessingSummary;
+}
+
+export interface ZipProcessingSummary {
+  status: "completed" | "failed" | "rejected";
+  totalFilesSeen: number;
+  indexedFiles: number;
+  skippedFiles: number;
+  rejectedFiles: number;
+  totalSafeTextBytes: number;
+  warnings: string[];
+  message: string;
 }
 
 export interface ImportFolderInput {
@@ -148,7 +160,10 @@ async function uploadArchive(input: {
   return { storagePath, storageAvailable: true };
 }
 
-async function requestManifestProcessing(projectId: string, correlationId: string): Promise<void> {
+async function requestManifestProcessing(
+  projectId: string,
+  correlationId: string,
+): Promise<ZipProcessingSummary> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("You must be signed in to process the uploaded project.");
@@ -177,6 +192,12 @@ async function requestManifestProcessing(projectId: string, correlationId: strin
         "Project ZIP processing is unavailable. Check Supabase configuration and migrations.",
     );
   }
+
+  const payload = (await response.json()) as { summary?: ZipProcessingSummary; message?: string };
+  if (!payload.summary) {
+    throw new Error(payload.message || "Project ZIP processing did not return a safe summary.");
+  }
+  return payload.summary;
 }
 
 export async function uploadProjectZip(input: UploadProjectInput): Promise<UploadProjectResult> {
@@ -319,32 +340,12 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       stage: upload.storageAvailable ? "archive_uploaded" : "archive_staged_without_storage",
     };
 
+    let processingSummary: ZipProcessingSummary | undefined;
     if (upload.storageAvailable) {
-      await requestManifestProcessing(project.id, correlationId);
+      processingSummary = await requestManifestProcessing(project.id, correlationId);
       job = { ...job, status: "completed", stage: "completed" };
     }
 
-    if (upload.storageAvailable) {
-      await recordUsageEvent({
-        userId: input.userId,
-        projectId: project.id,
-        eventType: "project_upload_completed",
-        correlationId,
-        quantity: 1,
-        sizeBytes: input.file.size,
-        metadata: {
-          file_name: input.file.name,
-          source_type: "zip",
-          storage_available: true,
-          status: "indexed_manifest",
-        },
-      }).catch((error) =>
-        console.warn(
-          "[project-upload] usage event failed",
-          withLogContext({ correlationId }, safeErrorLog(error)),
-        ),
-      );
-    }
     await recordAuditEvent({
       userId: input.userId,
       projectId: project.id,
@@ -358,27 +359,32 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       job,
       storagePath: upload.storagePath,
       storageAvailable: upload.storageAvailable,
+      processingSummary,
     };
   } catch (error) {
     const message = safeErrorMessage(error, "Project upload failed.");
-    await updateProjectStatus(project.id, "failed").catch(() => {});
+    const rejected =
+      message.includes("unsafe paths") ||
+      message.includes("dangerous content") ||
+      message.includes("file or size limits");
+    await updateProjectStatus(project.id, rejected ? "rejected" : "failed").catch(() => {});
     await updateIngestionJob(job.id, {
-      status: "failed",
-      stage: "upload_failed",
+      status: rejected ? "rejected" : "failed",
+      stage: rejected ? "rejected" : "upload_failed",
       error_message: message,
       metadata: { correlationId },
     }).catch(() => {});
     await recordUsageEvent({
       userId: input.userId,
       projectId: project.id,
-      eventType: "ingestion_failed",
+      eventType: rejected ? "project_upload_rejected" : "ingestion_failed",
       correlationId,
       metadata: { message },
     }).catch(() => {});
     await recordAuditEvent({
       userId: input.userId,
       projectId: project.id,
-      eventType: "ingestion_failed",
+      eventType: rejected ? "project_upload_rejected" : "ingestion_failed",
       correlationId,
       severity: "warning",
       payload: { message },

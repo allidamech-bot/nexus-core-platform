@@ -9,12 +9,13 @@ const STATUS_LABELS: Record<ProjectStatus | ProjectIngestionStatus, string> = {
   indexed_manifest: "Manifest ready",
   completed: "Complete",
   failed: "Failed",
+  rejected: "Rejected",
   archived: "Archived",
 };
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus | ProjectIngestionStatus }) {
   const tone =
-    status === "failed"
+    status === "failed" || status === "rejected"
       ? "border-destructive/30 bg-destructive/10 text-destructive"
       : status === "completed" ||
           status === "uploaded" ||

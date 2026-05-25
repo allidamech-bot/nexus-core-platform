@@ -5,6 +5,7 @@ import type { Project, ProjectIngestionJob, ProjectManifest } from "../types";
 import { generateProjectManifest } from "./manifestGenerator";
 import { generateTextPreviewsFromArchive } from "./textPreviewIndexer";
 import { readZipCentralDirectory, toProjectFileInsert } from "./zipCentralDirectory";
+import { ZipRejectedError } from "./zipSafety";
 import { safeErrorLog, safeErrorMessage, withLogContext } from "@/lib/safeLogging";
 
 type ProjectSupabaseClient = SupabaseClient<Database>;
@@ -21,6 +22,18 @@ interface ProcessProjectArchiveResult {
   job: ProjectIngestionJob;
   manifest: ProjectManifest;
   fileCount: number;
+  summary: ZipProcessingSummary;
+}
+
+export interface ZipProcessingSummary {
+  status: "completed" | "failed" | "rejected";
+  totalFilesSeen: number;
+  indexedFiles: number;
+  skippedFiles: number;
+  rejectedFiles: number;
+  totalSafeTextBytes: number;
+  warnings: string[];
+  message: string;
 }
 
 function asRecord(value: Json): Record<string, Json> {
@@ -84,6 +97,59 @@ async function logSecurityEvent(
         ? withLogContext({ correlationId: input.correlationId }, safeErrorLog(error))
         : safeErrorLog(error),
     );
+}
+
+function sumSkipped(skipped: Record<string, number>): number {
+  return Object.values(skipped).reduce((sum, count) => sum + count, 0);
+}
+
+function rowsSkippedCount(
+  inventory: { files: Array<{ mime_type: string }>; skipped: Record<string, number> },
+  previewSkipped: Record<string, number>,
+): number {
+  const nonPreviewableManifestRows = inventory.files.filter(
+    (file) => file.mime_type !== "text",
+  ).length;
+  return sumSkipped(inventory.skipped) + nonPreviewableManifestRows + sumSkipped(previewSkipped);
+}
+
+async function recordSuccessfulZipUploadUsage(input: {
+  supabase: ProjectSupabaseClient;
+  userId: string;
+  projectId: string;
+  jobId: string;
+  fileName: string | null;
+  sizeBytes: number;
+  correlationId?: string;
+}) {
+  const { data: existing, error: existingError } = await input.supabase
+    .from("usage_events")
+    .select("id")
+    .eq("user_id", input.userId)
+    .eq("project_id", input.projectId)
+    .eq("event_type", "project_upload_completed")
+    .limit(1);
+
+  if (existingError) throw existingError;
+  if ((existing ?? []).length > 0) return;
+
+  const { error } = await input.supabase.from("usage_events").insert({
+    user_id: input.userId,
+    project_id: input.projectId,
+    event_type: "project_upload_completed",
+    quantity: 1,
+    size_bytes: input.sizeBytes,
+    metadata: {
+      correlationId: input.correlationId,
+      file_name: input.fileName,
+      source_type: "zip",
+      storage_available: true,
+      status: "indexed_manifest",
+      ingestion_job_id: input.jobId,
+    },
+  });
+
+  if (error) throw error;
 }
 
 async function applyPreviewQuota(
@@ -162,6 +228,9 @@ export async function processProjectArchive({
   if (jobError) throw jobError;
   const job = jobs?.[0] as ProjectIngestionJob | undefined;
   if (!job) throw new Error("Ingestion job not found.");
+  if (job.user_id !== userId || job.project_id !== projectId) {
+    throw new Error("Ingestion job not found.");
+  }
 
   const existingMetadata = asRecord(job.metadata);
   const storagePath =
@@ -171,8 +240,8 @@ export async function processProjectArchive({
   try {
     await updateProjectStatus(supabase, projectId, "processing");
     await updateJob(supabase, job.id, {
-      status: "processing",
-      stage: "extracting",
+      status: "validating",
+      stage: "server_validation",
       error_message: null,
       metadata: {
         ...existingMetadata,
@@ -189,6 +258,7 @@ export async function processProjectArchive({
     if (!archive) throw new Error("Uploaded archive could not be downloaded.");
     const archiveBytes = new Uint8Array(await archive.arrayBuffer());
 
+    await updateProjectStatus(supabase, projectId, "processing");
     await updateJob(supabase, job.id, { status: "processing", stage: "scanning" });
     const inventory = readZipCentralDirectory(archiveBytes);
 
@@ -236,7 +306,9 @@ export async function processProjectArchive({
         .eq("project_id", projectId)
         .eq("path", storagePath);
 
-      const rows = inventory.files.map((file) => toProjectFileInsert(file, projectId, userId));
+      const rows = inventory.files.map((file) =>
+        toProjectFileInsert(file, projectId, userId, job.id),
+      );
       for (let index = 0; index < rows.length; index += 500) {
         const { error } = await supabase
           .from("project_files")
@@ -321,6 +393,22 @@ export async function processProjectArchive({
         skipped_reasons: previewIndex.skipped,
       },
     };
+    const manifestSkippedFiles = rowsSkippedCount(inventory, previewIndex.skipped);
+    const summary: ZipProcessingSummary = {
+      status: "completed",
+      totalFilesSeen: inventory.files.length + sumSkipped(inventory.skipped),
+      indexedFiles: inventory.files.length,
+      skippedFiles: manifestSkippedFiles,
+      rejectedFiles: 0,
+      totalSafeTextBytes: indexedPreviewBytes,
+      warnings: [
+        ...Object.keys(inventory.skipped),
+        ...Object.keys(previewIndex.skipped),
+        ...(inventory.suspicious.length > 0 ? ["suspicious_entries_skipped"] : []),
+        ...(previewIndex.suspicious.length > 0 ? ["preview_entries_skipped"] : []),
+      ],
+      message: `ZIP processed successfully. Indexed ${inventory.files.length} files and skipped ${manifestSkippedFiles} files.`,
+    };
 
     await updateProjectStatus(supabase, projectId, "indexed_manifest");
     await updateJob(supabase, job.id, {
@@ -328,6 +416,20 @@ export async function processProjectArchive({
       stage: "completed",
       error_message: null,
       metadata: completedMetadata,
+    });
+    const fileName =
+      typeof existingMetadata.file_name === "string" ? existingMetadata.file_name : null;
+    await recordSuccessfulZipUploadUsage({
+      supabase,
+      userId,
+      projectId,
+      jobId: job.id,
+      fileName,
+      sizeBytes:
+        typeof existingMetadata.size_bytes === "number"
+          ? existingMetadata.size_bytes
+          : archive.size,
+      correlationId,
     });
 
     return {
@@ -341,19 +443,24 @@ export async function processProjectArchive({
       },
       manifest,
       fileCount: inventory.files.length,
+      summary,
     };
   } catch (error) {
     const message = safeErrorMessage(error, "ZIP manifest extraction failed.");
-    await updateProjectStatus(supabase, projectId, "failed").catch(() => {});
+    const rejected = error instanceof ZipRejectedError;
+    await updateProjectStatus(supabase, projectId, rejected ? "rejected" : "failed").catch(
+      () => {},
+    );
     await updateJob(supabase, job.id, {
-      status: "failed",
-      stage: "failed",
+      status: rejected ? "rejected" : "failed",
+      stage: rejected ? "rejected" : "failed",
       error_message: message,
       metadata: {
         ...existingMetadata,
         ...(correlationId ? { correlationId } : {}),
         pipeline: "zip_manifest_text_preview_v1",
         failure: message,
+        failure_reason: rejected ? error.reason : "processing_failed",
       },
     }).catch(() => {});
     await logSecurityEvent(supabase, {

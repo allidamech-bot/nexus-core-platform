@@ -11,6 +11,7 @@ export type ProjectStatus =
   | "indexed_manifest"
   | "completed"
   | "failed"
+  | "rejected"
   | "archived";
 
 export type ProjectIngestionStatus =
@@ -20,7 +21,8 @@ export type ProjectIngestionStatus =
   | "processing"
   | "indexing_mocked"
   | "completed"
-  | "failed";
+  | "failed"
+  | "rejected";
 
 export type ProjectSecuritySeverity = "info" | "warning" | "critical";
 
@@ -57,6 +59,13 @@ export interface ProjectFile {
   size_bytes: number | null;
   mime_type: string | null;
   checksum: string | null;
+  content_sha256: string | null;
+  ingestion_job_id: string | null;
+  is_text: boolean;
+  is_previewable: boolean;
+  skipped: boolean;
+  skip_reason: string | null;
+  indexed_at: string | null;
   created_at: string;
 }
 
