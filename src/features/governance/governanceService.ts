@@ -124,13 +124,21 @@ export async function getUsageOverview(userId: string): Promise<UsageOverview> {
 
   const { data: monthlyEvents, error } = await supabase
     .from("usage_events")
-    .select("event_type,size_bytes,token_estimate,quantity")
+    .select("event_type,size_bytes,token_estimate,quantity,metadata")
     .eq("user_id", userId)
     .gte("created_at", MONTH_START());
   if (error) throw error;
 
   const uploadedZipBytesThisMonth = (monthlyEvents ?? [])
-    .filter((event) => event.event_type === "project_upload_completed")
+    .filter(
+      (event) =>
+        event.event_type === "project_upload_completed" &&
+        event.metadata &&
+        typeof event.metadata === "object" &&
+        !Array.isArray(event.metadata) &&
+        event.metadata.storage_available === true &&
+        (event.metadata.source_type ?? "zip") === "zip",
+    )
     .reduce((sum, event) => sum + Number(event.size_bytes ?? 0), 0);
   const estimatedTokensThisMonth = (monthlyEvents ?? [])
     .filter((event) => event.event_type === "ai_request")

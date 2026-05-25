@@ -324,23 +324,27 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
       job = { ...job, status: "completed", stage: "completed" };
     }
 
-    await recordUsageEvent({
-      userId: input.userId,
-      projectId: project.id,
-      eventType: "project_upload_completed",
-      correlationId,
-      quantity: 1,
-      sizeBytes: input.file.size,
-      metadata: {
-        file_name: input.file.name,
-        storage_available: upload.storageAvailable,
-      },
-    }).catch((error) =>
-      console.warn(
-        "[project-upload] usage event failed",
-        withLogContext({ correlationId }, safeErrorLog(error)),
-      ),
-    );
+    if (upload.storageAvailable) {
+      await recordUsageEvent({
+        userId: input.userId,
+        projectId: project.id,
+        eventType: "project_upload_completed",
+        correlationId,
+        quantity: 1,
+        sizeBytes: input.file.size,
+        metadata: {
+          file_name: input.file.name,
+          source_type: "zip",
+          storage_available: true,
+          status: "indexed_manifest",
+        },
+      }).catch((error) =>
+        console.warn(
+          "[project-upload] usage event failed",
+          withLogContext({ correlationId }, safeErrorLog(error)),
+        ),
+      );
+    }
     await recordAuditEvent({
       userId: input.userId,
       projectId: project.id,
@@ -446,7 +450,7 @@ export async function importProjectFolder(input: ImportFolderInput): Promise<Upl
   await recordUsageEvent({
     userId: input.userId,
     projectId: project.id,
-    eventType: "project_upload_completed",
+    eventType: "folder_import_completed",
     quantity: 1,
     sizeBytes: input.summary.totalBytes,
     metadata: {

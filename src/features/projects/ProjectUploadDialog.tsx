@@ -42,6 +42,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
   function friendlyUploadError(error: unknown) {
     const message = error instanceof Error ? error.message : "";
     if (message.includes("max_projects")) return t("projectLimitReachedForUpload");
+    if (message.includes("max_uploads_monthly")) return t("monthlyUploadLimitReached");
     if (message.includes("Safe previews were not generated")) {
       return t("zipUploadProcessingFailed");
     }

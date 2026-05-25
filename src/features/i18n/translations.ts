@@ -63,6 +63,8 @@ export const translations = {
       "Folder import is inventory-only. Use ZIP upload when you need safe previews and grounded patch previews.",
     projectLimitReachedForUpload:
       "Project limit reached. Archive an existing project when project lifecycle is available, use a QA account with an open project slot, or upgrade your plan before uploading another ZIP.",
+    monthlyUploadLimitReached:
+      "Monthly successful ZIP upload limit reached. Wait for the monthly reset, use a QA account or plan with available uploads, upgrade your plan, or continue with an existing ZIP-backed project that already has safe previews.",
     zipUploadProcessingFailed:
       "ZIP upload could not be processed. Safe previews were not generated.",
     archiveProject: "Archive project",
@@ -350,6 +352,8 @@ export const translations = {
       "استيراد المجلد يوفر فهرسًا فقط. استخدم رفع ZIP عند الحاجة إلى معاينات آمنة ومقترحات grounded.",
     projectLimitReachedForUpload:
       "تم بلوغ حد المشاريع. أرشف مشروعًا موجودًا عندما تتوفر دورة حياة المشاريع، أو استخدم حساب QA لديه مساحة مشروع، أو قم بترقية الخطة قبل رفع ZIP آخر.",
+    monthlyUploadLimitReached:
+      "\u062a\u0645 \u0628\u0644\u0648\u063a \u062d\u062f \u0631\u0641\u0639\u0627\u062a ZIP \u0627\u0644\u0646\u0627\u062c\u062d\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0646\u062a\u0638\u0631 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u0634\u0647\u0631\u064a\u0629\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u062d\u0633\u0627\u0628 QA \u0623\u0648 \u062e\u0637\u0629 \u0628\u0647\u0627 \u0631\u0641\u0639\u0627\u062a \u0645\u062a\u0627\u062d\u0629\u060c \u0623\u0648 \u0631\u0642\u0651 \u0627\u0644\u062e\u0637\u0629\u060c \u0623\u0648 \u062a\u0627\u0628\u0639 \u0628\u0645\u0634\u0631\u0648\u0639 ZIP \u0645\u0648\u062c\u0648\u062f \u0644\u062f\u064a\u0647 \u0645\u0639\u0627\u064a\u0646\u0627\u062a \u0622\u0645\u0646\u0629.",
     zipUploadProcessingFailed: "تعذرت معالجة رفع ZIP. لم يتم إنشاء معاينات آمنة.",
     archiveProject: "أرشفة المشروع",
     archiveProjectConfirm: "هل تريد أرشفة هذا المشروع؟",
