@@ -77,6 +77,18 @@ export const translations = {
     skippedFiles: "Skipped files",
     unsupportedFilesSkippedSafely: "Unsupported files were skipped safely.",
     safeProjectPreviewReady: "Safe project preview is ready.",
+    safePreview: "Safe preview",
+    fileTree: "File tree",
+    projectFiles: "Project files",
+    previewReady: "Preview ready",
+    noPreviewAvailable: "No preview available",
+    thisFileWasSkipped: "This file was skipped",
+    unsupportedFileType: "Unsupported file type",
+    binaryFilePreviewDisabled: "Binary file preview is disabled",
+    unsafeFileRejected: "Unsafe file was rejected",
+    selectFileToPreview: "Select a file to preview",
+    previewTruncatedForSafety: "Preview truncated for safety",
+    projectNotProcessedYet: "Project has not been processed yet",
     archiveProject: "Archive project",
     archiveProjectConfirm: "Archive this project?",
     archiveProjectWarning:
@@ -383,6 +395,27 @@ export const translations = {
       "\u062a\u0645 \u062a\u062c\u0627\u0647\u0644 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u063a\u064a\u0631 \u0627\u0644\u0645\u062f\u0639\u0648\u0645\u0629 \u0628\u0623\u0645\u0627\u0646.",
     safeProjectPreviewReady:
       "\u0623\u0635\u0628\u062d\u062a \u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0622\u0645\u0646\u0629 \u062c\u0627\u0647\u0632\u0629.",
+    safePreview:
+      "\u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0622\u0645\u0646\u0629",
+    fileTree: "\u0634\u062c\u0631\u0629 \u0627\u0644\u0645\u0644\u0641\u0627\u062a",
+    projectFiles: "\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u0634\u0631\u0648\u0639",
+    previewReady: "\u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u062c\u0627\u0647\u0632\u0629",
+    noPreviewAvailable:
+      "\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0639\u0627\u064a\u0646\u0629 \u0645\u062a\u0627\u062d\u0629",
+    thisFileWasSkipped:
+      "\u062a\u0645 \u062a\u062c\u0627\u0647\u0644 \u0647\u0630\u0627 \u0627\u0644\u0645\u0644\u0641",
+    unsupportedFileType:
+      "\u0646\u0648\u0639 \u0627\u0644\u0645\u0644\u0641 \u063a\u064a\u0631 \u0645\u062f\u0639\u0648\u0645",
+    binaryFilePreviewDisabled:
+      "\u062a\u0645 \u062a\u0639\u0637\u064a\u0644 \u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u062b\u0646\u0627\u0626\u064a\u0629",
+    unsafeFileRejected:
+      "\u062a\u0645 \u0631\u0641\u0636 \u0627\u0644\u0645\u0644\u0641 \u063a\u064a\u0631 \u0627\u0644\u0622\u0645\u0646",
+    selectFileToPreview:
+      "\u0627\u062e\u062a\u0631 \u0645\u0644\u0641\u064b\u0627 \u0644\u0644\u0645\u0639\u0627\u064a\u0646\u0629",
+    previewTruncatedForSafety:
+      "\u062a\u0645 \u0627\u062e\u062a\u0635\u0627\u0631 \u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0644\u0644\u0623\u0645\u0627\u0646",
+    projectNotProcessedYet:
+      "\u0644\u0645 \u062a\u062a\u0645 \u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0628\u0639\u062f",
     archiveProject: "أرشفة المشروع",
     archiveProjectConfirm: "هل تريد أرشفة هذا المشروع؟",
     archiveProjectWarning:

@@ -5,10 +5,13 @@ import type {
   ProjectFile,
   ProjectIngestionJob,
   ProjectIngestionStatus,
+  ProjectManifest,
   ProjectSecurityEvent,
   ProjectStatus,
+  ProjectTextPreview,
   ProjectTextPreviewWithPath,
 } from "./types";
+import { buildProjectFileTree, type ProjectFileTreeNode } from "./projectFileTree";
 
 export async function listProjects(): Promise<Project[]> {
   const { data, error } = await supabase
@@ -42,10 +45,67 @@ export async function listProjectFiles(projectId: string): Promise<ProjectFile[]
     .select("*")
     .eq("project_id", projectId)
     .order("path", { ascending: true })
-    .limit(250);
+    .limit(1000);
 
   if (error) throw error;
   return (data ?? []) as ProjectFile[];
+}
+
+export async function getProjectFileManifest(projectId: string): Promise<ProjectFile[]> {
+  return listProjectFiles(projectId);
+}
+
+export async function getProjectTextPreview(input: {
+  projectId: string;
+  fileId: string;
+}): Promise<ProjectTextPreview | null> {
+  const { data, error } = await supabase
+    .from("project_text_previews")
+    .select("*")
+    .eq("project_id", input.projectId)
+    .eq("file_id", input.fileId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+  return { ...data, preview_text: data.preview_text.slice(0, 12000) } as ProjectTextPreview;
+}
+
+export async function getProjectPreviewSummary(projectId: string): Promise<{
+  manifest: ProjectManifest | null;
+  latestJob: ProjectIngestionJob | null;
+  indexedFiles: number;
+  skippedFiles: number;
+  previewFiles: number;
+}> {
+  const [jobs, files, previews] = await Promise.all([
+    listLatestIngestionJobs([projectId]),
+    listProjectFiles(projectId),
+    listProjectTextPreviews(projectId),
+  ]);
+  const latestJob = jobs[0] ?? null;
+  const metadata =
+    latestJob?.metadata &&
+    typeof latestJob.metadata === "object" &&
+    !Array.isArray(latestJob.metadata)
+      ? latestJob.metadata
+      : {};
+  const manifest =
+    "manifest" in metadata && metadata.manifest && typeof metadata.manifest === "object"
+      ? (metadata.manifest as unknown as ProjectManifest)
+      : null;
+
+  return {
+    manifest,
+    latestJob,
+    indexedFiles: files.filter((file) => !file.skipped).length,
+    skippedFiles: files.filter((file) => file.skipped).length,
+    previewFiles: previews.length,
+  };
+}
+
+export function buildProjectFileTreeFromManifest(rows: ProjectFile[]): ProjectFileTreeNode[] {
+  return buildProjectFileTree(rows);
 }
 
 export async function listProjectTextPreviews(

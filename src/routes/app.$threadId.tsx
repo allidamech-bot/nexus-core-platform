@@ -13,8 +13,8 @@ import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
-import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
 import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewPanel";
+import { ProjectSafePreviewPanel } from "@/features/projects/ProjectSafePreviewPanel";
 import { getProjectManifest } from "@/features/projects/projectManifest";
 import { useProjectFilesQuery } from "@/features/projects/projectQueries";
 import {
@@ -572,9 +572,15 @@ function ThreadView() {
             </DrawerSection>
           )}
 
-          <DrawerSection title={activeProject ? "File Inventory" : "Example file scope"}>
+          <DrawerSection title={activeProject ? t("safePreview") : "Example file scope"}>
             {activeProject ? (
-              <ProjectFileInventory files={projectFiles} loading={projectFilesLoading} />
+              <ProjectSafePreviewPanel
+                files={projectFiles}
+                previews={activeProjectPreviews}
+                manifest={activeProjectManifest}
+                latestJob={activeProject.latest_job}
+                loading={projectFilesLoading || activeProjectPreviewsLoading}
+              />
             ) : (
               <FileTree nodes={mockFileTree} depth={0} />
             )}
