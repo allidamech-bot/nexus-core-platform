@@ -113,6 +113,19 @@ function rowsSkippedCount(
   return sumSkipped(inventory.skipped) + nonPreviewableManifestRows + sumSkipped(previewSkipped);
 }
 
+function successfulZipUploadIdempotencyKey(projectId: string, jobId: string): string {
+  return `zip-upload:${projectId}:${jobId}`;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: string }).code === "23505",
+  );
+}
+
 async function recordSuccessfulZipUploadUsage(input: {
   supabase: ProjectSupabaseClient;
   userId: string;
@@ -122,6 +135,7 @@ async function recordSuccessfulZipUploadUsage(input: {
   sizeBytes: number;
   correlationId?: string;
 }) {
+  const idempotencyKey = successfulZipUploadIdempotencyKey(input.projectId, input.jobId);
   const { data: existing, error: existingError } = await input.supabase
     .from("usage_events")
     .select("id")
@@ -137,6 +151,7 @@ async function recordSuccessfulZipUploadUsage(input: {
     user_id: input.userId,
     project_id: input.projectId,
     event_type: "project_upload_completed",
+    idempotency_key: idempotencyKey,
     quantity: 1,
     size_bytes: input.sizeBytes,
     metadata: {
@@ -146,9 +161,11 @@ async function recordSuccessfulZipUploadUsage(input: {
       storage_available: true,
       status: "indexed_manifest",
       ingestion_job_id: input.jobId,
+      idempotency_key: idempotencyKey,
     },
   });
 
+  if (isUniqueViolation(error)) return;
   if (error) throw error;
 }
 

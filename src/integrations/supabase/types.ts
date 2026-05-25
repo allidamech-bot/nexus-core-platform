@@ -597,6 +597,7 @@ export type Database = {
           created_at: string;
           event_type: string;
           id: string;
+          idempotency_key: string | null;
           metadata: Json;
           project_id: string | null;
           quantity: number;
@@ -609,6 +610,7 @@ export type Database = {
           created_at?: string;
           event_type: string;
           id?: string;
+          idempotency_key?: string | null;
           metadata?: Json;
           project_id?: string | null;
           quantity?: number;
@@ -621,6 +623,7 @@ export type Database = {
           created_at?: string;
           event_type?: string;
           id?: string;
+          idempotency_key?: string | null;
           metadata?: Json;
           project_id?: string | null;
           quantity?: number;

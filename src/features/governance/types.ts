@@ -53,6 +53,7 @@ export interface UsageEventInput {
   tokenEstimate?: number;
   projectId?: string | null;
   threadId?: string | null;
+  idempotencyKey?: string | null;
   metadata?: Record<string, Json>;
 }
 
