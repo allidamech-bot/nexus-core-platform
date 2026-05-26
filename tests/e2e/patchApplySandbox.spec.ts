@@ -1052,4 +1052,26 @@ test.describe("pipeline diagnostics release gate", () => {
     expect(doc).toContain("Object storage writeback");
     expect(doc).toContain("Uploaded/generated code execution");
   });
+
+  test("keeps release candidate report and checklists available", () => {
+    const rcPath = resolve(process.cwd(), "docs/RELEASE_CANDIDATE_RC1.md");
+    const checklistPath = resolve(process.cwd(), "docs/RELEASE_CANDIDATE_CHECKLIST.md");
+
+    expect(existsSync(rcPath)).toBe(true);
+    expect(existsSync(checklistPath)).toBe(true);
+
+    const rcDoc = readFileSync(rcPath, "utf8");
+    const checklistDoc = readFileSync(checklistPath, "utf8");
+
+    expect(rcDoc).toContain("Nexus Core RC-1");
+    expect(rcDoc).toContain("What Is Intentionally Unavailable");
+    expect(rcDoc).toContain("Source ZIP Overwrite");
+    expect(rcDoc).toContain("Object Storage Writeback");
+    expect(rcDoc).toContain("Required Production Smoke Checklist");
+    expect(rcDoc).toContain("Ready for production smoke, not final production source writeback");
+
+    expect(checklistDoc).toContain("Nexus Core Release Candidate Checklist");
+    expect(checklistDoc).toContain("source ZIP");
+    expect(checklistDoc).toContain("object storage writeback");
+  });
 });
