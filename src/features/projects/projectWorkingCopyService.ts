@@ -199,6 +199,11 @@ async function postExecuteWritebackRequest(requestId: string): Promise<ExecuteWr
   };
 }
 
+function filenameFromContentDisposition(header: string | null, fallback: string) {
+  const match = header?.match(/filename="([^"]+)"/i);
+  return match?.[1] || fallback;
+}
+
 export function summarizeWorkingCopy(input: {
   request: ProjectWritebackRequest;
   files: ProjectPatchSnapshotFile[];
@@ -315,6 +320,42 @@ export async function executeApprovedWritebackRequest(
 ): Promise<ExecuteWritebackResult> {
   await requireCurrentUserId();
   return postExecuteWritebackRequest(requestId);
+}
+
+export async function downloadWorkingCopyExport(workingCopyId: string): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Unauthorized");
+
+  const response = await fetch(
+    `/api/projects/working-copy-export?workingCopyId=${encodeURIComponent(workingCopyId)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "Working copy export failed.");
+    throw new Error(message || "Working copy export failed.");
+  }
+
+  const blob = await response.blob();
+  const filename = filenameFromContentDisposition(
+    response.headers.get("Content-Disposition"),
+    `nexus-core-working-copy-${workingCopyId.slice(0, 8)}.json`,
+  );
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function getWorkingCopies(projectId: string): Promise<ProjectWorkingCopy[]> {

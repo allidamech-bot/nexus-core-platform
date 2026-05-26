@@ -158,6 +158,15 @@ export const translations = {
     executionBlocked: "Execution blocked",
     executionDoesNotDeployChanges: "Execution does not deploy changes",
     productionSourceWritebackUnavailableYet: "Production/source writeback is not available yet",
+    downloadWorkingCopyExport: "Download working copy export",
+    exportWorkingCopy: "Export working copy",
+    workingCopyExportCreated: "Working copy export created",
+    workingCopyExportFailed: "Working copy export failed",
+    versionedWorkingCopyBundle: "Versioned working copy bundle",
+    exportLimitedToWorkingCopyText: "Export is limited to working copy text",
+    workingCopyExportBlocked: "Working copy export blocked",
+    workingCopyExportFileLimitExceeded: "Working copy export file limit exceeded",
+    workingCopyExportSizeLimitExceeded: "Working copy export size limit exceeded",
     downloadSnapshotExport: "Download snapshot export",
     exportSnapshot: "Export snapshot",
     exportCreated: "Export created",
@@ -678,6 +687,24 @@ export const translations = {
       "\u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0644\u0627 \u064a\u0646\u0634\u0631 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a",
     productionSourceWritebackUnavailableYet:
       "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+    downloadWorkingCopyExport:
+      "\u062a\u0646\u0632\u064a\u0644 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    exportWorkingCopy:
+      "\u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    workingCopyExportCreated:
+      "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    workingCopyExportFailed:
+      "\u0641\u0634\u0644 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    versionedWorkingCopyBundle:
+      "\u062d\u0632\u0645\u0629 \u0646\u0633\u062e\u0629 \u0639\u0645\u0644 \u0628\u0625\u0635\u062f\u0627\u0631 \u0645\u0633\u062a\u0642\u0644",
+    exportLimitedToWorkingCopyText:
+      "\u0627\u0644\u062a\u0635\u062f\u064a\u0631 \u0645\u062d\u062f\u0648\u062f \u0628\u0646\u0635 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    workingCopyExportBlocked:
+      "\u062a\u0645 \u062d\u0638\u0631 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    workingCopyExportFileLimitExceeded:
+      "\u062a\u0645 \u062a\u062c\u0627\u0648\u0632 \u062d\u062f \u0645\u0644\u0641\u0627\u062a \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    workingCopyExportSizeLimitExceeded:
+      "\u062a\u0645 \u062a\u062c\u0627\u0648\u0632 \u062d\u062f \u062d\u062c\u0645 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
     downloadSnapshotExport:
       "\u062a\u0646\u0632\u064a\u0644 \u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",
     exportSnapshot: "\u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",

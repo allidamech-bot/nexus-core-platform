@@ -50,6 +50,7 @@ import {
   type ProjectWritebackRequest,
 } from "./projectWritebackRequestService";
 import {
+  downloadWorkingCopyExport,
   executeApprovedWritebackRequest,
   getLatestWorkingCopyForRequest,
   getWorkingCopyFiles,
@@ -259,6 +260,12 @@ export function useCreatePatchSnapshotMutation(projectId: string) {
 export function useDownloadPatchSnapshotExportMutation() {
   return useMutation({
     mutationFn: (snapshotId: string): Promise<void> => downloadPatchSnapshotExport(snapshotId),
+  });
+}
+
+export function useDownloadWorkingCopyExportMutation() {
+  return useMutation({
+    mutationFn: (workingCopyId: string): Promise<void> => downloadWorkingCopyExport(workingCopyId),
   });
 }
 

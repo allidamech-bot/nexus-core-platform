@@ -17,6 +17,7 @@ import {
   useCreatePatchSnapshotMutation,
   useCreateWritebackRequestMutation,
   useDownloadPatchSnapshotExportMutation,
+  useDownloadWorkingCopyExportMutation,
   useExecuteWritebackRequestMutation,
   useLatestWorkingCopyForRequestQuery,
   usePatchPreviewsQuery,
@@ -61,6 +62,7 @@ export function ProjectPatchPreviewPanel({
   const sandboxPreview = usePatchPreviewSandboxMutation();
   const createSnapshot = useCreatePatchSnapshotMutation(projectId);
   const downloadSnapshotExport = useDownloadPatchSnapshotExportMutation();
+  const downloadWorkingCopyExport = useDownloadWorkingCopyExportMutation();
   const createWritebackRequest = useCreateWritebackRequestMutation(projectId);
   const submitWritebackRequest = useSubmitWritebackRequestMutation(projectId);
   const cancelWritebackRequest = useCancelWritebackRequestMutation(projectId);
@@ -110,6 +112,7 @@ export function ProjectPatchPreviewPanel({
     sandboxPreview.isPending ||
     createSnapshot.isPending ||
     downloadSnapshotExport.isPending ||
+    downloadWorkingCopyExport.isPending ||
     createWritebackRequest.isPending ||
     submitWritebackRequest.isPending ||
     cancelWritebackRequest.isPending ||
@@ -284,6 +287,16 @@ export function ProjectPatchPreviewPanel({
       toast.success(result.alreadyExists ? t("workingCopyAlreadyExists") : t("workingCopyCreated"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("workingCopyCreationFailed"));
+    }
+  }
+
+  async function handleDownloadWorkingCopyExport(workingCopyId: string) {
+    if (disabled || downloadWorkingCopyExport.isPending) return;
+    try {
+      await downloadWorkingCopyExport.mutateAsync(workingCopyId);
+      toast.success(t("workingCopyExportCreated"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("workingCopyExportFailed"));
     }
   }
 
@@ -477,7 +490,8 @@ export function ProjectPatchPreviewPanel({
               createWritebackRequest.isPending ||
               submitWritebackRequest.isPending ||
               cancelWritebackRequest.isPending ||
-              executeWritebackRequest.isPending
+              executeWritebackRequest.isPending ||
+              downloadWorkingCopyExport.isPending
             }
             workingCopy={latestWorkingCopy}
             workingCopyFiles={latestWorkingCopyFiles}
@@ -487,6 +501,7 @@ export function ProjectPatchPreviewPanel({
             onSubmitWriteback={handleSubmitWritebackRequest}
             onCancelWriteback={handleCancelWritebackRequest}
             onExecuteWriteback={handleExecuteWritebackRequest}
+            onDownloadWorkingCopyExport={handleDownloadWorkingCopyExport}
           />
           {sandboxPreview.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
@@ -522,6 +537,7 @@ function PatchSnapshotAction({
   onSubmitWriteback,
   onCancelWriteback,
   onExecuteWriteback,
+  onDownloadWorkingCopyExport,
 }: {
   disabled?: boolean;
   sandbox: PatchSandboxResult | null;
@@ -541,6 +557,7 @@ function PatchSnapshotAction({
   onSubmitWriteback: (requestId: string) => void;
   onCancelWriteback: (requestId: string) => void;
   onExecuteWriteback: (requestId: string) => void;
+  onDownloadWorkingCopyExport: (workingCopyId: string) => void;
 }) {
   const { t } = useLocale();
   const canCreate = sandbox?.status === "verified" || sandbox?.status === "partial";
@@ -624,6 +641,7 @@ function PatchSnapshotAction({
             onSubmit={onSubmitWriteback}
             onCancel={onCancelWriteback}
             onExecute={onExecuteWriteback}
+            onDownloadWorkingCopyExport={onDownloadWorkingCopyExport}
           />
         </>
       )}
@@ -654,6 +672,7 @@ function WritebackRequestPanel({
   onSubmit,
   onCancel,
   onExecute,
+  onDownloadWorkingCopyExport,
 }: {
   disabled?: boolean;
   snapshot: ProjectPatchSnapshot;
@@ -667,6 +686,7 @@ function WritebackRequestPanel({
   onSubmit: (requestId: string) => void;
   onCancel: (requestId: string) => void;
   onExecute: (requestId: string) => void;
+  onDownloadWorkingCopyExport: (workingCopyId: string) => void;
 }) {
   const { t } = useLocale();
   const canSubmit = request?.status === "draft";
@@ -814,6 +834,7 @@ function WritebackRequestPanel({
               workingCopy={workingCopy}
               files={workingCopyFiles}
               onExecute={onExecute}
+              onDownloadExport={onDownloadWorkingCopyExport}
             />
           )}
         </div>
@@ -829,6 +850,7 @@ function WorkingCopyPanel({
   workingCopy,
   files,
   onExecute,
+  onDownloadExport,
 }: {
   disabled?: boolean;
   loading: boolean;
@@ -836,6 +858,7 @@ function WorkingCopyPanel({
   workingCopy: ProjectWorkingCopy | null;
   files: ProjectWorkingCopyFile[];
   onExecute: (requestId: string) => void;
+  onDownloadExport: (workingCopyId: string) => void;
 }) {
   const { t } = useLocale();
   const [selectedFileId, setSelectedFileId] = useState("");
@@ -894,6 +917,24 @@ function WorkingCopyPanel({
             <Metric label={t("changedFiles")} value={workingCopy.changedFilesCount} />
             <Metric label={t("workingCopyFiles")} value={files.length} />
           </div>
+          <div className="rounded border border-white/5 bg-black/10 p-2 text-[10px] leading-relaxed text-muted-foreground">
+            {t("versionedWorkingCopyBundle")} {t("exportLimitedToWorkingCopyText")}{" "}
+            {t("originalProjectFilesWereNotModified")}{" "}
+            {t("sourceZipAndObjectStorageNotOverwritten")}
+          </div>
+          <button
+            type="button"
+            onClick={() => onDownloadExport(workingCopy.id)}
+            disabled={disabled || loading}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Download className="size-3" />
+            )}
+            {loading ? t("exportWorkingCopy") : t("downloadWorkingCopyExport")}
+          </button>
           {files.length > 0 && (
             <div className="space-y-2">
               <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">

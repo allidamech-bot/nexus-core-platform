@@ -22,7 +22,15 @@ import {
   buildWorkingCopyRows,
   summarizeWorkingCopy,
   validateRequestCanExecute,
+  type ProjectWorkingCopy,
+  type ProjectWorkingCopyFile,
 } from "../../src/features/projects/projectWorkingCopyService";
+import {
+  createWorkingCopyExportBundle,
+  createWorkingCopyExportReadme,
+  enforceWorkingCopyExportLimits,
+  sanitizeWorkingCopyExportPath,
+} from "../../src/features/projects/workingCopyExport";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -733,5 +741,116 @@ test.describe("approved writeback working copy builder", () => {
     });
 
     expect(rows.files[0].content_sha256).toBe(await hashPatchedText("new"));
+  });
+});
+
+test.describe("working copy export builder", () => {
+  const workingCopy: ProjectWorkingCopy = {
+    id: "working-copy-1",
+    projectId: "project-1",
+    writebackRequestId: "request-1",
+    patchPreviewId: "patch-1",
+    patchSnapshotId: "snapshot-1",
+    createdBy: "user-1",
+    executedBy: "user-1",
+    status: "created",
+    title: "Versioned working copy",
+    summary: "Derived working copy",
+    source: "approved_writeback_request",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    metadata: {
+      originalProjectFilesModified: false,
+      originalTextPreviewsModified: false,
+      objectStorageModified: false,
+      sourceZipOverwritten: false,
+    },
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  const workingCopyFile: ProjectWorkingCopyFile = {
+    id: "working-copy-file-1",
+    workingCopyId: workingCopy.id,
+    projectId: workingCopy.projectId,
+    writebackRequestId: workingCopy.writebackRequestId,
+    patchSnapshotId: workingCopy.patchSnapshotId,
+    filePath: "src/app.ts",
+    contentSha256: "hash-2",
+    contentText: "export const value = 'new';\n",
+    sizeBytes: 27,
+    changed: true,
+    previewLimited: true,
+    truncated: false,
+    warnings: [],
+    blockers: [],
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  test("sanitizes safe export paths and blocks unsafe paths", () => {
+    expect(sanitizeWorkingCopyExportPath("src\\app.ts")).toBe("src/app.ts");
+    expect(sanitizeWorkingCopyExportPath(".env.example")).toBe(".env.example");
+    expect(() => sanitizeWorkingCopyExportPath("../app.ts")).toThrow("Unsafe working copy");
+    expect(() => sanitizeWorkingCopyExportPath("/src/app.ts")).toThrow("Absolute working copy");
+    expect(() => sanitizeWorkingCopyExportPath("C:\\src\\app.ts")).toThrow("Windows drive");
+    expect(() => sanitizeWorkingCopyExportPath(".git/config")).toThrow("Unsafe working copy");
+    expect(() => sanitizeWorkingCopyExportPath(".env.local")).toThrow("Sensitive files");
+  });
+
+  test("builds manifest, README, and bundle without mutating source rows", () => {
+    const beforeCopy = JSON.stringify(workingCopy);
+    const beforeFile = JSON.stringify(workingCopyFile);
+    const bundle = createWorkingCopyExportBundle({
+      workingCopy,
+      workingCopyFiles: [workingCopyFile],
+      request: {
+        id: "request-1",
+        status: "approved",
+        reviewedAt: "2026-05-26T00:00:00.000Z",
+        reviewerId: "admin-1",
+        requesterNote: "Please review.",
+        reviewerNote: "Approved.",
+      },
+      exportedAt: "2026-05-26T12:00:00.000Z",
+    });
+
+    expect(bundle.readme).toContain("Original project files were not modified.");
+    expect(bundle.readme).toContain("Source ZIP and object storage were not overwritten.");
+    expect(bundle.manifest.source).toBe("versioned working copy");
+    expect(bundle.manifest.originalProjectFilesModified).toBe(false);
+    expect(bundle.manifest.sourceZipOverwritten).toBe(false);
+    expect(bundle.manifest.objectStorageModified).toBe(false);
+    expect(bundle.files[0]).toMatchObject({
+      exportPath: "working-copy/files/src/app.ts",
+      contentText: "export const value = 'new';\n",
+      contentSha256: "hash-2",
+    });
+    expect(createWorkingCopyExportReadme(workingCopy)).toContain("Versioned working copy bundle");
+    expect(JSON.stringify(workingCopy)).toBe(beforeCopy);
+    expect(JSON.stringify(workingCopyFile)).toBe(beforeFile);
+  });
+
+  test("enforces working copy export file and size limits", () => {
+    expect(() =>
+      enforceWorkingCopyExportLimits({
+        files: Array.from({ length: 151 }, (_, index) => ({
+          ...workingCopyFile,
+          filePath: `src/file-${index}.ts`,
+          exportPath: `working-copy/files/src/file-${index}.ts`,
+        })),
+      }),
+    ).toThrow("Working copy export file limit exceeded.");
+
+    expect(() =>
+      enforceWorkingCopyExportLimits({
+        files: [
+          {
+            ...workingCopyFile,
+            exportPath: "working-copy/files/src/app.ts",
+            contentText: "a".repeat(150_001),
+          },
+        ],
+      }),
+    ).toThrow("Working copy export size limit exceeded.");
   });
 });
