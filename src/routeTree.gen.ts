@@ -19,6 +19,7 @@ import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
+import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -70,6 +71,12 @@ const ApiProjectsProcessZipRoute = ApiProjectsProcessZipRouteImport.update({
   path: '/api/projects/process-zip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProjectsAiPatchPreviewRoute =
+  ApiProjectsAiPatchPreviewRouteImport.update({
+    id: '/api/projects/ai-patch-preview',
+    path: '/api/projects/ai-patch-preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
 export interface FileRoutesByTo {
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
+  '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
 export interface FileRoutesById {
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
 }
 export interface FileRouteTypes {
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app/'
+    | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app'
+    | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
   id:
     | '__root__'
@@ -142,6 +154,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app/'
+    | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
   fileRoutesById: FileRoutesById
 }
@@ -151,6 +164,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
 }
 
@@ -226,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsProcessZipRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/ai-patch-preview': {
+      id: '/api/projects/ai-patch-preview'
+      path: '/api/projects/ai-patch-preview'
+      fullPath: '/api/projects/ai-patch-preview'
+      preLoaderRoute: typeof ApiProjectsAiPatchPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -251,6 +272,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
 }
 export const routeTree = rootRouteImport

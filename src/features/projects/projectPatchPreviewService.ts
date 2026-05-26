@@ -25,6 +25,13 @@ export interface CreateManualPatchPreviewInput {
   newText: string;
 }
 
+export interface CreateAiPatchPreviewInput {
+  projectId: string;
+  fileIds: string[];
+  title?: string;
+  instruction: string;
+}
+
 function asWarnings(value: Json): PatchPreviewWarning[] {
   return Array.isArray(value) ? (value as unknown as PatchPreviewWarning[]) : [];
 }
@@ -231,4 +238,45 @@ export async function createManualPatchPreview(
   } catch (error) {
     return createRejectedPatchPreview(input, error);
   }
+}
+
+export async function createAiPatchPreview(
+  input: CreateAiPatchPreviewInput,
+): Promise<GroundedPatchPreview> {
+  await validatePatchPreviewAccess(input.projectId);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Unauthorized");
+
+  const response = await fetch("/api/projects/ai-patch-preview", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      projectId: input.projectId,
+      fileIds: input.fileIds,
+      title: input.title,
+      instruction: input.instruction,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    previewId?: string;
+    message?: string;
+    warnings?: PatchPreviewWarning[];
+  };
+  if (!response.ok && !payload.previewId) {
+    throw new Error(
+      payload.message || payload.warnings?.[0]?.message || "AI patch preview failed.",
+    );
+  }
+  if (!payload.previewId) {
+    throw new Error("AI patch preview did not return a preview record.");
+  }
+
+  const preview = await getPatchPreview(payload.previewId);
+  if (!preview) throw new Error("AI patch preview could not be loaded.");
+  return preview;
 }

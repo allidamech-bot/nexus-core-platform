@@ -13,9 +13,11 @@ import {
   listProjectTextPreviews,
 } from "./projectService";
 import {
+  createAiPatchPreview,
   createManualPatchPreview,
   getPatchPreviews,
   getPreviewablePatchTargets,
+  type CreateAiPatchPreviewInput,
   type CreateManualPatchPreviewInput,
 } from "./projectPatchPreviewService";
 import { governanceKeys } from "@/features/governance/governanceQueries";
@@ -151,6 +153,16 @@ export function useCreatePatchPreviewMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateManualPatchPreviewInput) => createManualPatchPreview(input),
+    onSuccess: (preview) => {
+      qc.invalidateQueries({ queryKey: projectKeys.patchPreviews(preview.projectId) });
+    },
+  });
+}
+
+export function useCreateAiPatchPreviewMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateAiPatchPreviewInput) => createAiPatchPreview(input),
     onSuccess: (preview) => {
       qc.invalidateQueries({ queryKey: projectKeys.patchPreviews(preview.projectId) });
     },
