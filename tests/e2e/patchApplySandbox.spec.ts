@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { verifyPatchPreviewCanApply } from "../../src/features/projects/patchApplySandbox";
+import {
+  createPatchSnapshotFromSandbox,
+  hashPatchedText,
+} from "../../src/features/projects/patchSnapshot";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -181,5 +185,71 @@ test.describe("patch apply sandbox verifier", () => {
 
     expect(result.files[0].truncated).toBeTruthy();
     expect(result.summary.displayLimited).toBeTruthy();
+  });
+});
+
+test.describe("patch snapshot builder", () => {
+  test("creates snapshot input from a verified sandbox without mutating source preview", async () => {
+    const indexedPreview = textPreview();
+    const before = indexedPreview.preview_text;
+    const preview = patchPreview();
+    const sandbox = verifyPatchPreviewCanApply({
+      preview,
+      files: [baseFile],
+      textPreviews: [indexedPreview],
+    });
+
+    const built = await createPatchSnapshotFromSandbox({
+      preview,
+      sandbox,
+      userId: baseFile.user_id,
+    });
+
+    expect(built.snapshot.status).toBe("created");
+    expect(built.snapshot.changed_files_count).toBe(1);
+    expect(built.files).toHaveLength(1);
+    expect(built.files[0].changed).toBeTruthy();
+    expect(built.files[0].patched_preview_text).toContain("'new'");
+    expect(built.files[0].patched_content_sha256).toBe(
+      await hashPatchedText("export const value = 'new';\n"),
+    );
+    expect(indexedPreview.preview_text).toBe(before);
+  });
+
+  test("blocks snapshot creation from blocked sandbox", async () => {
+    const preview = patchPreview({ oldText: "missing" });
+    const sandbox = verifyPatchPreviewCanApply({
+      preview,
+      files: [baseFile],
+      textPreviews: [textPreview()],
+    });
+
+    await expect(
+      createPatchSnapshotFromSandbox({ preview, sandbox, userId: baseFile.user_id }),
+    ).rejects.toThrow("Cannot create snapshot from blocked sandbox.");
+  });
+
+  test("keeps unchanged files safe and truncates large snapshot previews", async () => {
+    const longText = `${"a".repeat(13000)}old`;
+    const file = { ...baseFile, content_sha256: null, checksum: null };
+    const preview = patchPreview({ oldText: "old", newText: "new", file });
+    const sandbox = verifyPatchPreviewCanApply({
+      preview,
+      files: [file],
+      textPreviews: [textPreview(file, longText)],
+    });
+    const built = await createPatchSnapshotFromSandbox({
+      preview,
+      sandbox,
+      userId: baseFile.user_id,
+    });
+
+    expect(built.files[0].truncated).toBeTruthy();
+    expect(built.files[0].patched_content_sha256).toBeTruthy();
+    expect(built.snapshot.metadata).toMatchObject({
+      original_project_files_modified: false,
+      original_text_previews_modified: false,
+      source_writeback: false,
+    });
   });
 });

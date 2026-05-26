@@ -15,9 +15,13 @@ import {
 import {
   createAiPatchPreview,
   createManualPatchPreview,
+  createPatchSnapshot,
   getPatchPreviews,
+  getPatchSnapshotFiles,
+  getPatchSnapshots,
   getPreviewablePatchTargets,
   runPatchPreviewSandbox,
+  type CreatePatchSnapshotResult,
   type CreateAiPatchPreviewInput,
   type CreateManualPatchPreviewInput,
 } from "./projectPatchPreviewService";
@@ -30,6 +34,7 @@ import type {
   ProjectWithLatestJob,
 } from "./types";
 import type { PatchSandboxResult } from "./patchApplySandbox";
+import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -37,6 +42,9 @@ export const projectKeys = {
   previews: (projectId: string) => ["projects", projectId, "text-previews"] as const,
   patchPreviews: (projectId: string) => ["projects", projectId, "patch-previews"] as const,
   patchTargets: (projectId: string) => ["projects", projectId, "patch-targets"] as const,
+  patchSnapshots: (projectId: string) => ["projects", projectId, "patch-snapshots"] as const,
+  patchSnapshotFiles: (snapshotId: string) =>
+    ["projects", "patch-snapshot-files", snapshotId] as const,
 };
 
 export function useProjectsQuery(enabled = true) {
@@ -151,6 +159,32 @@ export function usePreviewablePatchTargetsQuery(projectId: string | null) {
   });
 }
 
+export function usePatchSnapshotsQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId
+      ? projectKeys.patchSnapshots(projectId)
+      : ["projects", "patch-snapshots", "disabled"],
+    queryFn: async (): Promise<ProjectPatchSnapshot[]> => {
+      if (!projectId) return [];
+      return getPatchSnapshots(projectId);
+    },
+  });
+}
+
+export function usePatchSnapshotFilesQuery(snapshotId: string | null) {
+  return useQuery({
+    enabled: Boolean(snapshotId),
+    queryKey: snapshotId
+      ? projectKeys.patchSnapshotFiles(snapshotId)
+      : ["projects", "patch-snapshot-files", "disabled"],
+    queryFn: async (): Promise<ProjectPatchSnapshotFile[]> => {
+      if (!snapshotId) return [];
+      return getPatchSnapshotFiles(snapshotId);
+    },
+  });
+}
+
 export function useCreatePatchPreviewMutation() {
   const qc = useQueryClient();
   return useMutation({
@@ -175,5 +209,17 @@ export function usePatchPreviewSandboxMutation() {
   return useMutation({
     mutationFn: (previewId: string): Promise<PatchSandboxResult> =>
       runPatchPreviewSandbox(previewId),
+  });
+}
+
+export function useCreatePatchSnapshotMutation(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (previewId: string): Promise<CreatePatchSnapshotResult> =>
+      createPatchSnapshot(previewId),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: projectKeys.patchSnapshots(projectId) });
+      qc.invalidateQueries({ queryKey: projectKeys.patchSnapshotFiles(result.snapshot.id) });
+    },
   });
 }

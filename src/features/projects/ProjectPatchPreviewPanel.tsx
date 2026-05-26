@@ -6,11 +6,15 @@ import { AI_PATCH_LIMITS } from "./aiPatchPreview";
 import {
   useCreateAiPatchPreviewMutation,
   useCreatePatchPreviewMutation,
+  useCreatePatchSnapshotMutation,
   usePatchPreviewsQuery,
+  usePatchSnapshotFilesQuery,
+  usePatchSnapshotsQuery,
   usePatchPreviewSandboxMutation,
   usePreviewablePatchTargetsQuery,
 } from "./projectQueries";
 import type { PatchSandboxResult } from "./patchApplySandbox";
+import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import type { GroundedPatchPreview, ProjectFile, ProjectTextPreviewWithPath } from "./types";
 
 function shortHash(value: string | null) {
@@ -32,12 +36,15 @@ export function ProjectPatchPreviewPanel({
   const { data: targets = [], isLoading: targetsLoading } =
     usePreviewablePatchTargetsQuery(projectId);
   const { data: patchPreviews = [], isLoading: previewsLoading } = usePatchPreviewsQuery(projectId);
+  const { data: patchSnapshots = [] } = usePatchSnapshotsQuery(projectId);
   const createPreview = useCreatePatchPreviewMutation();
   const createAiPreview = useCreateAiPatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
+  const createSnapshot = useCreatePatchSnapshotMutation(projectId);
   const [selectedFileId, setSelectedFileId] = useState("");
   const [selectedAiFileIds, setSelectedAiFileIds] = useState<string[]>([]);
   const [selectedPatchPreviewId, setSelectedPatchPreviewId] = useState("");
+  const [createdSnapshotFiles, setCreatedSnapshotFiles] = useState<ProjectPatchSnapshotFile[]>([]);
   const [title, setTitle] = useState("");
   const [oldText, setOldText] = useState("");
   const [newText, setNewText] = useState("");
@@ -53,7 +60,20 @@ export function ProjectPatchPreviewPanel({
     patchPreviews.find((preview) => preview.id === selectedPatchPreviewId) ??
     patchPreviews[0] ??
     null;
-  const busy = createPreview.isPending || createAiPreview.isPending || sandboxPreview.isPending;
+  const latestSnapshotForSelected = selectedPatchPreview
+    ? (patchSnapshots.find((snapshot) => snapshot.patchPreviewId === selectedPatchPreview.id) ??
+      null)
+    : null;
+  const { data: latestSnapshotFiles = [] } = usePatchSnapshotFilesQuery(
+    latestSnapshotForSelected?.id ?? null,
+  );
+  const displayedSnapshotFiles =
+    createdSnapshotFiles.length > 0 ? createdSnapshotFiles : latestSnapshotFiles;
+  const busy =
+    createPreview.isPending ||
+    createAiPreview.isPending ||
+    sandboxPreview.isPending ||
+    createSnapshot.isPending;
 
   useEffect(() => {
     if (!selectedFileId && previewableTargets[0]) {
@@ -72,6 +92,10 @@ export function ProjectPatchPreviewPanel({
       setSelectedPatchPreviewId(patchPreviews[0].id);
     }
   }, [patchPreviews, selectedPatchPreviewId]);
+
+  useEffect(() => {
+    setCreatedSnapshotFiles([]);
+  }, [selectedPatchPreviewId]);
 
   function toggleAiFile(fileId: string) {
     setSelectedAiFileIds((current) => {
@@ -151,6 +175,20 @@ export function ProjectPatchPreviewPanel({
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("sandboxFailed"));
+    }
+  }
+
+  async function handleCreateSnapshot() {
+    if (!selectedPatchPreview || disabled || createSnapshot.isPending) return;
+    try {
+      const result = await createSnapshot.mutateAsync(selectedPatchPreview.id);
+      setCreatedSnapshotFiles(result.files);
+      toast.success(result.alreadyExists ? t("snapshotAlreadyExists") : t("snapshotCreated"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("snapshotCreationFailed");
+      toast.error(
+        message.includes("blocked sandbox") ? t("cannotCreateSnapshotFromBlockedSandbox") : message,
+      );
     }
   }
 
@@ -326,6 +364,18 @@ export function ProjectPatchPreviewPanel({
             sandboxPreview.data.patchPreviewId === selectedPatchPreview.id && (
               <PatchSandboxResultView result={sandboxPreview.data} />
             )}
+          <PatchSnapshotAction
+            disabled={disabled}
+            sandbox={
+              sandboxPreview.data?.patchPreviewId === selectedPatchPreview.id
+                ? sandboxPreview.data
+                : null
+            }
+            snapshot={latestSnapshotForSelected}
+            files={displayedSnapshotFiles}
+            loading={createSnapshot.isPending}
+            onCreate={handleCreateSnapshot}
+          />
           {sandboxPreview.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
               {t("sandboxFailed")}
@@ -337,6 +387,110 @@ export function ProjectPatchPreviewPanel({
           {t("groundedPatchPreview")}
         </div>
       )}
+    </div>
+  );
+}
+
+function PatchSnapshotAction({
+  disabled,
+  sandbox,
+  snapshot,
+  files,
+  loading,
+  onCreate,
+}: {
+  disabled?: boolean;
+  sandbox: PatchSandboxResult | null;
+  snapshot: ProjectPatchSnapshot | null;
+  files: ProjectPatchSnapshotFile[];
+  loading: boolean;
+  onCreate: () => void;
+}) {
+  const { t } = useLocale();
+  const canCreate = sandbox?.status === "verified" || sandbox?.status === "partial";
+
+  return (
+    <div className="space-y-2 rounded-md border border-border bg-background/40 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+            <ShieldCheck className="size-3 text-accent" />
+            {t("versionedPatchSnapshot")}
+          </div>
+          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            {t("derivedSnapshotOnly")} {t("originalProjectFilesWereNotModified")}{" "}
+            {t("sourceWritebackUnavailableYet")}
+          </div>
+        </div>
+        {snapshot && (
+          <span className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] uppercase text-emerald-300">
+            {snapshot.status}
+          </span>
+        )}
+      </div>
+
+      {!snapshot && (
+        <button
+          type="button"
+          onClick={onCreate}
+          disabled={disabled || loading || !canCreate}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-accent/25 bg-accent/10 px-3 py-2 text-[11px] font-semibold text-accent hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <ShieldCheck className="size-3" />
+          )}
+          {t("createVersionedSnapshot")}
+        </button>
+      )}
+
+      {!snapshot && sandbox && !canCreate && (
+        <div className="rounded border border-destructive/20 bg-destructive/10 p-2 text-[10px] text-destructive">
+          {t("cannotCreateSnapshotFromBlockedSandbox")}
+        </div>
+      )}
+
+      {snapshot && <PatchSnapshotResult snapshot={snapshot} files={files} />}
+    </div>
+  );
+}
+
+function PatchSnapshotResult({
+  snapshot,
+  files,
+}: {
+  snapshot: ProjectPatchSnapshot;
+  files: ProjectPatchSnapshotFile[];
+}) {
+  const { t } = useLocale();
+  const changedFiles = files.filter((file) => file.changed);
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+        <Metric label={t("changedFiles")} value={snapshot.changedFilesCount} />
+        <Metric label={t("snapshotFiles")} value={files.length} />
+      </div>
+      <div className="text-[11px] leading-relaxed text-muted-foreground">
+        {snapshot.summary || t("snapshotCreated")} {t("snapshotLimitedToIndexedText")}
+      </div>
+      {changedFiles.length === 0 && (
+        <div className="rounded border border-white/5 bg-black/10 p-2 text-[10px] text-muted-foreground">
+          {t("noChangedFiles")}
+        </div>
+      )}
+      {changedFiles.map((file) => (
+        <div key={file.id} className="space-y-2 rounded border border-white/5 bg-black/10 p-2">
+          <div className="truncate font-mono text-[10px] text-zinc-300" dir="ltr">
+            {file.filePath} / {shortHash(file.patchedContentSha256)}
+          </div>
+          <SandboxTextBlock label={t("originalPreview")} text={file.originalPreviewText ?? ""} />
+          <SandboxTextBlock label={t("patchedPreview")} text={file.patchedPreviewText ?? ""} />
+          {file.truncated && (
+            <div className="text-[10px] text-warning">{t("previewTruncatedForSafety")}</div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

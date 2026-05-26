@@ -7,6 +7,11 @@ import {
 } from "./patchDiff";
 import { isSensitivePreviewPath } from "./projectFileTree";
 import { verifyPatchPreviewCanApply, type PatchSandboxResult } from "./patchApplySandbox";
+import {
+  createPatchSnapshotFromSandbox,
+  type ProjectPatchSnapshot,
+  type ProjectPatchSnapshotFile,
+} from "./patchSnapshot";
 import type {
   GroundedPatchChange,
   GroundedPatchFile,
@@ -33,6 +38,12 @@ export interface CreateAiPatchPreviewInput {
   instruction: string;
 }
 
+export interface CreatePatchSnapshotResult {
+  snapshot: ProjectPatchSnapshot;
+  files: ProjectPatchSnapshotFile[];
+  alreadyExists: boolean;
+}
+
 function asWarnings(value: Json): PatchPreviewWarning[] {
   return Array.isArray(value) ? (value as unknown as PatchPreviewWarning[]) : [];
 }
@@ -43,6 +54,12 @@ function asGroundedFiles(value: Json): GroundedPatchFile[] {
 
 function asChanges(value: Json): GroundedPatchChange[] {
   return Array.isArray(value) ? (value as unknown as GroundedPatchChange[]) : [];
+}
+
+function asSandboxIssues(value: Json) {
+  return Array.isArray(value)
+    ? (value as unknown as ProjectPatchSnapshot["warnings"])
+    : ([] as ProjectPatchSnapshot["warnings"]);
 }
 
 function toPatchPreview(row: {
@@ -71,6 +88,76 @@ function toPatchPreview(row: {
   };
 }
 
+function toPatchSnapshot(row: {
+  id: string;
+  project_id: string;
+  patch_preview_id: string;
+  created_by: string;
+  status: string;
+  title: string | null;
+  summary: string | null;
+  source: string;
+  verification_status: string;
+  changed_files_count: number;
+  warnings: Json;
+  blockers: Json;
+  metadata: Json;
+  created_at: string;
+}): ProjectPatchSnapshot {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    patchPreviewId: row.patch_preview_id,
+    createdBy: row.created_by,
+    status: row.status as ProjectPatchSnapshot["status"],
+    title: row.title,
+    summary: row.summary,
+    source: "patch_preview_sandbox",
+    verificationStatus: row.verification_status as ProjectPatchSnapshot["verificationStatus"],
+    changedFilesCount: row.changed_files_count,
+    warnings: asSandboxIssues(row.warnings),
+    blockers: asSandboxIssues(row.blockers),
+    metadata: row.metadata,
+    createdAt: row.created_at,
+  };
+}
+
+function toPatchSnapshotFile(row: {
+  id: string;
+  snapshot_id: string;
+  project_id: string;
+  patch_preview_id: string;
+  file_path: string;
+  original_content_sha256: string | null;
+  patched_content_sha256: string | null;
+  original_preview_text: string | null;
+  patched_preview_text: string | null;
+  changed: boolean;
+  preview_limited: boolean;
+  truncated: boolean;
+  warnings: Json;
+  blockers: Json;
+  created_at: string;
+}): ProjectPatchSnapshotFile {
+  return {
+    id: row.id,
+    snapshotId: row.snapshot_id,
+    projectId: row.project_id,
+    patchPreviewId: row.patch_preview_id,
+    filePath: row.file_path,
+    originalContentSha256: row.original_content_sha256,
+    patchedContentSha256: row.patched_content_sha256,
+    originalPreviewText: row.original_preview_text,
+    patchedPreviewText: row.patched_preview_text,
+    changed: row.changed,
+    previewLimited: row.preview_limited,
+    truncated: row.truncated,
+    warnings: asSandboxIssues(row.warnings),
+    blockers: asSandboxIssues(row.blockers),
+    createdAt: row.created_at,
+  };
+}
+
 function safeFailureMessage(error: unknown) {
   if (error instanceof PatchPreviewValidationError) return error.message;
   if (error instanceof Error) return error.message;
@@ -85,6 +172,10 @@ export async function validatePatchPreviewAccess(projectId: string): Promise<voi
 }
 
 export async function validatePatchPreviewSandboxAccess(projectId: string): Promise<void> {
+  await validatePatchPreviewAccess(projectId);
+}
+
+export async function validatePatchSnapshotAccess(projectId: string): Promise<void> {
   await validatePatchPreviewAccess(projectId);
 }
 
@@ -166,6 +257,113 @@ export async function runPatchPreviewSandbox(previewId: string): Promise<PatchSa
   await validatePatchPreviewSandboxAccess(preview.projectId);
   const context = await getPatchPreviewCurrentContext(preview.projectId, preview.groundedFiles);
   return verifyPatchPreviewCanApply({ preview, ...context });
+}
+
+async function requireCurrentUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user?.id) throw new Error("Unauthorized");
+  return data.user.id;
+}
+
+export async function getPatchSnapshots(projectId: string): Promise<ProjectPatchSnapshot[]> {
+  await validatePatchSnapshotAccess(projectId);
+  const { data, error } = await supabase
+    .from("project_patch_snapshots")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) throw error;
+  return (data ?? []).map(toPatchSnapshot);
+}
+
+export async function getPatchSnapshot(snapshotId: string): Promise<ProjectPatchSnapshot | null> {
+  const { data, error } = await supabase
+    .from("project_patch_snapshots")
+    .select("*")
+    .eq("id", snapshotId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? toPatchSnapshot(data) : null;
+}
+
+export async function getPatchSnapshotFiles(
+  snapshotId: string,
+): Promise<ProjectPatchSnapshotFile[]> {
+  const { data, error } = await supabase
+    .from("project_patch_snapshot_files")
+    .select("*")
+    .eq("snapshot_id", snapshotId)
+    .order("file_path", { ascending: true })
+    .limit(100);
+
+  if (error) throw error;
+  return (data ?? []).map(toPatchSnapshotFile);
+}
+
+export async function getLatestPatchSnapshotForPreview(
+  previewId: string,
+): Promise<ProjectPatchSnapshot | null> {
+  const { data, error } = await supabase
+    .from("project_patch_snapshots")
+    .select("*")
+    .eq("patch_preview_id", previewId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? toPatchSnapshot(data) : null;
+}
+
+export async function createPatchSnapshot(previewId: string): Promise<CreatePatchSnapshotResult> {
+  const userId = await requireCurrentUserId();
+  const preview = await getPatchPreviewForSandbox(previewId);
+  if (!preview) throw new Error("Patch preview not found.");
+  await validatePatchSnapshotAccess(preview.projectId);
+
+  const existing = await getLatestPatchSnapshotForPreview(previewId);
+  if (existing) {
+    const files = await getPatchSnapshotFiles(existing.id);
+    return { snapshot: existing, files, alreadyExists: true };
+  }
+
+  const sandbox = await runPatchPreviewSandbox(previewId);
+  const built = await createPatchSnapshotFromSandbox({ preview, sandbox, userId });
+
+  const { data: snapshotRow, error: snapshotError } = await supabase
+    .from("project_patch_snapshots")
+    .insert(built.snapshot)
+    .select()
+    .single();
+
+  if (snapshotError) {
+    if (snapshotError.code === "23505") {
+      const duplicate = await getLatestPatchSnapshotForPreview(previewId);
+      if (duplicate) {
+        const files = await getPatchSnapshotFiles(duplicate.id);
+        return { snapshot: duplicate, files, alreadyExists: true };
+      }
+    }
+    throw snapshotError;
+  }
+
+  const snapshot = toPatchSnapshot(snapshotRow);
+  const fileRows = built.files.map((file) => ({ ...file, snapshot_id: snapshot.id }));
+  const { data: createdFiles, error: filesError } = await supabase
+    .from("project_patch_snapshot_files")
+    .insert(fileRows)
+    .select();
+
+  if (filesError) throw filesError;
+  return {
+    snapshot,
+    files: (createdFiles ?? []).map(toPatchSnapshotFile),
+    alreadyExists: false,
+  };
 }
 
 export async function getPreviewablePatchTargets(projectId: string): Promise<ProjectFile[]> {

@@ -374,6 +374,148 @@ export type Database = {
           },
         ];
       };
+      project_patch_snapshot_files: {
+        Row: {
+          blockers: Json;
+          changed: boolean;
+          created_at: string;
+          file_path: string;
+          id: string;
+          original_content_sha256: string | null;
+          original_preview_text: string | null;
+          patched_content_sha256: string | null;
+          patched_preview_text: string | null;
+          patch_preview_id: string;
+          preview_limited: boolean;
+          project_id: string;
+          snapshot_id: string;
+          truncated: boolean;
+          warnings: Json;
+        };
+        Insert: {
+          blockers?: Json;
+          changed?: boolean;
+          created_at?: string;
+          file_path: string;
+          id?: string;
+          original_content_sha256?: string | null;
+          original_preview_text?: string | null;
+          patched_content_sha256?: string | null;
+          patched_preview_text?: string | null;
+          patch_preview_id: string;
+          preview_limited?: boolean;
+          project_id: string;
+          snapshot_id: string;
+          truncated?: boolean;
+          warnings?: Json;
+        };
+        Update: {
+          blockers?: Json;
+          changed?: boolean;
+          created_at?: string;
+          file_path?: string;
+          id?: string;
+          original_content_sha256?: string | null;
+          original_preview_text?: string | null;
+          patched_content_sha256?: string | null;
+          patched_preview_text?: string | null;
+          patch_preview_id?: string;
+          preview_limited?: boolean;
+          project_id?: string;
+          snapshot_id?: string;
+          truncated?: boolean;
+          warnings?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_patch_snapshot_files_patch_preview_id_fkey";
+            columns: ["patch_preview_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_previews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_patch_snapshot_files_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_patch_snapshot_files_snapshot_id_fkey";
+            columns: ["snapshot_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_snapshots";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_patch_snapshots: {
+        Row: {
+          blockers: Json;
+          changed_files_count: number;
+          created_at: string;
+          created_by: string;
+          id: string;
+          metadata: Json;
+          patch_preview_id: string;
+          project_id: string;
+          source: string;
+          status: string;
+          summary: string | null;
+          title: string | null;
+          verification_status: string;
+          warnings: Json;
+        };
+        Insert: {
+          blockers?: Json;
+          changed_files_count?: number;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          metadata?: Json;
+          patch_preview_id: string;
+          project_id: string;
+          source?: string;
+          status?: string;
+          summary?: string | null;
+          title?: string | null;
+          verification_status: string;
+          warnings?: Json;
+        };
+        Update: {
+          blockers?: Json;
+          changed_files_count?: number;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          metadata?: Json;
+          patch_preview_id?: string;
+          project_id?: string;
+          source?: string;
+          status?: string;
+          summary?: string | null;
+          title?: string | null;
+          verification_status?: string;
+          warnings?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_patch_snapshots_patch_preview_id_fkey";
+            columns: ["patch_preview_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_previews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_patch_snapshots_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_security_events: {
         Row: {
           created_at: string;
