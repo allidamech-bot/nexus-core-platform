@@ -159,6 +159,14 @@ export const translations = {
     executionBlocked: "Execution blocked",
     executionDoesNotDeployChanges: "Execution does not deploy changes",
     productionSourceWritebackUnavailableYet: "Production/source writeback is not available yet",
+    productionReadiness: "Production readiness",
+    deploymentReadiness: "Deployment readiness",
+    credentialedSmokeRequired: "Credentialed smoke required",
+    environmentConfigurationRequired: "Environment configuration required",
+    aiProviderConfigurationRequired: "AI provider configuration required",
+    productionSmokeChecklist: "Production smoke checklist",
+    readyForProductionSmoke: "Ready for production smoke",
+    notReadyForProductionSmoke: "Not ready for production smoke",
     pipelineDiagnostics: "Pipeline diagnostics",
     releaseGate: "Release gate",
     pipelineStage: "Pipeline stage",
@@ -707,6 +715,21 @@ export const translations = {
       "\u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0644\u0627 \u064a\u0646\u0634\u0631 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a",
     productionSourceWritebackUnavailableYet:
       "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+    productionReadiness:
+      "\u062c\u0627\u0647\u0632\u064a\u0629 \u0627\u0644\u0625\u0646\u062a\u0627\u062c",
+    deploymentReadiness: "\u062c\u0627\u0647\u0632\u064a\u0629 \u0627\u0644\u0646\u0634\u0631",
+    credentialedSmokeRequired:
+      "\u064a\u0644\u0632\u0645 \u0641\u062d\u0635 \u0627\u0639\u062a\u0645\u0627\u062f \u062d\u0642\u064a\u0642\u064a",
+    environmentConfigurationRequired:
+      "\u064a\u0644\u0632\u0645 \u0636\u0628\u0637 \u0628\u064a\u0626\u0629 \u0627\u0644\u062a\u0634\u063a\u064a\u0644",
+    aiProviderConfigurationRequired:
+      "\u064a\u0644\u0632\u0645 \u0636\u0628\u0637 \u0645\u0632\u0648\u062f \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a",
+    productionSmokeChecklist:
+      "\u0642\u0627\u0626\u0645\u0629 \u0641\u062d\u0635 \u0627\u0644\u0625\u0646\u062a\u0627\u062c",
+    readyForProductionSmoke:
+      "\u062c\u0627\u0647\u0632 \u0644\u0641\u062d\u0635 \u0627\u0644\u0625\u0646\u062a\u0627\u062c",
+    notReadyForProductionSmoke:
+      "\u063a\u064a\u0631 \u062c\u0627\u0647\u0632 \u0644\u0641\u062d\u0635 \u0627\u0644\u0625\u0646\u062a\u0627\u062c",
     pipelineDiagnostics:
       "\u062a\u0634\u062e\u064a\u0635 \u0645\u0633\u0627\u0631 \u0627\u0644\u0639\u0645\u0644",
     releaseGate: "\u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062c\u0627\u0647\u0632\u064a\u0629",

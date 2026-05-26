@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { verifyPatchPreviewCanApply } from "../../src/features/projects/patchApplySandbox";
 import {
   createPatchSnapshotFromSandbox,
@@ -41,6 +43,7 @@ import type {
   ProjectFile,
   ProjectTextPreviewWithPath,
 } from "../../src/features/projects/types";
+import { translations } from "../../src/features/i18n/translations";
 
 const baseFile: ProjectFile = {
   id: "file-1",
@@ -1032,5 +1035,21 @@ test.describe("pipeline diagnostics release gate", () => {
     );
     expect(diagnostics.safetyInvariants.length).toBeGreaterThan(0);
     expect(JSON.stringify(input)).toBe(before);
+  });
+
+  test("keeps production readiness labels and docs available", () => {
+    const docPath = resolve(process.cwd(), "docs/phase-94-production-readiness.md");
+    expect(existsSync(docPath)).toBe(true);
+    const doc = readFileSync(docPath, "utf8");
+
+    expect(translations.en.productionReadiness).toBe("Production readiness");
+    expect(translations.en.credentialedSmokeRequired).toBe("Credentialed smoke required");
+    expect(translations.ar.productionReadiness).toContain(
+      "\u0627\u0644\u0625\u0646\u062a\u0627\u062c",
+    );
+    expect(doc).toContain("LOVABLE_API_KEY");
+    expect(doc).toContain("Source ZIP overwrite");
+    expect(doc).toContain("Object storage writeback");
+    expect(doc).toContain("Uploaded/generated code execution");
   });
 });

@@ -62,11 +62,13 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
             <ShieldCheck className="size-3 text-accent" />
-            {t("pipelineDiagnostics")}
+            {t("pipelineDiagnostics")} / {t("productionReadiness")}
           </div>
           <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            {t("releaseGate")} /{" "}
-            {diagnostics.health.hasBlockers ? t("blockersDetected") : t("noBlockersDetected")}
+            {t("deploymentReadiness")} / {t("productionSmokeChecklist")} /{" "}
+            {diagnostics.health.hasBlockers
+              ? t("notReadyForProductionSmoke")
+              : t("readyForProductionSmoke")}
           </div>
         </div>
         <span
@@ -89,6 +91,10 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
       <div className="mt-3 rounded border border-white/5 bg-black/10 p-2">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("releaseGate")}
+        </div>
+        <div className="mb-2 text-[10px] leading-relaxed text-muted-foreground">
+          {t("credentialedSmokeRequired")} {t("environmentConfigurationRequired")}{" "}
+          {t("aiProviderConfigurationRequired")}
         </div>
         <div className="grid gap-1 sm:grid-cols-2">
           {releaseRows.map(([label, ready]) => (
