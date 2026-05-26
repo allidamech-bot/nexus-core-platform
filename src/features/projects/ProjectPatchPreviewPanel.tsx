@@ -29,7 +29,9 @@ import {
   useSubmitWritebackRequestMutation,
   useWritebackRequestsQuery,
   useWorkingCopyFilesQuery,
+  useWorkingCopiesQuery,
 } from "./projectQueries";
+import { ProjectPipelineDiagnosticsPanel } from "./ProjectPipelineDiagnosticsPanel";
 import type { PatchSandboxResult } from "./patchApplySandbox";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import type { ProjectWritebackRequest } from "./projectWritebackRequestService";
@@ -57,6 +59,7 @@ export function ProjectPatchPreviewPanel({
   const { data: patchPreviews = [], isLoading: previewsLoading } = usePatchPreviewsQuery(projectId);
   const { data: patchSnapshots = [] } = usePatchSnapshotsQuery(projectId);
   const { data: writebackRequests = [] } = useWritebackRequestsQuery(projectId);
+  const { data: workingCopies = [] } = useWorkingCopiesQuery(projectId);
   const createPreview = useCreatePatchPreviewMutation();
   const createAiPreview = useCreateAiPatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
@@ -311,6 +314,18 @@ export function ProjectPatchPreviewPanel({
           {t("thisPatchNotApplied")} {t("previewLimitedToIndexedText")}
         </div>
       </div>
+
+      <ProjectPipelineDiagnosticsPanel
+        projectId={projectId}
+        safePreviews={previews}
+        patchPreviews={patchPreviews}
+        patchSnapshots={patchSnapshots}
+        writebackRequests={writebackRequests}
+        workingCopies={workingCopies}
+        workingCopyFiles={latestWorkingCopyFiles}
+        uploadQuotaAvailable={null}
+        aiPatchPreviewConfigured={null}
+      />
 
       <div className="space-y-2">
         <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">

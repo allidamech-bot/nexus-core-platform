@@ -130,6 +130,7 @@ export const translations = {
     versionedPatchSnapshot: "Versioned patch snapshot",
     createVersionedSnapshot: "Create versioned snapshot",
     snapshotCreated: "Snapshot created",
+    patchSnapshot: "Patch snapshot",
     snapshotCreationFailed: "Snapshot creation failed",
     snapshotAlreadyExists: "Snapshot already exists",
     derivedSnapshotOnly: "Derived snapshot only",
@@ -158,6 +159,24 @@ export const translations = {
     executionBlocked: "Execution blocked",
     executionDoesNotDeployChanges: "Execution does not deploy changes",
     productionSourceWritebackUnavailableYet: "Production/source writeback is not available yet",
+    pipelineDiagnostics: "Pipeline diagnostics",
+    releaseGate: "Release gate",
+    pipelineStage: "Pipeline stage",
+    readyToContinue: "Ready to continue",
+    blocked: "Blocked",
+    warning: "Warning",
+    complete: "Complete",
+    failed: "Failed",
+    nextSafeAction: "Next safe action",
+    safetyInvariants: "Safety invariants",
+    originalProjectFilesRemainUnchanged: "Original project files remain unchanged",
+    objectStorageRemainsUnchanged: "Object storage remains unchanged",
+    sourceZipRemainsUnchanged: "Source ZIP remains unchanged",
+    sourceWritebackIsNotAvailableYet: "Source writeback is not available yet",
+    fullPipelineSmokeChecklist: "Full pipeline smoke checklist",
+    credentialedSmokeTestsSkippedLocally: "Credentialed smoke tests are skipped locally",
+    noBlockersDetected: "No blockers detected",
+    blockersDetected: "Blockers detected",
     downloadWorkingCopyExport: "Download working copy export",
     exportWorkingCopy: "Export working copy",
     workingCopyExportCreated: "Working copy export created",
@@ -635,6 +654,7 @@ export const translations = {
       "\u0625\u0646\u0634\u0627\u0621 \u0644\u0642\u0637\u0629 \u0628\u0625\u0635\u062f\u0627\u0631 \u0645\u0633\u062a\u0642\u0644",
     snapshotCreated:
       "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0644\u0642\u0637\u0629",
+    patchSnapshot: "\u0644\u0642\u0637\u0629 \u0627\u0644\u062a\u0635\u062d\u064a\u062d",
     snapshotCreationFailed:
       "\u0641\u0634\u0644 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0644\u0642\u0637\u0629",
     snapshotAlreadyExists:
@@ -687,6 +707,32 @@ export const translations = {
       "\u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0644\u0627 \u064a\u0646\u0634\u0631 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a",
     productionSourceWritebackUnavailableYet:
       "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+    pipelineDiagnostics:
+      "\u062a\u0634\u062e\u064a\u0635 \u0645\u0633\u0627\u0631 \u0627\u0644\u0639\u0645\u0644",
+    releaseGate: "\u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062c\u0627\u0647\u0632\u064a\u0629",
+    pipelineStage: "\u0645\u0631\u062d\u0644\u0629 \u0627\u0644\u0645\u0633\u0627\u0631",
+    readyToContinue: "\u062c\u0627\u0647\u0632 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629",
+    blocked: "\u0645\u062d\u0638\u0648\u0631",
+    warning: "\u062a\u062d\u0630\u064a\u0631",
+    complete: "\u0645\u0643\u062a\u0645\u0644",
+    failed: "\u0641\u0634\u0644",
+    nextSafeAction:
+      "\u0627\u0644\u0625\u062c\u0631\u0627\u0621 \u0627\u0644\u0622\u0645\u0646 \u0627\u0644\u062a\u0627\u0644\u064a",
+    safetyInvariants: "\u062b\u0648\u0627\u0628\u062a \u0627\u0644\u0623\u0645\u0627\u0646",
+    originalProjectFilesRemainUnchanged:
+      "\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0623\u0635\u0644\u064a\u0629 \u0628\u0642\u064a\u062a \u062f\u0648\u0646 \u062a\u063a\u064a\u064a\u0631",
+    objectStorageRemainsUnchanged:
+      "\u062a\u062e\u0632\u064a\u0646 \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0628\u0642\u064a \u062f\u0648\u0646 \u062a\u063a\u064a\u064a\u0631",
+    sourceZipRemainsUnchanged:
+      "\u0645\u0644\u0641 ZIP \u0627\u0644\u0623\u0635\u0644\u064a \u0628\u0642\u064a \u062f\u0648\u0646 \u062a\u063a\u064a\u064a\u0631",
+    sourceWritebackIsNotAvailableYet:
+      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+    fullPipelineSmokeChecklist:
+      "\u0642\u0627\u0626\u0645\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0633\u0627\u0631 \u0627\u0644\u0643\u0627\u0645\u0644",
+    credentialedSmokeTestsSkippedLocally:
+      "\u0627\u062e\u062a\u0628\u0627\u0631\u0627\u062a \u0627\u0644\u0627\u0639\u062a\u0645\u0627\u062f \u064a\u062a\u0645 \u062a\u062e\u0637\u064a\u0647\u0627 \u0645\u062d\u0644\u064a\u064b\u0627",
+    noBlockersDetected: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0639\u0648\u0627\u0626\u0642",
+    blockersDetected: "\u062a\u0648\u062c\u062f \u0639\u0648\u0627\u0626\u0642",
     downloadWorkingCopyExport:
       "\u062a\u0646\u0632\u064a\u0644 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
     exportWorkingCopy:

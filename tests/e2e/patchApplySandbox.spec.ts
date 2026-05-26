@@ -31,6 +31,11 @@ import {
   enforceWorkingCopyExportLimits,
   sanitizeWorkingCopyExportPath,
 } from "../../src/features/projects/workingCopyExport";
+import {
+  PIPELINE_STAGE_ORDER,
+  buildProjectPipelineDiagnostics,
+  buildPipelineSafetyInvariants,
+} from "../../src/features/projects/projectPipelineDiagnostics";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -852,5 +857,180 @@ test.describe("working copy export builder", () => {
         ],
       }),
     ).toThrow("Working copy export size limit exceeded.");
+  });
+});
+
+test.describe("pipeline diagnostics release gate", () => {
+  const readyPreview: GroundedPatchPreview = {
+    id: "patch-1",
+    projectId: "project-1",
+    title: "Patch",
+    status: "ready",
+    summary: "Ready patch",
+    groundedFiles: [
+      {
+        fileId: "file-1",
+        path: "src/app.ts",
+        contentSha256: "hash-1",
+        isPreviewable: true,
+        sourcePreviewAvailable: true,
+      },
+    ],
+    changes: [],
+    warnings: [{ code: "ai_change_reason", message: "AI validated." }],
+    createdAt: "2026-05-26T00:00:00.000Z",
+    updatedAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  const snapshot: ProjectPatchSnapshot = {
+    id: "snapshot-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    createdBy: "user-1",
+    status: "created",
+    title: "Snapshot",
+    summary: "Snapshot",
+    source: "patch_preview_sandbox",
+    verificationStatus: "verified",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    metadata: {},
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  const approvedRequest: ProjectWritebackRequest = {
+    id: "request-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    snapshotId: "snapshot-1",
+    requestedBy: "user-1",
+    reviewerId: "admin-1",
+    status: "approved",
+    title: "Request",
+    requesterNote: null,
+    reviewerNote: "Approved.",
+    reviewDecision: "approved",
+    riskLevel: "low",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    snapshotSummary: {},
+    metadata: {},
+    reviewMetadata: {},
+    createdAt: "2026-05-26T00:00:00.000Z",
+    updatedAt: "2026-05-26T00:00:00.000Z",
+    submittedAt: "2026-05-26T00:00:00.000Z",
+    reviewedAt: "2026-05-26T01:00:00.000Z",
+  };
+
+  const workingCopy: ProjectWorkingCopy = {
+    id: "working-copy-1",
+    projectId: "project-1",
+    writebackRequestId: "request-1",
+    patchPreviewId: "patch-1",
+    patchSnapshotId: "snapshot-1",
+    createdBy: "user-1",
+    executedBy: "user-1",
+    status: "created",
+    title: "Versioned working copy",
+    summary: "Working copy",
+    source: "approved_writeback_request",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    metadata: {},
+    createdAt: "2026-05-26T02:00:00.000Z",
+  };
+
+  const workingCopyFile: ProjectWorkingCopyFile = {
+    id: "working-copy-file-1",
+    workingCopyId: "working-copy-1",
+    projectId: "project-1",
+    writebackRequestId: "request-1",
+    patchSnapshotId: "snapshot-1",
+    filePath: "src/app.ts",
+    contentSha256: "hash-2",
+    contentText: "new",
+    sizeBytes: 3,
+    changed: true,
+    previewLimited: true,
+    truncated: false,
+    warnings: [],
+    blockers: [],
+    createdAt: "2026-05-26T02:00:00.000Z",
+  };
+
+  test("keeps diagnostics stage ordering stable", () => {
+    const diagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [readyPreview],
+    });
+
+    expect(diagnostics.stages.map((stage) => stage.key)).toEqual(PIPELINE_STAGE_ORDER);
+  });
+
+  test("release gate never enables source writeback", () => {
+    const diagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [readyPreview],
+      patchSnapshots: [snapshot],
+      writebackRequests: [approvedRequest],
+      workingCopies: [workingCopy],
+      workingCopyFiles: [workingCopyFile],
+    });
+
+    expect(diagnostics.releaseGate.realSourceWritebackUnavailable).toBe(true);
+    expect(diagnostics.releaseGate.sourceWritebackAvailable).toBe(false);
+  });
+
+  test("blocks snapshot export when a patch preview has no snapshot", () => {
+    const diagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [readyPreview],
+    });
+    const exportStage = diagnostics.stages.find((stage) => stage.key === "snapshotExport");
+
+    expect(exportStage?.status).toBe("blocked");
+    expect(exportStage?.blockers.join(" ")).toContain("snapshot");
+  });
+
+  test("marks working copy export complete when file rows are present", () => {
+    const diagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [readyPreview],
+      patchSnapshots: [snapshot],
+      writebackRequests: [approvedRequest],
+      workingCopies: [workingCopy],
+      workingCopyFiles: [workingCopyFile],
+    });
+    const exportStage = diagnostics.stages.find((stage) => stage.key === "workingCopyExport");
+
+    expect(exportStage?.status).toBe("complete");
+  });
+
+  test("includes safety invariant messages and does not mutate inputs", () => {
+    const input = {
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [readyPreview],
+      patchSnapshots: [snapshot],
+      writebackRequests: [approvedRequest],
+      workingCopies: [workingCopy],
+      workingCopyFiles: [workingCopyFile],
+    };
+    const before = JSON.stringify(input);
+    const diagnostics = buildProjectPipelineDiagnostics(input);
+    const invariants = buildPipelineSafetyInvariants();
+
+    expect(invariants.map((item) => item.label).join(" ")).toContain(
+      "Original project_files remain unchanged",
+    );
+    expect(diagnostics.safetyInvariants.length).toBeGreaterThan(0);
+    expect(JSON.stringify(input)).toBe(before);
   });
 });
