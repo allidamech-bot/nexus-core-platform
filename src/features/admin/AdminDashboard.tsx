@@ -247,8 +247,7 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
                 <div>
                   <h2 className="text-sm font-semibold">{t("writebackReviewWorkflow")}</h2>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {t("submittedWritebackRequests")} / {t("approvalDoesNotApplyChanges")} /{" "}
-                    {t("sourceWritebackUnavailableYet")}
+                    {t("writebackReviewWorkflowDescription")}
                   </p>
                 </div>
                 <span className="rounded border border-warning/30 bg-warning/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-warning">

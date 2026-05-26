@@ -32,6 +32,7 @@ export const translations = {
     authServiceUnreachable:
       "Authentication service is unreachable. Check your connection and Supabase configuration.",
     authFailed: "Authentication failed. Please try again.",
+    initializingWorkspace: "Initializing workspace...",
 
     // Sidebar / nav
     workspace: "Workspace",
@@ -47,6 +48,8 @@ export const translations = {
     soon: "Soon",
     settings: "Settings",
     projects: "Projects",
+    connectRepo: "Connect Repo",
+    connectRepoDisabledTooltip: "Repository connection is not supported in this phase.",
 
     // Upload dialog
     uploadZip: "Upload ZIP",
@@ -73,6 +76,7 @@ export const translations = {
     zipRejectedUnsafePaths: "ZIP rejected because it contains unsafe paths.",
     zipRejectedSizeLimits: "ZIP rejected because it exceeds file or size limits.",
     zipProcessingFailed: "ZIP processing failed.",
+    loadingPreviews: "Loading previews...",
     indexedFiles: "Indexed files",
     skippedFiles: "Skipped files",
     unsupportedFilesSkippedSafely: "Unsupported files were skipped safely.",
@@ -227,6 +231,8 @@ export const translations = {
     governanceReviewRequired: "Governance review required",
     approvalDoesNotApplyChangesYet: "Approval does not apply changes yet",
     writebackReviewWorkflow: "Writeback review workflow",
+    writebackReviewWorkflowDescription:
+      "Review submitted writeback requests. Approval authorizes future writeback; changes are not applied directly.",
     submittedWritebackRequests: "Submitted writeback requests",
     reviewRequest: "Review request",
     approveRequest: "Approve request",
@@ -516,6 +522,7 @@ export const translations = {
       "\u062e\u062f\u0645\u0629 \u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u062a\u0635\u0627\u0644\u0643 \u0648\u0625\u0639\u062f\u0627\u062f Supabase.",
     authFailed:
       "\u0641\u0634\u0644\u062a \u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.",
+    initializingWorkspace: "جارٍ تهيئة مساحة العمل...",
     // Sidebar / nav
     workspace: "مساحة العمل",
     quickActions: "إجراءات سريعة",
@@ -530,6 +537,8 @@ export const translations = {
     soon: "قريبًا",
     settings: "الإعدادات",
     projects: "المشاريع",
+    connectRepo: "ربط المستودع",
+    connectRepoDisabledTooltip: "ربط المستودع غير مدعوم في هذه المرحلة.",
 
     // Upload dialog
     uploadZip: "رفع ملف ZIP",
@@ -559,6 +568,7 @@ export const translations = {
       "\u062a\u0645 \u0631\u0641\u0636 \u0645\u0644\u0641 ZIP \u0644\u0623\u0646\u0647 \u064a\u062a\u062c\u0627\u0648\u0632 \u062d\u062f\u0648\u062f \u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0623\u0648 \u0627\u0644\u062d\u062c\u0645.",
     zipProcessingFailed:
       "\u0641\u0634\u0644\u062a \u0645\u0639\u0627\u0644\u062c\u0629 \u0645\u0644\u0641 ZIP.",
+    loadingPreviews: "جارٍ تحميل المعاينات...",
     indexedFiles:
       "\u0627\u0644\u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u0641\u0647\u0631\u0633\u0629",
     skippedFiles:
@@ -826,6 +836,8 @@ export const translations = {
       "\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0644\u0627 \u062a\u0637\u0628\u0642 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a \u0628\u0639\u062f",
     writebackReviewWorkflow:
       "\u0633\u064a\u0631 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631",
+    writebackReviewWorkflowDescription:
+      "مراجعة طلبات الكتابة المقدمة. الموافقة ترخص للكتابة المستقبلية؛ لا يتم تطبيق التغييرات مباشرة.",
     submittedWritebackRequests:
       "\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u0627\u0644\u0645\u0631\u0633\u0644\u0629",
     reviewRequest: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0637\u0644\u0628",

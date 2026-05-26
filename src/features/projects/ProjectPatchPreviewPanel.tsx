@@ -447,7 +447,7 @@ export function ProjectPatchPreviewPanel({
       </button>
 
       {previewsLoading ? (
-        <div className="text-xs text-muted-foreground">{t("loadingProjects")}</div>
+        <div className="text-xs text-muted-foreground">{t("loadingPreviews")}</div>
       ) : selectedPatchPreview ? (
         <div className="space-y-2">
           {patchPreviews.length > 1 && (

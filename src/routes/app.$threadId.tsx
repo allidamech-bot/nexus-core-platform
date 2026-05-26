@@ -31,6 +31,7 @@ import {
 } from "@/features/governance/governanceService";
 import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -383,12 +384,23 @@ function ThreadView() {
                 }
               />
             )}
-            <button
-              className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
-              disabled
-            >
-              <GitBranch className="size-3" /> Connect Repo
-            </button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block">
+                    <button
+                      className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled
+                    >
+                      <GitBranch className="size-3" /> {t("connectRepo")}
+                    </button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{t("connectRepoDisabledTooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {hasThreadLifecycle && !isArchived && (
               <button
                 type="button"
@@ -435,7 +447,7 @@ function ThreadView() {
             ))}
             {status === "submitted" && (
               <div className="font-mono text-[11px] text-accent flex items-center gap-2">
-                <Loader2 className="size-3 animate-spin" /> Initializing workspace...
+                <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
               </div>
             )}
           </div>
@@ -508,7 +520,7 @@ function ThreadView() {
                 </div>
                 <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   {activeProject.source_type} / ingestion{" "}
-                  {activeProject.latest_job?.status.replace("_", " ") ?? "not started"}
+                  {activeProject.latest_job?.status.replace(/_/g, " ") ?? "not started"}
                 </div>
                 <button
                   type="button"

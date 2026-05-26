@@ -50,7 +50,7 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
     if (message.includes("Safe previews were not generated")) {
       return t("zipUploadProcessingFailed");
     }
-    return message || t("uploadSuccess");
+    return message || t("zipProcessingFailed");
   }
 
   function resetForm() {
