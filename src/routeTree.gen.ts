@@ -19,6 +19,7 @@ import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiProjectsWritebackReviewRouteImport } from './routes/api/projects.writeback-review'
+import { Route as ApiProjectsWritebackExecuteRouteImport } from './routes/api/projects.writeback-execute'
 import { Route as ApiProjectsSnapshotExportRouteImport } from './routes/api/projects.snapshot-export'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
@@ -74,6 +75,12 @@ const ApiProjectsWritebackReviewRoute =
     path: '/api/projects/writeback-review',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiProjectsWritebackExecuteRoute =
+  ApiProjectsWritebackExecuteRouteImport.update({
+    id: '/api/projects/writeback-execute',
+    path: '/api/projects/writeback-execute',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsSnapshotExportRoute =
   ApiProjectsSnapshotExportRouteImport.update({
     id: '/api/projects/snapshot-export',
@@ -105,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
+  '/api/projects/writeback-execute': typeof ApiProjectsWritebackExecuteRoute
   '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
 }
 export interface FileRoutesByTo {
@@ -119,6 +127,7 @@ export interface FileRoutesByTo {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
+  '/api/projects/writeback-execute': typeof ApiProjectsWritebackExecuteRoute
   '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
 }
 export interface FileRoutesById {
@@ -135,6 +144,7 @@ export interface FileRoutesById {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
+  '/api/projects/writeback-execute': typeof ApiProjectsWritebackExecuteRoute
   '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
 }
 export interface FileRouteTypes {
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
+    | '/api/projects/writeback-execute'
     | '/api/projects/writeback-review'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
+    | '/api/projects/writeback-execute'
     | '/api/projects/writeback-review'
   id:
     | '__root__'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
+    | '/api/projects/writeback-execute'
     | '/api/projects/writeback-review'
   fileRoutesById: FileRoutesById
 }
@@ -193,6 +206,7 @@ export interface RootRouteChildren {
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
   ApiProjectsSnapshotExportRoute: typeof ApiProjectsSnapshotExportRoute
+  ApiProjectsWritebackExecuteRoute: typeof ApiProjectsWritebackExecuteRoute
   ApiProjectsWritebackReviewRoute: typeof ApiProjectsWritebackReviewRoute
 }
 
@@ -268,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsWritebackReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/writeback-execute': {
+      id: '/api/projects/writeback-execute'
+      path: '/api/projects/writeback-execute'
+      fullPath: '/api/projects/writeback-execute'
+      preLoaderRoute: typeof ApiProjectsWritebackExecuteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/snapshot-export': {
       id: '/api/projects/snapshot-export'
       path: '/api/projects/snapshot-export'
@@ -317,6 +338,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
   ApiProjectsSnapshotExportRoute: ApiProjectsSnapshotExportRoute,
+  ApiProjectsWritebackExecuteRoute: ApiProjectsWritebackExecuteRoute,
   ApiProjectsWritebackReviewRoute: ApiProjectsWritebackReviewRoute,
 }
 export const routeTree = rootRouteImport

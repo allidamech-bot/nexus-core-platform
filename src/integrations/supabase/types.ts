@@ -516,6 +516,175 @@ export type Database = {
           },
         ];
       };
+      project_working_copies: {
+        Row: {
+          blockers: Json;
+          changed_files_count: number;
+          created_at: string;
+          created_by: string;
+          executed_by: string;
+          id: string;
+          metadata: Json;
+          patch_preview_id: string;
+          patch_snapshot_id: string;
+          project_id: string;
+          source: string;
+          status: string;
+          summary: string | null;
+          title: string | null;
+          warnings: Json;
+          writeback_request_id: string;
+        };
+        Insert: {
+          blockers?: Json;
+          changed_files_count?: number;
+          created_at?: string;
+          created_by: string;
+          executed_by: string;
+          id?: string;
+          metadata?: Json;
+          patch_preview_id: string;
+          patch_snapshot_id: string;
+          project_id: string;
+          source?: string;
+          status?: string;
+          summary?: string | null;
+          title?: string | null;
+          warnings?: Json;
+          writeback_request_id: string;
+        };
+        Update: {
+          blockers?: Json;
+          changed_files_count?: number;
+          created_at?: string;
+          created_by?: string;
+          executed_by?: string;
+          id?: string;
+          metadata?: Json;
+          patch_preview_id?: string;
+          patch_snapshot_id?: string;
+          project_id?: string;
+          source?: string;
+          status?: string;
+          summary?: string | null;
+          title?: string | null;
+          warnings?: Json;
+          writeback_request_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_working_copies_patch_preview_id_fkey";
+            columns: ["patch_preview_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_previews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_working_copies_patch_snapshot_id_fkey";
+            columns: ["patch_snapshot_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_snapshots";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_working_copies_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_working_copies_writeback_request_id_fkey";
+            columns: ["writeback_request_id"];
+            isOneToOne: false;
+            referencedRelation: "project_writeback_requests";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_working_copy_files: {
+        Row: {
+          blockers: Json;
+          changed: boolean;
+          content_sha256: string | null;
+          content_text: string;
+          created_at: string;
+          file_path: string;
+          id: string;
+          patch_snapshot_id: string;
+          preview_limited: boolean;
+          project_id: string;
+          size_bytes: number;
+          truncated: boolean;
+          warnings: Json;
+          working_copy_id: string;
+          writeback_request_id: string;
+        };
+        Insert: {
+          blockers?: Json;
+          changed?: boolean;
+          content_sha256?: string | null;
+          content_text?: string;
+          created_at?: string;
+          file_path: string;
+          id?: string;
+          patch_snapshot_id: string;
+          preview_limited?: boolean;
+          project_id: string;
+          size_bytes?: number;
+          truncated?: boolean;
+          warnings?: Json;
+          working_copy_id: string;
+          writeback_request_id: string;
+        };
+        Update: {
+          blockers?: Json;
+          changed?: boolean;
+          content_sha256?: string | null;
+          content_text?: string;
+          created_at?: string;
+          file_path?: string;
+          id?: string;
+          patch_snapshot_id?: string;
+          preview_limited?: boolean;
+          project_id?: string;
+          size_bytes?: number;
+          truncated?: boolean;
+          warnings?: Json;
+          working_copy_id?: string;
+          writeback_request_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_working_copy_files_patch_snapshot_id_fkey";
+            columns: ["patch_snapshot_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_snapshots";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_working_copy_files_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_working_copy_files_working_copy_id_fkey";
+            columns: ["working_copy_id"];
+            isOneToOne: false;
+            referencedRelation: "project_working_copies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_working_copy_files_writeback_request_id_fkey";
+            columns: ["writeback_request_id"];
+            isOneToOne: false;
+            referencedRelation: "project_writeback_requests";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_writeback_requests: {
         Row: {
           blockers: Json;

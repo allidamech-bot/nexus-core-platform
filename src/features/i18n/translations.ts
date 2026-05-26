@@ -142,6 +142,22 @@ export const translations = {
     cannotCreateSnapshotFromBlockedSandbox: "Cannot create snapshot from blocked sandbox",
     snapshotLimitedToIndexedText: "Snapshot is limited to indexed preview text",
     sourceWritebackUnavailableYet: "Source writeback is not available yet",
+    versionedWorkingCopy: "Versioned working copy",
+    createVersionedWorkingCopy: "Create versioned working copy",
+    workingCopyCreated: "Working copy created",
+    workingCopyAlreadyExists: "Working copy already exists",
+    workingCopyCreationFailed: "Working copy creation failed",
+    versionedWorkingCopyCreatedNotice:
+      "This created a versioned working copy. Original project files were not modified.",
+    sourceZipAndObjectStorageNotOverwritten: "Source ZIP and object storage were not overwritten.",
+    sourceZipWasNotOverwritten: "Source ZIP was not overwritten",
+    objectStorageWasNotModified: "Object storage was not modified",
+    workingCopyFiles: "Working copy files",
+    executedFromApprovedRequest: "Executed from approved request",
+    requestMustBeApprovedBeforeExecution: "Request must be approved before execution",
+    executionBlocked: "Execution blocked",
+    executionDoesNotDeployChanges: "Execution does not deploy changes",
+    productionSourceWritebackUnavailableYet: "Production/source writeback is not available yet",
     downloadSnapshotExport: "Download snapshot export",
     exportSnapshot: "Export snapshot",
     exportCreated: "Export created",
@@ -633,6 +649,35 @@ export const translations = {
       "\u0627\u0644\u0644\u0642\u0637\u0629 \u0645\u062d\u062f\u0648\u062f\u0629 \u0628\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0641\u0647\u0631\u0633",
     sourceWritebackUnavailableYet:
       "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+    versionedWorkingCopy:
+      "\u0646\u0633\u062e\u0629 \u0639\u0645\u0644 \u0628\u0625\u0635\u062f\u0627\u0631 \u0645\u0633\u062a\u0642\u0644",
+    createVersionedWorkingCopy:
+      "\u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0639\u0645\u0644 \u0628\u0625\u0635\u062f\u0627\u0631 \u0645\u0633\u062a\u0642\u0644",
+    workingCopyCreated:
+      "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    workingCopyAlreadyExists:
+      "\u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644 \u0645\u0648\u062c\u0648\u062f\u0629 \u0645\u0633\u0628\u0642\u064b\u0627",
+    workingCopyCreationFailed:
+      "\u0641\u0634\u0644 \u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    versionedWorkingCopyCreatedNotice:
+      "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0646\u0633\u062e\u0629 \u0639\u0645\u0644 \u0628\u0625\u0635\u062f\u0627\u0631 \u0645\u0633\u062a\u0642\u0644. \u0644\u0645 \u064a\u062a\u0645 \u062a\u0639\u062f\u064a\u0644 \u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0623\u0635\u0644\u064a\u0629.",
+    sourceZipAndObjectStorageNotOverwritten:
+      "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0633\u062a\u0628\u062f\u0627\u0644 \u0645\u0644\u0641 ZIP \u0627\u0644\u0623\u0635\u0644\u064a \u0623\u0648 \u062a\u062e\u0632\u064a\u0646 \u0627\u0644\u0645\u0644\u0641\u0627\u062a.",
+    sourceZipWasNotOverwritten:
+      "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0633\u062a\u0628\u062f\u0627\u0644 \u0645\u0644\u0641 ZIP \u0627\u0644\u0623\u0635\u0644\u064a",
+    objectStorageWasNotModified:
+      "\u0644\u0645 \u064a\u062a\u0645 \u062a\u0639\u062f\u064a\u0644 \u062a\u062e\u0632\u064a\u0646 \u0627\u0644\u0645\u0644\u0641\u0627\u062a",
+    workingCopyFiles:
+      "\u0645\u0644\u0641\u0627\u062a \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644",
+    executedFromApprovedRequest:
+      "\u062a\u0645 \u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0645\u0646 \u0637\u0644\u0628 \u0645\u0648\u0627\u0641\u0642 \u0639\u0644\u064a\u0647",
+    requestMustBeApprovedBeforeExecution:
+      "\u064a\u062c\u0628 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628 \u0642\u0628\u0644 \u0627\u0644\u062a\u0646\u0641\u064a\u0630",
+    executionBlocked: "\u062a\u0645 \u062d\u0638\u0631 \u0627\u0644\u062a\u0646\u0641\u064a\u0630",
+    executionDoesNotDeployChanges:
+      "\u0627\u0644\u062a\u0646\u0641\u064a\u0630 \u0644\u0627 \u064a\u0646\u0634\u0631 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a",
+    productionSourceWritebackUnavailableYet:
+      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0641\u0639\u0644\u064a\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
     downloadSnapshotExport:
       "\u062a\u0646\u0632\u064a\u0644 \u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",
     exportSnapshot: "\u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",

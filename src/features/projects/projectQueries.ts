@@ -49,6 +49,15 @@ import {
   type ProjectWritebackRequestDetail,
   type ProjectWritebackRequest,
 } from "./projectWritebackRequestService";
+import {
+  executeApprovedWritebackRequest,
+  getLatestWorkingCopyForRequest,
+  getWorkingCopyFiles,
+  getWorkingCopies,
+  type ExecuteWritebackResult,
+  type ProjectWorkingCopy,
+  type ProjectWorkingCopyFile,
+} from "./projectWorkingCopyService";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -63,6 +72,11 @@ export const projectKeys = {
   writebackReview: () => ["projects", "writeback-review"] as const,
   writebackReviewDetail: (requestId: string) =>
     ["projects", "writeback-review", requestId] as const,
+  workingCopies: (projectId: string) => ["projects", projectId, "working-copies"] as const,
+  latestWorkingCopyForRequest: (requestId: string) =>
+    ["projects", "working-copy-request", requestId] as const,
+  workingCopyFiles: (workingCopyId: string) =>
+    ["projects", "working-copy-files", workingCopyId] as const,
 };
 
 export function useProjectsQuery(enabled = true) {
@@ -345,6 +359,62 @@ export function useRejectWritebackRequestMutation() {
       qc.invalidateQueries({ queryKey: projectKeys.writebackReview() });
       qc.invalidateQueries({ queryKey: projectKeys.writebackReviewDetail(request.id) });
       qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(request.projectId) });
+    },
+  });
+}
+
+export function useWorkingCopiesQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId
+      ? projectKeys.workingCopies(projectId)
+      : ["projects", "working-copies", "disabled"],
+    queryFn: async (): Promise<ProjectWorkingCopy[]> => {
+      if (!projectId) return [];
+      return getWorkingCopies(projectId);
+    },
+  });
+}
+
+export function useLatestWorkingCopyForRequestQuery(requestId: string | null) {
+  return useQuery({
+    enabled: Boolean(requestId),
+    queryKey: requestId
+      ? projectKeys.latestWorkingCopyForRequest(requestId)
+      : ["projects", "working-copy-request", "disabled"],
+    queryFn: async (): Promise<ProjectWorkingCopy | null> => {
+      if (!requestId) return null;
+      return getLatestWorkingCopyForRequest(requestId);
+    },
+  });
+}
+
+export function useWorkingCopyFilesQuery(workingCopyId: string | null) {
+  return useQuery({
+    enabled: Boolean(workingCopyId),
+    queryKey: workingCopyId
+      ? projectKeys.workingCopyFiles(workingCopyId)
+      : ["projects", "working-copy-files", "disabled"],
+    queryFn: async (): Promise<ProjectWorkingCopyFile[]> => {
+      if (!workingCopyId) return [];
+      return getWorkingCopyFiles(workingCopyId);
+    },
+  });
+}
+
+export function useExecuteWritebackRequestMutation(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string): Promise<ExecuteWritebackResult> =>
+      executeApprovedWritebackRequest(requestId),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: projectKeys.workingCopies(projectId) });
+      qc.invalidateQueries({
+        queryKey: projectKeys.latestWorkingCopyForRequest(result.workingCopy.writebackRequestId),
+      });
+      qc.invalidateQueries({ queryKey: projectKeys.workingCopyFiles(result.workingCopy.id) });
+      qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(projectId) });
+      qc.invalidateQueries({ queryKey: projectKeys.writebackReview() });
     },
   });
 }

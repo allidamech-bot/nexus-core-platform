@@ -18,6 +18,11 @@ import {
   validateWritebackStatusTransition,
   type ProjectWritebackRequest,
 } from "../../src/features/projects/projectWritebackRequestService";
+import {
+  buildWorkingCopyRows,
+  summarizeWorkingCopy,
+  validateRequestCanExecute,
+} from "../../src/features/projects/projectWorkingCopyService";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -569,5 +574,164 @@ test.describe("writeback review transition rules", () => {
     expect(summary.originalProjectFilesModified).toBe(false);
     expect(summary.originalTextPreviewsModified).toBe(false);
     expect(summary.approvalAppliesChanges).toBe(false);
+  });
+});
+
+test.describe("approved writeback working copy builder", () => {
+  const snapshot: ProjectPatchSnapshot = {
+    id: "snapshot-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    createdBy: "user-1",
+    status: "created",
+    title: "Versioned patch snapshot",
+    summary: "Derived snapshot",
+    source: "patch_preview_sandbox",
+    verificationStatus: "verified",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    metadata: {},
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  const approvedRequest: ProjectWritebackRequest = {
+    id: "request-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    snapshotId: "snapshot-1",
+    requestedBy: "user-1",
+    reviewerId: "admin-1",
+    status: "approved",
+    title: "Source writeback review",
+    requesterNote: "Please review.",
+    reviewerNote: "Approved for future writeback consideration.",
+    reviewDecision: "approved",
+    riskLevel: "medium",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    snapshotSummary: {},
+    metadata: {},
+    reviewMetadata: {},
+    createdAt: "2026-05-26T00:00:00.000Z",
+    updatedAt: "2026-05-26T00:00:00.000Z",
+    submittedAt: "2026-05-26T00:00:00.000Z",
+    reviewedAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  function snapshotFile(path = "src/app.ts"): ProjectPatchSnapshotFile {
+    return {
+      id: `snapshot-file-${path}`,
+      snapshotId: snapshot.id,
+      projectId: snapshot.projectId,
+      patchPreviewId: snapshot.patchPreviewId,
+      filePath: path,
+      originalContentSha256: "hash-1",
+      patchedContentSha256: "hash-2",
+      originalPreviewText: "old",
+      patchedPreviewText: "new",
+      changed: true,
+      previewLimited: true,
+      truncated: false,
+      warnings: [],
+      blockers: [],
+      createdAt: "2026-05-26T00:00:00.000Z",
+    };
+  }
+
+  test("creates working copy rows from approved snapshot rows without source mutation", async () => {
+    const files = [snapshotFile()];
+    const beforeFiles = JSON.stringify(files);
+    const beforeRequest = JSON.stringify(approvedRequest);
+    const rows = await buildWorkingCopyRows({
+      request: approvedRequest,
+      snapshot,
+      files,
+      actorId: "user-1",
+    });
+
+    expect(rows.workingCopy.changedFilesCount).toBe(1);
+    expect(rows.workingCopy.status).toBe("created");
+    expect(rows.workingCopy.metadata).toMatchObject({
+      originalProjectFilesModified: false,
+      originalTextPreviewsModified: false,
+      objectStorageModified: false,
+      sourceZipOverwritten: false,
+      codeExecuted: false,
+      deploymentPerformed: false,
+    });
+    expect(rows.files).toHaveLength(1);
+    expect(rows.files[0]).toMatchObject({
+      file_path: "src/app.ts",
+      content_sha256: "hash-2",
+      content_text: "new",
+      changed: true,
+    });
+    expect(JSON.stringify(files)).toBe(beforeFiles);
+    expect(JSON.stringify(approvedRequest)).toBe(beforeRequest);
+  });
+
+  test("blocks non-approved and terminal requests from execution", () => {
+    for (const status of ["draft", "submitted", "rejected", "cancelled"] as const) {
+      expect(() =>
+        validateRequestCanExecute({
+          request: { ...approvedRequest, status },
+          snapshot,
+          files: [snapshotFile()],
+        }),
+      ).toThrow("approved");
+    }
+  });
+
+  test("blocks execution when blockers or no changed files exist", () => {
+    expect(() =>
+      validateRequestCanExecute({
+        request: { ...approvedRequest, blockers: [{ code: "blocked", message: "Blocked." }] },
+        snapshot,
+        files: [snapshotFile()],
+      }),
+    ).toThrow("blocked");
+    expect(() =>
+      validateRequestCanExecute({
+        request: approvedRequest,
+        snapshot,
+        files: [{ ...snapshotFile(), changed: false }],
+      }),
+    ).toThrow("blocked");
+    expect(() =>
+      validateRequestCanExecute({
+        request: approvedRequest,
+        snapshot,
+        files: [{ ...snapshotFile(), blockers: [{ code: "blocked", message: "Blocked." }] }],
+      }),
+    ).toThrow("blocked");
+  });
+
+  test("summarizes working copy execution as non-deploying and storage-safe", () => {
+    const summary = summarizeWorkingCopy({
+      request: approvedRequest,
+      files: [snapshotFile()],
+    });
+
+    expect(summary.changedFilesCount).toBe(1);
+    expect(summary.createdFromApprovedRequest).toBe(true);
+    expect(summary.originalProjectFilesModified).toBe(false);
+    expect(summary.originalTextPreviewsModified).toBe(false);
+    expect(summary.objectStorageModified).toBe(false);
+    expect(summary.sourceZipOverwritten).toBe(false);
+    expect(summary.codeExecuted).toBe(false);
+    expect(summary.deploymentPerformed).toBe(false);
+  });
+
+  test("generates a content hash when the snapshot did not preserve one", async () => {
+    const rows = await buildWorkingCopyRows({
+      request: approvedRequest,
+      snapshot,
+      files: [{ ...snapshotFile(), patchedContentSha256: null }],
+      actorId: "user-1",
+    });
+
+    expect(rows.files[0].content_sha256).toBe(await hashPatchedText("new"));
   });
 });

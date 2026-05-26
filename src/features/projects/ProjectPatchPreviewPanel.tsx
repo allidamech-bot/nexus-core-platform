@@ -17,6 +17,8 @@ import {
   useCreatePatchSnapshotMutation,
   useCreateWritebackRequestMutation,
   useDownloadPatchSnapshotExportMutation,
+  useExecuteWritebackRequestMutation,
+  useLatestWorkingCopyForRequestQuery,
   usePatchPreviewsQuery,
   usePatchSnapshotFilesQuery,
   usePatchSnapshotsQuery,
@@ -25,10 +27,12 @@ import {
   useCancelWritebackRequestMutation,
   useSubmitWritebackRequestMutation,
   useWritebackRequestsQuery,
+  useWorkingCopyFilesQuery,
 } from "./projectQueries";
 import type { PatchSandboxResult } from "./patchApplySandbox";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import type { ProjectWritebackRequest } from "./projectWritebackRequestService";
+import type { ProjectWorkingCopy, ProjectWorkingCopyFile } from "./projectWorkingCopyService";
 import type { GroundedPatchPreview, ProjectFile, ProjectTextPreviewWithPath } from "./types";
 
 function shortHash(value: string | null) {
@@ -60,6 +64,7 @@ export function ProjectPatchPreviewPanel({
   const createWritebackRequest = useCreateWritebackRequestMutation(projectId);
   const submitWritebackRequest = useSubmitWritebackRequestMutation(projectId);
   const cancelWritebackRequest = useCancelWritebackRequestMutation(projectId);
+  const executeWritebackRequest = useExecuteWritebackRequestMutation(projectId);
   const [selectedFileId, setSelectedFileId] = useState("");
   const [selectedAiFileIds, setSelectedAiFileIds] = useState<string[]>([]);
   const [selectedPatchPreviewId, setSelectedPatchPreviewId] = useState("");
@@ -91,6 +96,12 @@ export function ProjectPatchPreviewPanel({
   const { data: latestSnapshotFiles = [] } = usePatchSnapshotFilesQuery(
     latestSnapshotForSelected?.id ?? null,
   );
+  const { data: latestWorkingCopy = null } = useLatestWorkingCopyForRequestQuery(
+    latestWritebackRequestForSnapshot?.id ?? null,
+  );
+  const { data: latestWorkingCopyFiles = [] } = useWorkingCopyFilesQuery(
+    latestWorkingCopy?.id ?? null,
+  );
   const displayedSnapshotFiles =
     createdSnapshotFiles.length > 0 ? createdSnapshotFiles : latestSnapshotFiles;
   const busy =
@@ -101,7 +112,8 @@ export function ProjectPatchPreviewPanel({
     downloadSnapshotExport.isPending ||
     createWritebackRequest.isPending ||
     submitWritebackRequest.isPending ||
-    cancelWritebackRequest.isPending;
+    cancelWritebackRequest.isPending ||
+    executeWritebackRequest.isPending;
 
   useEffect(() => {
     if (!selectedFileId && previewableTargets[0]) {
@@ -262,6 +274,16 @@ export function ProjectPatchPreviewPanel({
       toast.success(t("writebackRequestCancelled"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("writebackRequestBlocked"));
+    }
+  }
+
+  async function handleExecuteWritebackRequest(requestId: string) {
+    if (disabled || executeWritebackRequest.isPending) return;
+    try {
+      const result = await executeWritebackRequest.mutateAsync(requestId);
+      toast.success(result.alreadyExists ? t("workingCopyAlreadyExists") : t("workingCopyCreated"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("workingCopyCreationFailed"));
     }
   }
 
@@ -454,13 +476,17 @@ export function ProjectPatchPreviewPanel({
             writebackLoading={
               createWritebackRequest.isPending ||
               submitWritebackRequest.isPending ||
-              cancelWritebackRequest.isPending
+              cancelWritebackRequest.isPending ||
+              executeWritebackRequest.isPending
             }
+            workingCopy={latestWorkingCopy}
+            workingCopyFiles={latestWorkingCopyFiles}
             onCreate={handleCreateSnapshot}
             onExport={handleDownloadSnapshotExport}
             onRequestWriteback={handleCreateWritebackRequest}
             onSubmitWriteback={handleSubmitWritebackRequest}
             onCancelWriteback={handleCancelWritebackRequest}
+            onExecuteWriteback={handleExecuteWritebackRequest}
           />
           {sandboxPreview.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
@@ -487,12 +513,15 @@ function PatchSnapshotAction({
   writebackRequest,
   requesterNote,
   writebackLoading,
+  workingCopy,
+  workingCopyFiles,
   onRequesterNoteChange,
   onCreate,
   onExport,
   onRequestWriteback,
   onSubmitWriteback,
   onCancelWriteback,
+  onExecuteWriteback,
 }: {
   disabled?: boolean;
   sandbox: PatchSandboxResult | null;
@@ -503,12 +532,15 @@ function PatchSnapshotAction({
   writebackRequest: ProjectWritebackRequest | null;
   requesterNote: string;
   writebackLoading: boolean;
+  workingCopy: ProjectWorkingCopy | null;
+  workingCopyFiles: ProjectWorkingCopyFile[];
   onRequesterNoteChange: (value: string) => void;
   onCreate: () => void;
   onExport: (snapshotId: string) => void;
   onRequestWriteback: (snapshotId: string) => void;
   onSubmitWriteback: (requestId: string) => void;
   onCancelWriteback: (requestId: string) => void;
+  onExecuteWriteback: (requestId: string) => void;
 }) {
   const { t } = useLocale();
   const canCreate = sandbox?.status === "verified" || sandbox?.status === "partial";
@@ -585,10 +617,13 @@ function PatchSnapshotAction({
             request={writebackRequest}
             requesterNote={requesterNote}
             loading={writebackLoading}
+            workingCopy={workingCopy}
+            workingCopyFiles={workingCopyFiles}
             onRequesterNoteChange={onRequesterNoteChange}
             onCreate={onRequestWriteback}
             onSubmit={onSubmitWriteback}
             onCancel={onCancelWriteback}
+            onExecute={onExecuteWriteback}
           />
         </>
       )}
@@ -612,20 +647,26 @@ function WritebackRequestPanel({
   request,
   requesterNote,
   loading,
+  workingCopy,
+  workingCopyFiles,
   onRequesterNoteChange,
   onCreate,
   onSubmit,
   onCancel,
+  onExecute,
 }: {
   disabled?: boolean;
   snapshot: ProjectPatchSnapshot;
   request: ProjectWritebackRequest | null;
   requesterNote: string;
   loading: boolean;
+  workingCopy: ProjectWorkingCopy | null;
+  workingCopyFiles: ProjectWorkingCopyFile[];
   onRequesterNoteChange: (value: string) => void;
   onCreate: (snapshotId: string) => void;
   onSubmit: (requestId: string) => void;
   onCancel: (requestId: string) => void;
+  onExecute: (requestId: string) => void;
 }) {
   const { t } = useLocale();
   const canSubmit = request?.status === "draft";
@@ -765,7 +806,124 @@ function WritebackRequestPanel({
               </button>
             )}
           </div>
+          {approved && (
+            <WorkingCopyPanel
+              disabled={disabled}
+              loading={loading}
+              request={request}
+              workingCopy={workingCopy}
+              files={workingCopyFiles}
+              onExecute={onExecute}
+            />
+          )}
         </div>
+      )}
+    </div>
+  );
+}
+
+function WorkingCopyPanel({
+  disabled,
+  loading,
+  request,
+  workingCopy,
+  files,
+  onExecute,
+}: {
+  disabled?: boolean;
+  loading: boolean;
+  request: ProjectWritebackRequest;
+  workingCopy: ProjectWorkingCopy | null;
+  files: ProjectWorkingCopyFile[];
+  onExecute: (requestId: string) => void;
+}) {
+  const { t } = useLocale();
+  const [selectedFileId, setSelectedFileId] = useState("");
+  const selectedFile = files.find((file) => file.id === selectedFileId) ?? files[0] ?? null;
+
+  useEffect(() => {
+    if (files[0] && !files.some((file) => file.id === selectedFileId)) {
+      setSelectedFileId(files[0].id);
+    }
+  }, [files, selectedFileId]);
+
+  return (
+    <div className="space-y-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
+            <ShieldCheck className="size-3" />
+            {t("versionedWorkingCopy")}
+          </div>
+          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            {t("executedFromApprovedRequest")} {t("executionDoesNotDeployChanges")}{" "}
+            {t("productionSourceWritebackUnavailableYet")}
+          </div>
+        </div>
+        {workingCopy && (
+          <span className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] uppercase text-emerald-300">
+            {workingCopy.status}
+          </span>
+        )}
+      </div>
+
+      <div className="rounded border border-white/5 bg-black/10 p-2 text-[10px] leading-relaxed text-muted-foreground">
+        {workingCopy ? t("versionedWorkingCopyCreatedNotice") : t("createVersionedWorkingCopy")}{" "}
+        {t("sourceZipAndObjectStorageNotOverwritten")}
+      </div>
+
+      {!workingCopy && (
+        <button
+          type="button"
+          onClick={() => onExecute(request.id)}
+          disabled={disabled || loading || request.status !== "approved"}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <ShieldCheck className="size-3" />
+          )}
+          {t("createVersionedWorkingCopy")}
+        </button>
+      )}
+
+      {workingCopy && (
+        <>
+          <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+            <Metric label={t("changedFiles")} value={workingCopy.changedFilesCount} />
+            <Metric label={t("workingCopyFiles")} value={files.length} />
+          </div>
+          {files.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {t("workingCopyFiles")}
+              </label>
+              <select
+                value={selectedFile?.id ?? ""}
+                onChange={(event) => setSelectedFileId(event.target.value)}
+                className="h-8 w-full rounded-md border border-border bg-background/60 px-2 font-mono text-[11px] text-zinc-200 outline-none focus:border-accent/40"
+              >
+                {files.map((file) => (
+                  <option key={file.id} value={file.id}>
+                    {file.filePath}
+                  </option>
+                ))}
+              </select>
+              {selectedFile && (
+                <div className="space-y-2 rounded border border-white/5 bg-black/10 p-2">
+                  <div className="truncate font-mono text-[10px] text-zinc-300" dir="ltr">
+                    {selectedFile.filePath} / {shortHash(selectedFile.contentSha256)}
+                  </div>
+                  <SandboxTextBlock label={t("patchedPreview")} text={selectedFile.contentText} />
+                  {selectedFile.truncated && (
+                    <div className="text-[10px] text-warning">{t("previewTruncatedForSafety")}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
