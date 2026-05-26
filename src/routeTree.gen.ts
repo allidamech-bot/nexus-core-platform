@@ -18,6 +18,7 @@ import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiProjectsWritebackReviewRouteImport } from './routes/api/projects.writeback-review'
 import { Route as ApiProjectsSnapshotExportRouteImport } from './routes/api/projects.snapshot-export'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
@@ -67,6 +68,12 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProjectsWritebackReviewRoute =
+  ApiProjectsWritebackReviewRouteImport.update({
+    id: '/api/projects/writeback-review',
+    path: '/api/projects/writeback-review',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsSnapshotExportRoute =
   ApiProjectsSnapshotExportRouteImport.update({
     id: '/api/projects/snapshot-export',
@@ -98,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
+  '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,6 +119,7 @@ export interface FileRoutesByTo {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
+  '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -126,6 +135,7 @@ export interface FileRoutesById {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
+  '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
+    | '/api/projects/writeback-review'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
+    | '/api/projects/writeback-review'
   id:
     | '__root__'
     | '/'
@@ -169,6 +181,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
+    | '/api/projects/writeback-review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -180,6 +193,7 @@ export interface RootRouteChildren {
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
   ApiProjectsSnapshotExportRoute: typeof ApiProjectsSnapshotExportRoute
+  ApiProjectsWritebackReviewRoute: typeof ApiProjectsWritebackReviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -247,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/writeback-review': {
+      id: '/api/projects/writeback-review'
+      path: '/api/projects/writeback-review'
+      fullPath: '/api/projects/writeback-review'
+      preLoaderRoute: typeof ApiProjectsWritebackReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/snapshot-export': {
       id: '/api/projects/snapshot-export'
       path: '/api/projects/snapshot-export'
@@ -296,6 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
   ApiProjectsSnapshotExportRoute: ApiProjectsSnapshotExportRoute,
+  ApiProjectsWritebackReviewRoute: ApiProjectsWritebackReviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

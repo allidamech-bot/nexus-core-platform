@@ -33,12 +33,14 @@ export interface ProjectWritebackRequest {
   title: string | null;
   requesterNote: string | null;
   reviewerNote: string | null;
+  reviewDecision: "approved" | "rejected" | null;
   riskLevel: WritebackRiskLevel;
   changedFilesCount: number;
   warnings: PatchSandboxIssue[];
   blockers: PatchSandboxIssue[];
   snapshotSummary: Json;
   metadata: Json;
+  reviewMetadata: Json;
   createdAt: string;
   updatedAt: string;
   submittedAt: string | null;
@@ -55,6 +57,45 @@ export interface CreateWritebackRequestInput {
   requesterNote?: string;
 }
 
+export interface WritebackReviewSummary {
+  requestId: string;
+  projectId: string;
+  patchPreviewId: string;
+  snapshotId: string;
+  actorId: string;
+  action: WritebackReviewAction;
+  oldStatus: WritebackRequestStatus;
+  newStatus: WritebackRequestStatus;
+  riskLevel: WritebackRiskLevel;
+  warningCount: number;
+  blockerCount: number;
+  changedFilesCount: number;
+  approvalAppliesChanges: false;
+  sourceWritebackPerformed: false;
+  originalProjectFilesModified: false;
+  originalTextPreviewsModified: false;
+}
+
+export interface ProjectWritebackChangedFileSummary {
+  id: string;
+  filePath: string;
+  changed: boolean;
+  originalContentSha256: string | null;
+  patchedContentSha256: string | null;
+  previewLimited: boolean;
+  truncated: boolean;
+  warningCount: number;
+  blockerCount: number;
+}
+
+export interface ProjectWritebackRequestDetail {
+  request: ProjectWritebackRequest;
+  project: { id: string; name: string | null; userId: string | null } | null;
+  changedFiles: ProjectWritebackChangedFileSummary[];
+}
+
+export type WritebackReviewAction = "submit" | "cancel" | "approve" | "reject";
+
 function asIssues(value: Json): PatchSandboxIssue[] {
   return Array.isArray(value) ? (value as unknown as PatchSandboxIssue[]) : [];
 }
@@ -70,12 +111,14 @@ function toWritebackRequest(row: {
   title: string | null;
   requester_note: string | null;
   reviewer_note: string | null;
+  review_decision?: string | null;
   risk_level: string;
   changed_files_count: number;
   warnings: Json;
   blockers: Json;
   snapshot_summary: Json;
   metadata: Json;
+  review_metadata?: Json;
   created_at: string;
   updated_at: string;
   submitted_at: string | null;
@@ -92,17 +135,27 @@ function toWritebackRequest(row: {
     title: row.title,
     requesterNote: row.requester_note,
     reviewerNote: row.reviewer_note,
+    reviewDecision:
+      row.review_decision === "approved" || row.review_decision === "rejected"
+        ? row.review_decision
+        : null,
     riskLevel: row.risk_level as WritebackRiskLevel,
     changedFilesCount: row.changed_files_count,
     warnings: asIssues(row.warnings),
     blockers: asIssues(row.blockers),
     snapshotSummary: row.snapshot_summary,
     metadata: row.metadata,
+    reviewMetadata: row.review_metadata ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     submittedAt: row.submitted_at,
     reviewedAt: row.reviewed_at,
   };
+}
+
+function normalizeNote(note: string | undefined): string | null {
+  const trimmed = note?.trim() ?? "";
+  return trimmed ? trimmed.slice(0, 4000) : null;
 }
 
 async function requireCurrentUserId() {
@@ -131,6 +184,9 @@ async function auditWritebackRequest(input: {
   projectId: string;
   eventType: string;
   request?: ProjectWritebackRequest;
+  oldStatus?: WritebackRequestStatus;
+  newStatus?: WritebackRequestStatus;
+  action?: WritebackReviewAction;
   snapshotId?: string;
   patchPreviewId?: string;
   riskLevel?: WritebackRiskLevel;
@@ -149,7 +205,10 @@ async function auditWritebackRequest(input: {
         request_id: input.request?.id ?? null,
         snapshot_id: input.request?.snapshotId ?? input.snapshotId ?? null,
         patch_preview_id: input.request?.patchPreviewId ?? input.patchPreviewId ?? null,
-        status: input.request?.status ?? null,
+        status: input.request?.status ?? input.newStatus ?? null,
+        old_status: input.oldStatus ?? null,
+        new_status: input.newStatus ?? input.request?.status ?? null,
+        action: input.action ?? null,
         changed_files_count: input.request?.changedFilesCount ?? input.changedFilesCount ?? 0,
         risk_level: input.request?.riskLevel ?? input.riskLevel ?? "medium",
         warning_count: input.request?.warnings.length ?? input.warningCount ?? 0,
@@ -167,6 +226,104 @@ export async function validateWritebackRequestAccess(projectId: string): Promise
 }
 
 export { buildWritebackRequestRiskSummary };
+
+export function validateWritebackStatusTransition(input: {
+  action: WritebackReviewAction;
+  actorRole: "requester" | "reviewer";
+  fromStatus: WritebackRequestStatus;
+  reviewedAt?: string | null;
+  blockerCount?: number;
+  reviewerNote?: string | null;
+}): WritebackRequestStatus {
+  if (input.actorRole === "requester") {
+    if (input.action === "submit" && input.fromStatus === "draft") return "submitted";
+    if (input.action === "cancel" && input.fromStatus === "draft") return "cancelled";
+    if (input.action === "cancel" && input.fromStatus === "submitted" && !input.reviewedAt) {
+      return "cancelled";
+    }
+    throw new Error("Invalid writeback request transition.");
+  }
+
+  if (input.action === "approve") {
+    if (input.fromStatus !== "submitted") {
+      throw new Error("Only submitted requests can be approved.");
+    }
+    if ((input.blockerCount ?? 0) > 0) {
+      throw new Error("Request cannot be approved because it has blockers.");
+    }
+    return "approved";
+  }
+
+  if (input.action === "reject") {
+    if (!normalizeNote(input.reviewerNote ?? undefined)) {
+      throw new Error("Reviewer note is required for rejection.");
+    }
+    if (input.fromStatus === "submitted" || input.fromStatus === "blocked") return "rejected";
+    throw new Error("Only submitted or blocked requests can be rejected.");
+  }
+
+  throw new Error("Invalid writeback request transition.");
+}
+
+export function buildWritebackReviewSummary(input: {
+  request: ProjectWritebackRequest;
+  actorId: string;
+  action: WritebackReviewAction;
+  newStatus: WritebackRequestStatus;
+}): WritebackReviewSummary {
+  return {
+    requestId: input.request.id,
+    projectId: input.request.projectId,
+    patchPreviewId: input.request.patchPreviewId,
+    snapshotId: input.request.snapshotId,
+    actorId: input.actorId,
+    action: input.action,
+    oldStatus: input.request.status,
+    newStatus: input.newStatus,
+    riskLevel: input.request.riskLevel,
+    warningCount: input.request.warnings.length,
+    blockerCount: input.request.blockers.length,
+    changedFilesCount: input.request.changedFilesCount,
+    approvalAppliesChanges: false,
+    sourceWritebackPerformed: false,
+    originalProjectFilesModified: false,
+    originalTextPreviewsModified: false,
+  };
+}
+
+export async function validateWritebackReviewerAccess(): Promise<void> {
+  const { data, error } = await supabase.rpc("is_admin");
+  if (error) throw error;
+  if (!data) throw new Error("Reviewer authorization required.");
+}
+
+async function postWritebackReviewAction(input: {
+  requestId: string;
+  action: WritebackReviewAction;
+  note?: string;
+}): Promise<ProjectWritebackRequest> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Unauthorized");
+
+  const response = await fetch("/api/projects/writeback-review", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    request?: ProjectWritebackRequest;
+    message?: string;
+  };
+  if (!response.ok || !payload.request) {
+    throw new Error(payload.message || "Writeback review action failed.");
+  }
+  return payload.request;
+}
 
 export async function getWritebackRequests(projectId: string): Promise<ProjectWritebackRequest[]> {
   await validateWritebackRequestAccess(projectId);
@@ -192,6 +349,56 @@ export async function getWritebackRequest(
 
   if (error) throw error;
   return data ? toWritebackRequest(data) : null;
+}
+
+export async function getWritebackRequestsForReview(): Promise<ProjectWritebackRequest[]> {
+  await validateWritebackReviewerAccess();
+  const { data, error } = await supabase
+    .from("project_writeback_requests")
+    .select("*")
+    .in("status", ["submitted", "blocked"])
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+  return (data ?? []).map(toWritebackRequest);
+}
+
+export async function getWritebackRequestDetail(
+  requestId: string,
+): Promise<ProjectWritebackRequestDetail | null> {
+  const request = await getWritebackRequest(requestId);
+  if (!request) return null;
+
+  const [{ data: projectRow, error: projectError }, files] = await Promise.all([
+    supabase.from("projects").select("id,name,user_id").eq("id", request.projectId).maybeSingle(),
+    getPatchSnapshotFiles(request.snapshotId),
+  ]);
+  if (projectError) throw projectError;
+
+  return {
+    request,
+    project: projectRow
+      ? {
+          id: projectRow.id,
+          name: projectRow.name,
+          userId: projectRow.user_id,
+        }
+      : null,
+    changedFiles: files
+      .filter((file) => file.changed)
+      .map((file) => ({
+        id: file.id,
+        filePath: file.filePath,
+        changed: file.changed,
+        originalContentSha256: file.originalContentSha256,
+        patchedContentSha256: file.patchedContentSha256,
+        previewLimited: file.previewLimited,
+        truncated: file.truncated,
+        warningCount: file.warnings.length,
+        blockerCount: file.blockers.length,
+      })),
+  };
 }
 
 export async function getLatestWritebackRequestForSnapshot(
@@ -292,26 +499,15 @@ export async function submitWritebackRequest(requestId: string): Promise<Project
   const current = await getWritebackRequest(requestId);
   if (!current) throw new Error("Writeback request not found.");
   await validateWritebackRequestAccess(current.projectId);
-  if (current.status !== "draft") throw new Error("Only draft requests can be submitted.");
-
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("project_writeback_requests")
-    .update({ status: "submitted", submitted_at: now, updated_at: now })
-    .eq("id", requestId)
-    .eq("status", "draft")
-    .select()
-    .single();
-
-  if (error) throw error;
-  const request = toWritebackRequest(data);
-  await auditWritebackRequest({
-    userId,
-    projectId: request.projectId,
-    eventType: "writeback_request_submitted",
-    request,
+  if (current.requestedBy !== userId) throw new Error("Unauthorized");
+  validateWritebackStatusTransition({
+    action: "submit",
+    actorRole: "requester",
+    fromStatus: current.status,
+    reviewedAt: current.reviewedAt,
   });
-  return request;
+
+  return postWritebackReviewAction({ requestId, action: "submit" });
 }
 
 export async function cancelWritebackRequest(requestId: string): Promise<ProjectWritebackRequest> {
@@ -319,26 +515,39 @@ export async function cancelWritebackRequest(requestId: string): Promise<Project
   const current = await getWritebackRequest(requestId);
   if (!current) throw new Error("Writeback request not found.");
   await validateWritebackRequestAccess(current.projectId);
-  if (!["draft", "submitted"].includes(current.status)) {
-    throw new Error("Only draft or submitted requests can be cancelled.");
-  }
-
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("project_writeback_requests")
-    .update({ status: "cancelled", updated_at: now })
-    .eq("id", requestId)
-    .in("status", ["draft", "submitted"])
-    .select()
-    .single();
-
-  if (error) throw error;
-  const request = toWritebackRequest(data);
-  await auditWritebackRequest({
-    userId,
-    projectId: request.projectId,
-    eventType: "writeback_request_cancelled",
-    request,
+  if (current.requestedBy !== userId) throw new Error("Unauthorized");
+  validateWritebackStatusTransition({
+    action: "cancel",
+    actorRole: "requester",
+    fromStatus: current.status,
+    reviewedAt: current.reviewedAt,
   });
-  return request;
+
+  return postWritebackReviewAction({ requestId, action: "cancel" });
+}
+
+export async function approveWritebackRequest(input: {
+  requestId: string;
+  reviewerNote?: string;
+}): Promise<ProjectWritebackRequest> {
+  await requireCurrentUserId();
+  await validateWritebackReviewerAccess();
+  return postWritebackReviewAction({
+    requestId: input.requestId,
+    action: "approve",
+    note: input.reviewerNote,
+  });
+}
+
+export async function rejectWritebackRequest(input: {
+  requestId: string;
+  reviewerNote: string;
+}): Promise<ProjectWritebackRequest> {
+  await requireCurrentUserId();
+  await validateWritebackReviewerAccess();
+  return postWritebackReviewAction({
+    requestId: input.requestId,
+    action: "reject",
+    note: input.reviewerNote,
+  });
 }

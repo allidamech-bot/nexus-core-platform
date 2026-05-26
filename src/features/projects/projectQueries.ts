@@ -38,10 +38,15 @@ import type { PatchSandboxResult } from "./patchApplySandbox";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import {
   cancelWritebackRequest,
+  approveWritebackRequest,
   createWritebackRequestFromSnapshot,
+  getWritebackRequestDetail,
+  getWritebackRequestsForReview,
+  rejectWritebackRequest,
   getWritebackRequests,
   submitWritebackRequest,
   type CreateWritebackRequestResult,
+  type ProjectWritebackRequestDetail,
   type ProjectWritebackRequest,
 } from "./projectWritebackRequestService";
 
@@ -55,6 +60,9 @@ export const projectKeys = {
   patchSnapshotFiles: (snapshotId: string) =>
     ["projects", "patch-snapshot-files", snapshotId] as const,
   writebackRequests: (projectId: string) => ["projects", projectId, "writeback-requests"] as const,
+  writebackReview: () => ["projects", "writeback-review"] as const,
+  writebackReviewDetail: (requestId: string) =>
+    ["projects", "writeback-review", requestId] as const,
 };
 
 export function useProjectsQuery(enabled = true) {
@@ -253,6 +261,29 @@ export function useWritebackRequestsQuery(projectId: string | null) {
   });
 }
 
+export function useWritebackRequestsForReviewQuery(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: projectKeys.writebackReview(),
+    queryFn: (): Promise<ProjectWritebackRequest[]> => getWritebackRequestsForReview(),
+    retry: false,
+  });
+}
+
+export function useWritebackRequestDetailQuery(requestId: string | null) {
+  return useQuery({
+    enabled: Boolean(requestId),
+    queryKey: requestId
+      ? projectKeys.writebackReviewDetail(requestId)
+      : ["projects", "writeback-review", "disabled"],
+    queryFn: async (): Promise<ProjectWritebackRequestDetail | null> => {
+      if (!requestId) return null;
+      return getWritebackRequestDetail(requestId);
+    },
+    retry: false,
+  });
+}
+
 export function useCreateWritebackRequestMutation(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -284,6 +315,36 @@ export function useCancelWritebackRequestMutation(projectId: string) {
       cancelWritebackRequest(requestId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(projectId) });
+    },
+  });
+}
+
+export function useApproveWritebackRequestMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      requestId: string;
+      reviewerNote?: string;
+    }): Promise<ProjectWritebackRequest> => approveWritebackRequest(input),
+    onSuccess: (request) => {
+      qc.invalidateQueries({ queryKey: projectKeys.writebackReview() });
+      qc.invalidateQueries({ queryKey: projectKeys.writebackReviewDetail(request.id) });
+      qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(request.projectId) });
+    },
+  });
+}
+
+export function useRejectWritebackRequestMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      requestId: string;
+      reviewerNote: string;
+    }): Promise<ProjectWritebackRequest> => rejectWritebackRequest(input),
+    onSuccess: (request) => {
+      qc.invalidateQueries({ queryKey: projectKeys.writebackReview() });
+      qc.invalidateQueries({ queryKey: projectKeys.writebackReviewDetail(request.id) });
+      qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(request.projectId) });
     },
   });
 }

@@ -13,6 +13,11 @@ import {
   sanitizeExportFilePath,
 } from "../../src/features/projects/patchSnapshotExport";
 import { buildWritebackRequestRiskSummary } from "../../src/features/projects/writebackRisk";
+import {
+  buildWritebackReviewSummary,
+  validateWritebackStatusTransition,
+  type ProjectWritebackRequest,
+} from "../../src/features/projects/projectWritebackRequestService";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -445,5 +450,124 @@ test.describe("writeback request risk evaluator", () => {
         files: [{ ...snapshotFile(), truncated: true }],
       }).riskLevel,
     ).toBe("high");
+  });
+});
+
+test.describe("writeback review transition rules", () => {
+  const request: ProjectWritebackRequest = {
+    id: "request-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    snapshotId: "snapshot-1",
+    requestedBy: "user-1",
+    reviewerId: null,
+    status: "submitted",
+    title: "Source writeback review",
+    requesterNote: "Please review.",
+    reviewerNote: null,
+    reviewDecision: null,
+    riskLevel: "medium",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    snapshotSummary: {},
+    metadata: {},
+    reviewMetadata: {},
+    createdAt: "2026-05-26T00:00:00.000Z",
+    updatedAt: "2026-05-26T00:00:00.000Z",
+    submittedAt: "2026-05-26T00:00:00.000Z",
+    reviewedAt: null,
+  };
+
+  test("allows draft submit and submitted cancel for the requester", () => {
+    expect(
+      validateWritebackStatusTransition({
+        action: "submit",
+        actorRole: "requester",
+        fromStatus: "draft",
+      }),
+    ).toBe("submitted");
+    expect(
+      validateWritebackStatusTransition({
+        action: "cancel",
+        actorRole: "requester",
+        fromStatus: "submitted",
+        reviewedAt: null,
+      }),
+    ).toBe("cancelled");
+  });
+
+  test("allows reviewer approval and rejection from submitted only", () => {
+    expect(
+      validateWritebackStatusTransition({
+        action: "approve",
+        actorRole: "reviewer",
+        fromStatus: "submitted",
+        blockerCount: 0,
+      }),
+    ).toBe("approved");
+    expect(
+      validateWritebackStatusTransition({
+        action: "reject",
+        actorRole: "reviewer",
+        fromStatus: "submitted",
+        reviewerNote: "Not safe yet.",
+      }),
+    ).toBe("rejected");
+  });
+
+  test("blocks unsafe or terminal review transitions", () => {
+    expect(() =>
+      validateWritebackStatusTransition({
+        action: "approve",
+        actorRole: "reviewer",
+        fromStatus: "submitted",
+        blockerCount: 1,
+      }),
+    ).toThrow("blockers");
+    expect(() =>
+      validateWritebackStatusTransition({
+        action: "approve",
+        actorRole: "reviewer",
+        fromStatus: "rejected",
+      }),
+    ).toThrow("submitted");
+    expect(() =>
+      validateWritebackStatusTransition({
+        action: "approve",
+        actorRole: "reviewer",
+        fromStatus: "cancelled",
+      }),
+    ).toThrow("submitted");
+    expect(() =>
+      validateWritebackStatusTransition({
+        action: "submit",
+        actorRole: "requester",
+        fromStatus: "cancelled",
+      }),
+    ).toThrow("Invalid");
+  });
+
+  test("requires reviewer note for rejection and preserves no-writeback metadata", () => {
+    expect(() =>
+      validateWritebackStatusTransition({
+        action: "reject",
+        actorRole: "reviewer",
+        fromStatus: "submitted",
+        reviewerNote: "",
+      }),
+    ).toThrow("Reviewer note");
+
+    const summary = buildWritebackReviewSummary({
+      request,
+      actorId: "admin-1",
+      action: "approve",
+      newStatus: "approved",
+    });
+
+    expect(summary.sourceWritebackPerformed).toBe(false);
+    expect(summary.originalProjectFilesModified).toBe(false);
+    expect(summary.originalTextPreviewsModified).toBe(false);
+    expect(summary.approvalAppliesChanges).toBe(false);
   });
 });

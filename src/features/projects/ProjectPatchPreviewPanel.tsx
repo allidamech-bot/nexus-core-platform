@@ -629,7 +629,11 @@ function WritebackRequestPanel({
 }) {
   const { t } = useLocale();
   const canSubmit = request?.status === "draft";
-  const canCancel = request?.status === "draft" || request?.status === "submitted";
+  const canCancel =
+    request?.status === "draft" || (request?.status === "submitted" && !request.reviewedAt);
+  const approved = request?.status === "approved";
+  const rejected = request?.status === "rejected";
+  const cancelled = request?.status === "cancelled";
 
   return (
     <div className="space-y-2 rounded-md border border-border bg-background/40 p-3">
@@ -641,7 +645,7 @@ function WritebackRequestPanel({
           </div>
           <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             {t("thisOnlyCreatesReviewRequest")} {t("originalProjectFilesWereNotModified")}{" "}
-            {t("approvalDoesNotApplyChangesYet")}
+            {t("approvalDoesNotApplyChanges")} {t("sourceWritebackUnavailableYet")}
           </div>
         </div>
         {request && (
@@ -692,11 +696,36 @@ function WritebackRequestPanel({
           <div className="text-[11px] leading-relaxed text-muted-foreground">
             {t("requestStatus")}: {request.status}. {t("sourceWritebackUnavailableYet")}
           </div>
+          {request.status === "submitted" && (
+            <div className="rounded border border-warning/20 bg-warning/10 p-2 text-[10px] text-warning">
+              {t("waitingForReview")} {t("approvalDoesNotApplyChanges")}
+            </div>
+          )}
+          {approved && (
+            <div className="rounded border border-emerald-500/20 bg-emerald-500/10 p-2 text-[10px] text-emerald-300">
+              {t("approvedForFutureWritebackConsideration")} {t("sourceWritebackUnavailableYet")}
+            </div>
+          )}
+          {rejected && (
+            <div className="rounded border border-destructive/20 bg-destructive/10 p-2 text-[10px] text-destructive">
+              {t("rejectedByReviewer")}
+            </div>
+          )}
+          {cancelled && (
+            <div className="rounded border border-white/10 bg-black/10 p-2 text-[10px] text-muted-foreground">
+              {t("writebackRequestCancelled")}
+            </div>
+          )}
           {request.requesterNote && (
             <SandboxTextBlock label={t("requesterNote")} text={request.requesterNote} />
           )}
           {request.reviewerNote && (
             <SandboxTextBlock label={t("reviewerNote")} text={request.reviewerNote} />
+          )}
+          {request.reviewedAt && (
+            <div className="text-[10px] text-muted-foreground">
+              {t("reviewedAt")}: {new Date(request.reviewedAt).toLocaleString()}
+            </div>
           )}
           {request.blockers.length > 0 && (
             <IssueList title={t("blockers")} issues={request.blockers} tone="blocker" />

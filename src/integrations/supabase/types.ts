@@ -527,6 +527,8 @@ export type Database = {
           project_id: string;
           requested_by: string;
           requester_note: string | null;
+          review_decision: string | null;
+          review_metadata: Json;
           reviewed_at: string | null;
           reviewer_id: string | null;
           reviewer_note: string | null;
@@ -549,6 +551,8 @@ export type Database = {
           project_id: string;
           requested_by: string;
           requester_note?: string | null;
+          review_decision?: string | null;
+          review_metadata?: Json;
           reviewed_at?: string | null;
           reviewer_id?: string | null;
           reviewer_note?: string | null;
@@ -571,6 +575,8 @@ export type Database = {
           project_id?: string;
           requested_by?: string;
           requester_note?: string | null;
+          review_decision?: string | null;
+          review_metadata?: Json;
           reviewed_at?: string | null;
           reviewer_id?: string | null;
           reviewer_note?: string | null;

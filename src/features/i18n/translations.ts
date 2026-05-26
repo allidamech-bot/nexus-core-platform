@@ -174,6 +174,24 @@ export const translations = {
     blockedRisk: "Blocked risk",
     governanceReviewRequired: "Governance review required",
     approvalDoesNotApplyChangesYet: "Approval does not apply changes yet",
+    writebackReviewWorkflow: "Writeback review workflow",
+    submittedWritebackRequests: "Submitted writeback requests",
+    reviewRequest: "Review request",
+    approveRequest: "Approve request",
+    rejectRequest: "Reject request",
+    requestApproved: "Request approved",
+    requestRejected: "Request rejected",
+    requestCannotBeApproved: "Request cannot be approved",
+    requestHasBlockers: "Request has blockers",
+    reviewer: "Reviewer",
+    reviewedAt: "Reviewed at",
+    reviewDecision: "Review decision",
+    approvalDoesNotApplyChanges: "Approval does not apply changes",
+    approvedForFutureWritebackConsideration: "Approved for future writeback consideration",
+    rejectedByReviewer: "Rejected by reviewer",
+    waitingForReview: "Waiting for review",
+    noSubmittedRequests: "No submitted requests",
+    reviewerNoteRequiredForRejection: "Reviewer note is required for rejection",
     aiPatchPreview: "AI patch preview",
     describeChangeYouWant: "Describe the change you want",
     generateAiPatchPreview: "Generate AI patch preview",
@@ -665,6 +683,36 @@ export const translations = {
       "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u062d\u0648\u0643\u0645\u0629 \u0645\u0637\u0644\u0648\u0628\u0629",
     approvalDoesNotApplyChangesYet:
       "\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0644\u0627 \u062a\u0637\u0628\u0642 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a \u0628\u0639\u062f",
+    writebackReviewWorkflow:
+      "\u0633\u064a\u0631 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631",
+    submittedWritebackRequests:
+      "\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u0627\u0644\u0645\u0631\u0633\u0644\u0629",
+    reviewRequest: "\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0637\u0644\u0628",
+    approveRequest:
+      "\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628",
+    rejectRequest: "\u0631\u0641\u0636 \u0627\u0644\u0637\u0644\u0628",
+    requestApproved:
+      "\u062a\u0645\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628",
+    requestRejected: "\u062a\u0645 \u0631\u0641\u0636 \u0627\u0644\u0637\u0644\u0628",
+    requestCannotBeApproved:
+      "\u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0639\u0644\u0649 \u0627\u0644\u0637\u0644\u0628",
+    requestHasBlockers:
+      "\u064a\u062d\u062a\u0648\u064a \u0627\u0644\u0637\u0644\u0628 \u0639\u0644\u0649 \u0639\u0648\u0627\u0626\u0642",
+    reviewer: "\u0627\u0644\u0645\u0631\u0627\u062c\u0639",
+    reviewedAt: "\u062a\u0645\u062a \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629 \u0641\u064a",
+    reviewDecision: "\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629",
+    approvalDoesNotApplyChanges:
+      "\u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0644\u0627 \u062a\u0637\u0628\u0642 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a",
+    approvedForFutureWritebackConsideration:
+      "\u062a\u0645\u062a \u0627\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u0644\u0644\u0646\u0638\u0631 \u0641\u064a \u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0644\u0627\u062d\u0642\u064b\u0627",
+    rejectedByReviewer:
+      "\u062a\u0645 \u0627\u0644\u0631\u0641\u0636 \u0645\u0646 \u0642\u0628\u0644 \u0627\u0644\u0645\u0631\u0627\u062c\u0639",
+    waitingForReview:
+      "\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629",
+    noSubmittedRequests:
+      "\u0644\u0627 \u062a\u0648\u062c\u062f \u0637\u0644\u0628\u0627\u062a \u0645\u0631\u0633\u0644\u0629",
+    reviewerNoteRequiredForRejection:
+      "\u0645\u0644\u0627\u062d\u0638\u0629 \u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u0645\u0637\u0644\u0648\u0628\u0629 \u0639\u0646\u062f \u0627\u0644\u0631\u0641\u0636",
     aiPatchPreview:
       "\u0645\u0639\u0627\u064a\u0646\u0629 \u062a\u0639\u062f\u064a\u0644 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a",
     describeChangeYouWant:
