@@ -108,6 +108,25 @@ export const translations = {
     sensitiveFilesCannotBePatched: "Sensitive files cannot be patched",
     applyUnavailableYet: "Apply is not available yet",
     previewLimitedToIndexedText: "Preview is limited to indexed text",
+    patchSandbox: "Patch sandbox",
+    verifyInSandbox: "Verify in sandbox",
+    sandboxVerified: "Sandbox verified",
+    sandboxBlocked: "Sandbox blocked",
+    sandboxFailed: "Sandbox failed",
+    sandboxPartial: "Sandbox partial",
+    noProjectFilesModified: "No project files were modified",
+    sandboxLimitedToIndexedText: "Sandbox is limited to indexed preview text",
+    before: "Before",
+    after: "After",
+    wouldChange: "Would change",
+    blockers: "Blockers",
+    conflicts: "Conflicts",
+    stalePreviewDetected: "Stale preview detected",
+    targetFileNoLongerPreviewable: "Target file is no longer previewable",
+    oldTextAppearsMultipleTimes: "Old text appears multiple times",
+    currentFileHashDiffers: "Current file hash differs from patch grounding",
+    patchPreviewCannotBeAppliedSafelyYet: "Patch preview cannot be applied safely yet",
+    applyRemainsDisabled: "Apply remains disabled",
     aiPatchPreview: "AI patch preview",
     describeChangeYouWant: "Describe the change you want",
     generateAiPatchPreview: "Generate AI patch preview",
@@ -487,6 +506,39 @@ export const translations = {
       "\u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d \u0628\u0639\u062f",
     previewLimitedToIndexedText:
       "\u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0645\u062d\u062f\u0648\u062f\u0629 \u0628\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0641\u0647\u0631\u0633",
+    patchSandbox:
+      "\u0628\u064a\u0626\u0629 \u0627\u062e\u062a\u0628\u0627\u0631 \u0627\u0644\u062a\u0639\u062f\u064a\u0644",
+    verifyInSandbox:
+      "\u0627\u0644\u062a\u062d\u0642\u0642 \u0641\u064a \u0628\u064a\u0626\u0629 \u0627\u0644\u0627\u062e\u062a\u0628\u0627\u0631",
+    sandboxVerified:
+      "\u062a\u0645 \u0627\u0644\u062a\u062d\u0642\u0642 \u0641\u064a \u0628\u064a\u0626\u0629 \u0627\u0644\u0627\u062e\u062a\u0628\u0627\u0631",
+    sandboxBlocked:
+      "\u062a\u0645 \u062d\u0638\u0631 \u0628\u064a\u0626\u0629 \u0627\u0644\u0627\u062e\u062a\u0628\u0627\u0631",
+    sandboxFailed:
+      "\u0641\u0634\u0644\u062a \u0628\u064a\u0626\u0629 \u0627\u0644\u0627\u062e\u062a\u0628\u0627\u0631",
+    sandboxPartial:
+      "\u062a\u062d\u0642\u0642 \u062c\u0632\u0626\u064a \u0641\u064a \u0628\u064a\u0626\u0629 \u0627\u0644\u0627\u062e\u062a\u0628\u0627\u0631",
+    noProjectFilesModified:
+      "\u0644\u0645 \u064a\u062a\u0645 \u062a\u0639\u062f\u064a\u0644 \u0623\u064a \u0645\u0644\u0641\u0627\u062a \u0641\u064a \u0627\u0644\u0645\u0634\u0631\u0648\u0639",
+    sandboxLimitedToIndexedText:
+      "\u0628\u064a\u0626\u0629 \u0627\u0644\u0627\u062e\u062a\u0628\u0627\u0631 \u0645\u062d\u062f\u0648\u062f\u0629 \u0628\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0641\u0647\u0631\u0633",
+    before: "\u0642\u0628\u0644",
+    after: "\u0628\u0639\u062f",
+    wouldChange: "\u0633\u064a\u062a\u0645 \u062a\u063a\u064a\u064a\u0631\u0647",
+    blockers: "\u0627\u0644\u0639\u0648\u0627\u0626\u0642",
+    conflicts: "\u0627\u0644\u062a\u0639\u0627\u0631\u0636\u0627\u062a",
+    stalePreviewDetected:
+      "\u062a\u0645 \u0627\u0643\u062a\u0634\u0627\u0641 \u0645\u0639\u0627\u064a\u0646\u0629 \u0642\u062f\u064a\u0645\u0629",
+    targetFileNoLongerPreviewable:
+      "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0647\u062f\u0641 \u0644\u0645 \u064a\u0639\u062f \u0642\u0627\u0628\u0644\u064b\u0627 \u0644\u0644\u0645\u0639\u0627\u064a\u0646\u0629",
+    oldTextAppearsMultipleTimes:
+      "\u0627\u0644\u0646\u0635 \u0627\u0644\u0642\u062f\u064a\u0645 \u064a\u0638\u0647\u0631 \u0623\u0643\u062b\u0631 \u0645\u0646 \u0645\u0631\u0629",
+    currentFileHashDiffers:
+      "\u0628\u0635\u0645\u0629 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u062d\u0627\u0644\u064a\u0629 \u062a\u062e\u062a\u0644\u0641 \u0639\u0646 \u062a\u0648\u062b\u064a\u0642 \u0627\u0644\u062a\u0639\u062f\u064a\u0644",
+    patchPreviewCannotBeAppliedSafelyYet:
+      "\u0644\u0627 \u064a\u0645\u0643\u0646 \u062a\u0637\u0628\u064a\u0642 \u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u062a\u0639\u062f\u064a\u0644 \u0628\u0623\u0645\u0627\u0646 \u0628\u0639\u062f",
+    applyRemainsDisabled:
+      "\u0644\u0627 \u064a\u0632\u0627\u0644 \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u0645\u0639\u0637\u0644\u064b\u0627",
     aiPatchPreview:
       "\u0645\u0639\u0627\u064a\u0646\u0629 \u062a\u0639\u062f\u064a\u0644 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a",
     describeChangeYouWant:

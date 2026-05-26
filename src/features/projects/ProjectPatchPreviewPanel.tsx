@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, FileCode2, Loader2, ShieldCheck, Wand2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileCode2, Loader2, ShieldCheck, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/features/i18n/localeContext";
 import { AI_PATCH_LIMITS } from "./aiPatchPreview";
@@ -7,8 +7,10 @@ import {
   useCreateAiPatchPreviewMutation,
   useCreatePatchPreviewMutation,
   usePatchPreviewsQuery,
+  usePatchPreviewSandboxMutation,
   usePreviewablePatchTargetsQuery,
 } from "./projectQueries";
+import type { PatchSandboxResult } from "./patchApplySandbox";
 import type { GroundedPatchPreview, ProjectFile, ProjectTextPreviewWithPath } from "./types";
 
 function shortHash(value: string | null) {
@@ -32,8 +34,10 @@ export function ProjectPatchPreviewPanel({
   const { data: patchPreviews = [], isLoading: previewsLoading } = usePatchPreviewsQuery(projectId);
   const createPreview = useCreatePatchPreviewMutation();
   const createAiPreview = useCreateAiPatchPreviewMutation();
+  const sandboxPreview = usePatchPreviewSandboxMutation();
   const [selectedFileId, setSelectedFileId] = useState("");
   const [selectedAiFileIds, setSelectedAiFileIds] = useState<string[]>([]);
+  const [selectedPatchPreviewId, setSelectedPatchPreviewId] = useState("");
   const [title, setTitle] = useState("");
   const [oldText, setOldText] = useState("");
   const [newText, setNewText] = useState("");
@@ -45,8 +49,11 @@ export function ProjectPatchPreviewPanel({
   );
   const previewableTargets = targets.filter((target) => previewsByFileId.has(target.id));
   const selectedTarget = previewableTargets.find((target) => target.id === selectedFileId) ?? null;
-  const latestPreview = patchPreviews[0] ?? null;
-  const busy = createPreview.isPending || createAiPreview.isPending;
+  const selectedPatchPreview =
+    patchPreviews.find((preview) => preview.id === selectedPatchPreviewId) ??
+    patchPreviews[0] ??
+    null;
+  const busy = createPreview.isPending || createAiPreview.isPending || sandboxPreview.isPending;
 
   useEffect(() => {
     if (!selectedFileId && previewableTargets[0]) {
@@ -59,6 +66,12 @@ export function ProjectPatchPreviewPanel({
       setSelectedAiFileIds([previewableTargets[0].id]);
     }
   }, [previewableTargets, selectedAiFileIds.length]);
+
+  useEffect(() => {
+    if (!selectedPatchPreviewId && patchPreviews[0]) {
+      setSelectedPatchPreviewId(patchPreviews[0].id);
+    }
+  }, [patchPreviews, selectedPatchPreviewId]);
 
   function toggleAiFile(fileId: string) {
     setSelectedAiFileIds((current) => {
@@ -121,6 +134,24 @@ export function ProjectPatchPreviewPanel({
       return;
     }
     toast.error(result.warnings[0]?.message ?? t("aiPatchPreviewFailed"));
+  }
+
+  async function handleVerifySandbox() {
+    if (!selectedPatchPreview || disabled || sandboxPreview.isPending) return;
+    try {
+      const result = await sandboxPreview.mutateAsync(selectedPatchPreview.id);
+      if (result.status === "verified") {
+        toast.success(t("sandboxVerified"));
+      } else if (result.status === "blocked") {
+        toast.error(t("sandboxBlocked"));
+      } else if (result.status === "partial") {
+        toast.warning(t("sandboxPartial"));
+      } else {
+        toast.error(t("sandboxFailed"));
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("sandboxFailed"));
+    }
   }
 
   return (
@@ -251,18 +282,187 @@ export function ProjectPatchPreviewPanel({
         disabled
         className="w-full rounded-md border border-border px-3 py-2 text-[11px] font-medium text-muted-foreground opacity-60"
       >
-        {t("applyUnavailableYet")}
+        {t("applyUnavailableYet")} / {t("applyRemainsDisabled")}
       </button>
 
       {previewsLoading ? (
         <div className="text-xs text-muted-foreground">{t("loadingProjects")}</div>
-      ) : latestPreview ? (
-        <PatchPreviewResult preview={latestPreview} />
+      ) : selectedPatchPreview ? (
+        <div className="space-y-2">
+          {patchPreviews.length > 1 && (
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {t("groundedPatchPreview")}
+              </label>
+              <select
+                value={selectedPatchPreview.id}
+                onChange={(event) => setSelectedPatchPreviewId(event.target.value)}
+                disabled={disabled || busy}
+                className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-[11px] text-zinc-200 outline-none focus:border-accent/40 disabled:opacity-60"
+              >
+                {patchPreviews.map((preview) => (
+                  <option key={preview.id} value={preview.id}>
+                    {preview.title || t("groundedPatchPreview")} / {preview.status}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <PatchPreviewResult preview={selectedPatchPreview} />
+          <button
+            type="button"
+            onClick={handleVerifySandbox}
+            disabled={disabled || sandboxPreview.isPending || !selectedPatchPreview}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {sandboxPreview.isPending ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <ShieldCheck className="size-3" />
+            )}
+            {t("verifyInSandbox")}
+          </button>
+          {sandboxPreview.data &&
+            sandboxPreview.data.patchPreviewId === selectedPatchPreview.id && (
+              <PatchSandboxResultView result={sandboxPreview.data} />
+            )}
+          {sandboxPreview.error && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+              {t("sandboxFailed")}
+            </div>
+          )}
+        </div>
       ) : (
         <div className="rounded-md border border-border bg-background/40 p-3 text-xs text-muted-foreground">
           {t("groundedPatchPreview")}
         </div>
       )}
+    </div>
+  );
+}
+
+function sandboxStatusLabel(
+  status: PatchSandboxResult["status"],
+  t: ReturnType<typeof useLocale>["t"],
+) {
+  if (status === "verified") return t("sandboxVerified");
+  if (status === "blocked") return t("sandboxBlocked");
+  if (status === "partial") return t("sandboxPartial");
+  return t("sandboxFailed");
+}
+
+function PatchSandboxResultView({ result }: { result: PatchSandboxResult }) {
+  const { t } = useLocale();
+  const statusClass =
+    result.status === "verified"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : result.status === "blocked" || result.status === "failed"
+        ? "border-destructive/30 bg-destructive/10 text-destructive"
+        : "border-warning/30 bg-warning/10 text-warning";
+
+  return (
+    <div className="space-y-3 rounded-md border border-border bg-background/40 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+            <ShieldCheck className="size-3 text-accent" />
+            {t("patchSandbox")}
+          </div>
+          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            {t("noProjectFilesModified")} {t("sandboxLimitedToIndexedText")}
+          </div>
+        </div>
+        <span className={`rounded border px-1.5 py-0.5 text-[9px] uppercase ${statusClass}`}>
+          {sandboxStatusLabel(result.status, t)}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+        <Metric label={t("wouldChange")} value={result.summary.changedFiles} />
+        <Metric label={t("generatedChanges")} value={result.summary.changesApplied} />
+      </div>
+
+      {result.blockers.length > 0 && (
+        <IssueList title={t("blockers")} issues={result.blockers} tone="blocker" />
+      )}
+      {result.warnings.length > 0 && (
+        <IssueList title={t("conflicts")} issues={result.warnings} tone="warning" />
+      )}
+
+      {result.files.map((file) => (
+        <div
+          key={file.filePath}
+          className="space-y-2 rounded border border-white/5 bg-black/10 p-2"
+        >
+          <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-300" dir="ltr">
+            <CheckCircle2 className="size-3 text-accent" />
+            <span className="min-w-0 flex-1 truncate">{file.filePath}</span>
+            {file.changed && <span className="text-emerald-300">{t("wouldChange")}</span>}
+          </div>
+          {file.blockers.length > 0 && (
+            <IssueList title={t("blockers")} issues={file.blockers} tone="blocker" />
+          )}
+          <div className="grid gap-2">
+            <SandboxTextBlock label={t("before")} text={file.oldPreviewText} />
+            <SandboxTextBlock label={t("after")} text={file.sandboxPatchedText} />
+          </div>
+          {file.truncated && (
+            <div className="text-[10px] text-warning">{t("previewTruncatedForSafety")}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function IssueList({
+  title,
+  issues,
+  tone,
+}: {
+  title: string;
+  issues: { code: string; message: string; filePath?: string }[];
+  tone: "warning" | "blocker";
+}) {
+  const toneClass = tone === "blocker" ? "text-destructive" : "text-warning";
+  return (
+    <div className="space-y-1 rounded border border-white/5 bg-black/10 p-2">
+      <div className={`text-[10px] font-semibold uppercase tracking-widest ${toneClass}`}>
+        {title}
+      </div>
+      {issues.map((item, index) => (
+        <div
+          key={`${item.code}-${item.filePath ?? ""}-${index}`}
+          className={`text-[10px] ${toneClass}`}
+        >
+          {item.filePath ? `${item.filePath}: ` : ""}
+          {item.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SandboxTextBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div>
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <pre className="max-h-72 overflow-auto rounded border border-white/5 bg-black/35 p-2 font-mono text-[10px] leading-relaxed text-zinc-300 whitespace-pre-wrap">
+        {text || "(empty)"}
+      </pre>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-md border border-border bg-background/40 p-2">
+      <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-xs font-semibold text-zinc-200">{value}</div>
     </div>
   );
 }

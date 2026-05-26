@@ -17,6 +17,7 @@ import {
   createManualPatchPreview,
   getPatchPreviews,
   getPreviewablePatchTargets,
+  runPatchPreviewSandbox,
   type CreateAiPatchPreviewInput,
   type CreateManualPatchPreviewInput,
 } from "./projectPatchPreviewService";
@@ -28,6 +29,7 @@ import type {
   ProjectTextPreviewWithPath,
   ProjectWithLatestJob,
 } from "./types";
+import type { PatchSandboxResult } from "./patchApplySandbox";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -166,5 +168,12 @@ export function useCreateAiPatchPreviewMutation() {
     onSuccess: (preview) => {
       qc.invalidateQueries({ queryKey: projectKeys.patchPreviews(preview.projectId) });
     },
+  });
+}
+
+export function usePatchPreviewSandboxMutation() {
+  return useMutation({
+    mutationFn: (previewId: string): Promise<PatchSandboxResult> =>
+      runPatchPreviewSandbox(previewId),
   });
 }

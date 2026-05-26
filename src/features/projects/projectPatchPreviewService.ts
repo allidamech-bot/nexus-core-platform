@@ -6,6 +6,7 @@ import {
   validatePatchPreviewTarget,
 } from "./patchDiff";
 import { isSensitivePreviewPath } from "./projectFileTree";
+import { verifyPatchPreviewCanApply, type PatchSandboxResult } from "./patchApplySandbox";
 import type {
   GroundedPatchChange,
   GroundedPatchFile,
@@ -83,6 +84,10 @@ export async function validatePatchPreviewAccess(projectId: string): Promise<voi
   if (!data) throw new Error("Project not found.");
 }
 
+export async function validatePatchPreviewSandboxAccess(projectId: string): Promise<void> {
+  await validatePatchPreviewAccess(projectId);
+}
+
 export async function getPatchPreviews(projectId: string): Promise<GroundedPatchPreview[]> {
   const { data, error } = await supabase
     .from("project_patch_previews")
@@ -104,6 +109,63 @@ export async function getPatchPreview(previewId: string): Promise<GroundedPatchP
 
   if (error) throw error;
   return data ? toPatchPreview(data) : null;
+}
+
+export async function getPatchPreviewForSandbox(
+  previewId: string,
+): Promise<GroundedPatchPreview | null> {
+  return getPatchPreview(previewId);
+}
+
+export async function getPatchPreviewCurrentContext(
+  projectId: string,
+  groundedFiles: GroundedPatchFile[],
+): Promise<{ files: ProjectFile[]; textPreviews: ProjectTextPreviewWithPath[] }> {
+  const groundedFileIds = Array.from(
+    new Set(groundedFiles.map((file) => file.fileId).filter(Boolean)),
+  );
+  const groundedPaths = Array.from(new Set(groundedFiles.map((file) => file.path).filter(Boolean)));
+
+  if (groundedFileIds.length === 0 && groundedPaths.length === 0) {
+    return { files: [], textPreviews: [] };
+  }
+
+  let fileQuery = supabase.from("project_files").select("*").eq("project_id", projectId);
+  if (groundedFileIds.length > 0) {
+    fileQuery = fileQuery.in("id", groundedFileIds);
+  } else {
+    fileQuery = fileQuery.in("path", groundedPaths);
+  }
+
+  const { data: files, error: fileError } = await fileQuery.limit(100);
+  if (fileError) throw fileError;
+  const fileRows = (files ?? []) as ProjectFile[];
+  if (fileRows.length === 0) return { files: [], textPreviews: [] };
+
+  const fileIds = fileRows.map((file) => file.id);
+  const { data: previews, error: previewError } = await supabase
+    .from("project_text_previews")
+    .select("*")
+    .eq("project_id", projectId)
+    .in("file_id", fileIds)
+    .limit(100);
+
+  if (previewError) throw previewError;
+  const pathsByFileId = new Map(fileRows.map((file) => [file.id, file.path]));
+  const textPreviews = ((previews ?? []) as ProjectTextPreviewWithPath[]).map((preview) => ({
+    ...preview,
+    path: pathsByFileId.get(preview.file_id) ?? "unknown",
+  }));
+
+  return { files: fileRows, textPreviews };
+}
+
+export async function runPatchPreviewSandbox(previewId: string): Promise<PatchSandboxResult> {
+  const preview = await getPatchPreviewForSandbox(previewId);
+  if (!preview) throw new Error("Patch preview not found.");
+  await validatePatchPreviewSandboxAccess(preview.projectId);
+  const context = await getPatchPreviewCurrentContext(preview.projectId, preview.groundedFiles);
+  return verifyPatchPreviewCanApply({ preview, ...context });
 }
 
 export async function getPreviewablePatchTargets(projectId: string): Promise<ProjectFile[]> {
