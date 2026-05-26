@@ -12,6 +12,7 @@ import {
   enforceSnapshotExportLimits,
   sanitizeExportFilePath,
 } from "../../src/features/projects/patchSnapshotExport";
+import { buildWritebackRequestRiskSummary } from "../../src/features/projects/writebackRisk";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -356,5 +357,93 @@ test.describe("patch snapshot export builder", () => {
         ],
       }),
     ).toThrow("Export size limit exceeded.");
+  });
+});
+
+test.describe("writeback request risk evaluator", () => {
+  const snapshot: ProjectPatchSnapshot = {
+    id: "snapshot-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    createdBy: "user-1",
+    status: "created",
+    title: "Versioned patch snapshot",
+    summary: "Derived snapshot",
+    source: "patch_preview_sandbox",
+    verificationStatus: "verified",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    metadata: {},
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  function snapshotFile(path = "src/app.ts"): ProjectPatchSnapshotFile {
+    return {
+      id: `snapshot-file-${path}`,
+      snapshotId: snapshot.id,
+      projectId: snapshot.projectId,
+      patchPreviewId: snapshot.patchPreviewId,
+      filePath: path,
+      originalContentSha256: "hash-1",
+      patchedContentSha256: "hash-2",
+      originalPreviewText: "old",
+      patchedPreviewText: "new",
+      changed: true,
+      previewLimited: true,
+      truncated: false,
+      warnings: [],
+      blockers: [],
+      createdAt: "2026-05-26T00:00:00.000Z",
+    };
+  }
+
+  test("creates a low or medium request risk summary without mutating source rows", () => {
+    const file = snapshotFile();
+    const before = JSON.stringify(file);
+    const risk = buildWritebackRequestRiskSummary({ snapshot, files: [file] });
+
+    expect(risk.changedFilesCount).toBe(1);
+    expect(["low", "medium"]).toContain(risk.riskLevel);
+    expect(
+      risk.warnings.some((warning) => warning.code === "preview_limited_snapshot"),
+    ).toBeTruthy();
+    expect(JSON.stringify(file)).toBe(before);
+  });
+
+  test("blocks when snapshot has blockers or no changed files", () => {
+    expect(
+      buildWritebackRequestRiskSummary({
+        snapshot: {
+          ...snapshot,
+          blockers: [{ code: "blocked", message: "Blocked." }],
+        },
+        files: [snapshotFile()],
+      }).riskLevel,
+    ).toBe("blocked");
+
+    const unchanged = { ...snapshotFile(), changed: false };
+    const noChanges = buildWritebackRequestRiskSummary({ snapshot, files: [unchanged] });
+    expect(noChanges.riskLevel).toBe("blocked");
+    expect(noChanges.blockers.some((blocker) => blocker.code === "no_changed_files")).toBeTruthy();
+  });
+
+  test("raises package, migration, and truncated previews to high risk", () => {
+    expect(
+      buildWritebackRequestRiskSummary({ snapshot, files: [snapshotFile("package.json")] })
+        .riskLevel,
+    ).toBe("high");
+    expect(
+      buildWritebackRequestRiskSummary({
+        snapshot,
+        files: [snapshotFile("supabase/migrations/20260525190000_demo.sql")],
+      }).riskLevel,
+    ).toBe("high");
+    expect(
+      buildWritebackRequestRiskSummary({
+        snapshot,
+        files: [{ ...snapshotFile(), truncated: true }],
+      }).riskLevel,
+    ).toBe("high");
   });
 });

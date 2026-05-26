@@ -15,15 +15,20 @@ import {
   useCreateAiPatchPreviewMutation,
   useCreatePatchPreviewMutation,
   useCreatePatchSnapshotMutation,
+  useCreateWritebackRequestMutation,
   useDownloadPatchSnapshotExportMutation,
   usePatchPreviewsQuery,
   usePatchSnapshotFilesQuery,
   usePatchSnapshotsQuery,
   usePatchPreviewSandboxMutation,
   usePreviewablePatchTargetsQuery,
+  useCancelWritebackRequestMutation,
+  useSubmitWritebackRequestMutation,
+  useWritebackRequestsQuery,
 } from "./projectQueries";
 import type { PatchSandboxResult } from "./patchApplySandbox";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
+import type { ProjectWritebackRequest } from "./projectWritebackRequestService";
 import type { GroundedPatchPreview, ProjectFile, ProjectTextPreviewWithPath } from "./types";
 
 function shortHash(value: string | null) {
@@ -46,11 +51,15 @@ export function ProjectPatchPreviewPanel({
     usePreviewablePatchTargetsQuery(projectId);
   const { data: patchPreviews = [], isLoading: previewsLoading } = usePatchPreviewsQuery(projectId);
   const { data: patchSnapshots = [] } = usePatchSnapshotsQuery(projectId);
+  const { data: writebackRequests = [] } = useWritebackRequestsQuery(projectId);
   const createPreview = useCreatePatchPreviewMutation();
   const createAiPreview = useCreateAiPatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
   const createSnapshot = useCreatePatchSnapshotMutation(projectId);
   const downloadSnapshotExport = useDownloadPatchSnapshotExportMutation();
+  const createWritebackRequest = useCreateWritebackRequestMutation(projectId);
+  const submitWritebackRequest = useSubmitWritebackRequestMutation(projectId);
+  const cancelWritebackRequest = useCancelWritebackRequestMutation(projectId);
   const [selectedFileId, setSelectedFileId] = useState("");
   const [selectedAiFileIds, setSelectedAiFileIds] = useState<string[]>([]);
   const [selectedPatchPreviewId, setSelectedPatchPreviewId] = useState("");
@@ -59,6 +68,7 @@ export function ProjectPatchPreviewPanel({
   const [oldText, setOldText] = useState("");
   const [newText, setNewText] = useState("");
   const [aiInstruction, setAiInstruction] = useState("");
+  const [requesterNote, setRequesterNote] = useState("");
 
   const previewsByFileId = useMemo(
     () => new Map(previews.map((preview) => [preview.file_id, preview])),
@@ -74,6 +84,10 @@ export function ProjectPatchPreviewPanel({
     ? (patchSnapshots.find((snapshot) => snapshot.patchPreviewId === selectedPatchPreview.id) ??
       null)
     : null;
+  const latestWritebackRequestForSnapshot = latestSnapshotForSelected
+    ? (writebackRequests.find((request) => request.snapshotId === latestSnapshotForSelected.id) ??
+      null)
+    : null;
   const { data: latestSnapshotFiles = [] } = usePatchSnapshotFilesQuery(
     latestSnapshotForSelected?.id ?? null,
   );
@@ -84,7 +98,10 @@ export function ProjectPatchPreviewPanel({
     createAiPreview.isPending ||
     sandboxPreview.isPending ||
     createSnapshot.isPending ||
-    downloadSnapshotExport.isPending;
+    downloadSnapshotExport.isPending ||
+    createWritebackRequest.isPending ||
+    submitWritebackRequest.isPending ||
+    cancelWritebackRequest.isPending;
 
   useEffect(() => {
     if (!selectedFileId && previewableTargets[0]) {
@@ -210,6 +227,41 @@ export function ProjectPatchPreviewPanel({
       toast.success(t("exportCreated"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("exportFailed"));
+    }
+  }
+
+  async function handleCreateWritebackRequest(snapshotId: string) {
+    if (disabled || createWritebackRequest.isPending) return;
+    try {
+      const result = await createWritebackRequest.mutateAsync({
+        snapshotId,
+        requesterNote,
+      });
+      toast.success(
+        result.alreadyExists ? t("writebackRequestCreated") : t("writebackRequestCreated"),
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("writebackRequestBlocked"));
+    }
+  }
+
+  async function handleSubmitWritebackRequest(requestId: string) {
+    if (disabled || submitWritebackRequest.isPending) return;
+    try {
+      await submitWritebackRequest.mutateAsync(requestId);
+      toast.success(t("writebackRequestSubmitted"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("writebackRequestBlocked"));
+    }
+  }
+
+  async function handleCancelWritebackRequest(requestId: string) {
+    if (disabled || cancelWritebackRequest.isPending) return;
+    try {
+      await cancelWritebackRequest.mutateAsync(requestId);
+      toast.success(t("writebackRequestCancelled"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("writebackRequestBlocked"));
     }
   }
 
@@ -396,8 +448,19 @@ export function ProjectPatchPreviewPanel({
             files={displayedSnapshotFiles}
             loading={createSnapshot.isPending}
             exportLoading={downloadSnapshotExport.isPending}
+            writebackRequest={latestWritebackRequestForSnapshot}
+            requesterNote={requesterNote}
+            onRequesterNoteChange={setRequesterNote}
+            writebackLoading={
+              createWritebackRequest.isPending ||
+              submitWritebackRequest.isPending ||
+              cancelWritebackRequest.isPending
+            }
             onCreate={handleCreateSnapshot}
             onExport={handleDownloadSnapshotExport}
+            onRequestWriteback={handleCreateWritebackRequest}
+            onSubmitWriteback={handleSubmitWritebackRequest}
+            onCancelWriteback={handleCancelWritebackRequest}
           />
           {sandboxPreview.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
@@ -421,8 +484,15 @@ function PatchSnapshotAction({
   files,
   loading,
   exportLoading,
+  writebackRequest,
+  requesterNote,
+  writebackLoading,
+  onRequesterNoteChange,
   onCreate,
   onExport,
+  onRequestWriteback,
+  onSubmitWriteback,
+  onCancelWriteback,
 }: {
   disabled?: boolean;
   sandbox: PatchSandboxResult | null;
@@ -430,8 +500,15 @@ function PatchSnapshotAction({
   files: ProjectPatchSnapshotFile[];
   loading: boolean;
   exportLoading: boolean;
+  writebackRequest: ProjectWritebackRequest | null;
+  requesterNote: string;
+  writebackLoading: boolean;
+  onRequesterNoteChange: (value: string) => void;
   onCreate: () => void;
   onExport: (snapshotId: string) => void;
+  onRequestWriteback: (snapshotId: string) => void;
+  onSubmitWriteback: (requestId: string) => void;
+  onCancelWriteback: (requestId: string) => void;
 }) {
   const { t } = useLocale();
   const canCreate = sandbox?.status === "verified" || sandbox?.status === "partial";
@@ -502,7 +579,164 @@ function PatchSnapshotAction({
             {t("originalProjectFilesWereNotModified")}
           </div>
           <PatchSnapshotResult snapshot={snapshot} files={files} />
+          <WritebackRequestPanel
+            disabled={disabled}
+            snapshot={snapshot}
+            request={writebackRequest}
+            requesterNote={requesterNote}
+            loading={writebackLoading}
+            onRequesterNoteChange={onRequesterNoteChange}
+            onCreate={onRequestWriteback}
+            onSubmit={onSubmitWriteback}
+            onCancel={onCancelWriteback}
+          />
         </>
+      )}
+    </div>
+  );
+}
+
+function riskLabel(
+  risk: ProjectWritebackRequest["riskLevel"],
+  t: ReturnType<typeof useLocale>["t"],
+) {
+  if (risk === "low") return t("lowRisk");
+  if (risk === "medium") return t("mediumRisk");
+  if (risk === "high") return t("highRisk");
+  return t("blockedRisk");
+}
+
+function WritebackRequestPanel({
+  disabled,
+  snapshot,
+  request,
+  requesterNote,
+  loading,
+  onRequesterNoteChange,
+  onCreate,
+  onSubmit,
+  onCancel,
+}: {
+  disabled?: boolean;
+  snapshot: ProjectPatchSnapshot;
+  request: ProjectWritebackRequest | null;
+  requesterNote: string;
+  loading: boolean;
+  onRequesterNoteChange: (value: string) => void;
+  onCreate: (snapshotId: string) => void;
+  onSubmit: (requestId: string) => void;
+  onCancel: (requestId: string) => void;
+}) {
+  const { t } = useLocale();
+  const canSubmit = request?.status === "draft";
+  const canCancel = request?.status === "draft" || request?.status === "submitted";
+
+  return (
+    <div className="space-y-2 rounded-md border border-border bg-background/40 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+            <ShieldCheck className="size-3 text-accent" />
+            {t("sourceWritebackReview")}
+          </div>
+          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            {t("thisOnlyCreatesReviewRequest")} {t("originalProjectFilesWereNotModified")}{" "}
+            {t("approvalDoesNotApplyChangesYet")}
+          </div>
+        </div>
+        {request && (
+          <span className="rounded border border-white/10 bg-black/20 px-1.5 py-0.5 text-[9px] uppercase text-zinc-300">
+            {request.status}
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
+        <Metric
+          label={t("changedFiles")}
+          value={request?.changedFilesCount ?? snapshot.changedFilesCount}
+        />
+        <Metric
+          label={t("riskLevel")}
+          value={request ? riskLabel(request.riskLevel, t) : t("governanceReviewRequired")}
+        />
+      </div>
+
+      {!request && (
+        <>
+          <textarea
+            value={requesterNote}
+            onChange={(event) => onRequesterNoteChange(event.target.value)}
+            placeholder={t("requesterNote")}
+            disabled={disabled || loading}
+            className="min-h-16 w-full rounded-md border border-border bg-background/60 px-2 py-2 text-xs text-zinc-200 outline-none placeholder:text-muted-foreground focus:border-accent/40 disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={() => onCreate(snapshot.id)}
+            disabled={disabled || loading || snapshot.changedFilesCount < 1}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-[11px] font-semibold text-warning hover:bg-warning/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <ShieldCheck className="size-3" />
+            )}
+            {t("requestSourceWritebackReview")}
+          </button>
+        </>
+      )}
+
+      {request && (
+        <div className="space-y-2">
+          <div className="text-[11px] leading-relaxed text-muted-foreground">
+            {t("requestStatus")}: {request.status}. {t("sourceWritebackUnavailableYet")}
+          </div>
+          {request.requesterNote && (
+            <SandboxTextBlock label={t("requesterNote")} text={request.requesterNote} />
+          )}
+          {request.reviewerNote && (
+            <SandboxTextBlock label={t("reviewerNote")} text={request.reviewerNote} />
+          )}
+          {request.blockers.length > 0 && (
+            <IssueList title={t("blockers")} issues={request.blockers} tone="blocker" />
+          )}
+          {request.warnings.length > 0 && (
+            <IssueList title={t("conflicts")} issues={request.warnings} tone="warning" />
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            {canSubmit && (
+              <button
+                type="button"
+                onClick={() => onSubmit(request.id)}
+                disabled={disabled || loading}
+                className="flex items-center justify-center gap-1.5 rounded-md border border-accent/25 bg-accent/10 px-3 py-2 text-[11px] font-semibold text-accent hover:bg-accent/15 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <ShieldCheck className="size-3" />
+                )}
+                {t("submitRequest")}
+              </button>
+            )}
+            {canCancel && (
+              <button
+                type="button"
+                onClick={() => onCancel(request.id)}
+                disabled={disabled || loading}
+                className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-[11px] font-semibold text-destructive hover:bg-destructive/15 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <AlertTriangle className="size-3" />
+                )}
+                {t("cancelRequest")}
+              </button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

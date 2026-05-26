@@ -36,6 +36,14 @@ import type {
 } from "./types";
 import type { PatchSandboxResult } from "./patchApplySandbox";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
+import {
+  cancelWritebackRequest,
+  createWritebackRequestFromSnapshot,
+  getWritebackRequests,
+  submitWritebackRequest,
+  type CreateWritebackRequestResult,
+  type ProjectWritebackRequest,
+} from "./projectWritebackRequestService";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -46,6 +54,7 @@ export const projectKeys = {
   patchSnapshots: (projectId: string) => ["projects", projectId, "patch-snapshots"] as const,
   patchSnapshotFiles: (snapshotId: string) =>
     ["projects", "patch-snapshot-files", snapshotId] as const,
+  writebackRequests: (projectId: string) => ["projects", projectId, "writeback-requests"] as const,
 };
 
 export function useProjectsQuery(enabled = true) {
@@ -228,5 +237,53 @@ export function useCreatePatchSnapshotMutation(projectId: string) {
 export function useDownloadPatchSnapshotExportMutation() {
   return useMutation({
     mutationFn: (snapshotId: string): Promise<void> => downloadPatchSnapshotExport(snapshotId),
+  });
+}
+
+export function useWritebackRequestsQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId
+      ? projectKeys.writebackRequests(projectId)
+      : ["projects", "writeback-requests", "disabled"],
+    queryFn: async (): Promise<ProjectWritebackRequest[]> => {
+      if (!projectId) return [];
+      return getWritebackRequests(projectId);
+    },
+  });
+}
+
+export function useCreateWritebackRequestMutation(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      snapshotId: string;
+      requesterNote?: string;
+    }): Promise<CreateWritebackRequestResult> => createWritebackRequestFromSnapshot(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(projectId) });
+    },
+  });
+}
+
+export function useSubmitWritebackRequestMutation(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string): Promise<ProjectWritebackRequest> =>
+      submitWritebackRequest(requestId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(projectId) });
+    },
+  });
+}
+
+export function useCancelWritebackRequestMutation(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string): Promise<ProjectWritebackRequest> =>
+      cancelWritebackRequest(requestId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: projectKeys.writebackRequests(projectId) });
+    },
   });
 }

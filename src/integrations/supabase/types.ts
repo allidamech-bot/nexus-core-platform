@@ -516,6 +516,97 @@ export type Database = {
           },
         ];
       };
+      project_writeback_requests: {
+        Row: {
+          blockers: Json;
+          changed_files_count: number;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          patch_preview_id: string;
+          project_id: string;
+          requested_by: string;
+          requester_note: string | null;
+          reviewed_at: string | null;
+          reviewer_id: string | null;
+          reviewer_note: string | null;
+          risk_level: string;
+          snapshot_id: string;
+          snapshot_summary: Json;
+          status: string;
+          submitted_at: string | null;
+          title: string | null;
+          updated_at: string;
+          warnings: Json;
+        };
+        Insert: {
+          blockers?: Json;
+          changed_files_count?: number;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          patch_preview_id: string;
+          project_id: string;
+          requested_by: string;
+          requester_note?: string | null;
+          reviewed_at?: string | null;
+          reviewer_id?: string | null;
+          reviewer_note?: string | null;
+          risk_level?: string;
+          snapshot_id: string;
+          snapshot_summary?: Json;
+          status?: string;
+          submitted_at?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          warnings?: Json;
+        };
+        Update: {
+          blockers?: Json;
+          changed_files_count?: number;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          patch_preview_id?: string;
+          project_id?: string;
+          requested_by?: string;
+          requester_note?: string | null;
+          reviewed_at?: string | null;
+          reviewer_id?: string | null;
+          reviewer_note?: string | null;
+          risk_level?: string;
+          snapshot_id?: string;
+          snapshot_summary?: Json;
+          status?: string;
+          submitted_at?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          warnings?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_writeback_requests_patch_preview_id_fkey";
+            columns: ["patch_preview_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_previews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_writeback_requests_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_writeback_requests_snapshot_id_fkey";
+            columns: ["snapshot_id"];
+            isOneToOne: false;
+            referencedRelation: "project_patch_snapshots";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_security_events: {
         Row: {
           created_at: string;
