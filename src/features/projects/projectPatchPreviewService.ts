@@ -366,6 +366,47 @@ export async function createPatchSnapshot(previewId: string): Promise<CreatePatc
   };
 }
 
+function filenameFromContentDisposition(header: string | null, fallback: string) {
+  const match = header?.match(/filename="([^"]+)"/i);
+  return match?.[1] || fallback;
+}
+
+export async function downloadPatchSnapshotExport(snapshotId: string): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Unauthorized");
+
+  const response = await fetch(
+    `/api/projects/snapshot-export?snapshotId=${encodeURIComponent(snapshotId)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "Export failed.");
+    throw new Error(message || "Export failed.");
+  }
+
+  const blob = await response.blob();
+  const filename = filenameFromContentDisposition(
+    response.headers.get("Content-Disposition"),
+    `nexus-core-snapshot-${snapshotId.slice(0, 8)}.json`,
+  );
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function getPreviewablePatchTargets(projectId: string): Promise<ProjectFile[]> {
   const { data, error } = await supabase
     .from("project_files")

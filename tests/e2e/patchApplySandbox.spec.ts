@@ -3,7 +3,15 @@ import { verifyPatchPreviewCanApply } from "../../src/features/projects/patchApp
 import {
   createPatchSnapshotFromSandbox,
   hashPatchedText,
+  type ProjectPatchSnapshot,
+  type ProjectPatchSnapshotFile,
 } from "../../src/features/projects/patchSnapshot";
+import {
+  createSnapshotExportBundle,
+  createSnapshotExportReadme,
+  enforceSnapshotExportLimits,
+  sanitizeExportFilePath,
+} from "../../src/features/projects/patchSnapshotExport";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -251,5 +259,102 @@ test.describe("patch snapshot builder", () => {
       original_text_previews_modified: false,
       source_writeback: false,
     });
+  });
+});
+
+test.describe("patch snapshot export builder", () => {
+  const snapshot: ProjectPatchSnapshot = {
+    id: "snapshot-1",
+    projectId: "project-1",
+    patchPreviewId: "patch-1",
+    createdBy: "user-1",
+    status: "created",
+    title: "Versioned patch snapshot",
+    summary: "Derived snapshot",
+    source: "patch_preview_sandbox",
+    verificationStatus: "verified",
+    changedFilesCount: 1,
+    warnings: [],
+    blockers: [],
+    metadata: {
+      sandbox_summary: {
+        changedFiles: 1,
+        changesApplied: 1,
+        changesBlocked: 0,
+        displayLimited: false,
+      },
+    },
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  const snapshotFile: ProjectPatchSnapshotFile = {
+    id: "snapshot-file-1",
+    snapshotId: snapshot.id,
+    projectId: snapshot.projectId,
+    patchPreviewId: snapshot.patchPreviewId,
+    filePath: "src/app.ts",
+    originalContentSha256: "hash-1",
+    patchedContentSha256: "hash-2",
+    originalPreviewText: "export const value = 'old';\n",
+    patchedPreviewText: "export const value = 'new';\n",
+    changed: true,
+    previewLimited: true,
+    truncated: false,
+    warnings: [],
+    blockers: [],
+    createdAt: "2026-05-26T00:00:00.000Z",
+  };
+
+  test("sanitizes safe export paths and rejects traversal, absolute, and Windows drive paths", () => {
+    expect(sanitizeExportFilePath("src\\app.ts")).toBe("src/app.ts");
+    expect(() => sanitizeExportFilePath("../app.ts")).toThrow("Unsafe export path");
+    expect(() => sanitizeExportFilePath("/src/app.ts")).toThrow("Absolute export paths");
+    expect(() => sanitizeExportFilePath("C:\\src\\app.ts")).toThrow("Windows drive");
+  });
+
+  test("builds manifest, README, and bundle without mutating snapshot rows", () => {
+    const before = JSON.stringify(snapshotFile);
+    const bundle = createSnapshotExportBundle({
+      snapshot,
+      snapshotFiles: [snapshotFile],
+      patchPreview: patchPreview(),
+      exportedAt: "2026-05-26T12:00:00.000Z",
+    });
+
+    expect(bundle.readme).toContain("Original project files were not modified.");
+    expect(bundle.manifest.originalProjectFilesModified).toBe(false);
+    expect(bundle.manifest.exportLimitedToIndexedPreviewText).toBe(true);
+    expect(bundle.files[0].exportPath).toBe("snapshot-export/patched/src/app.ts");
+    expect(bundle.diffs[0].exportPath).toBe("snapshot-export/diffs/src/app.ts.patch");
+    expect(JSON.stringify(snapshotFile)).toBe(before);
+    expect(createSnapshotExportReadme(snapshot)).toContain("derived preview bundle");
+  });
+
+  test("enforces file count and total size limits", () => {
+    expect(() =>
+      enforceSnapshotExportLimits({
+        files: Array.from({ length: 101 }, (_, index) => ({
+          ...snapshotFile,
+          filePath: `src/file-${index}.ts`,
+          exportPath: `snapshot-export/patched/src/file-${index}.ts`,
+          originalExportPath: `snapshot-export/original-preview/src/file-${index}.ts`,
+          diffExportPath: `snapshot-export/diffs/src/file-${index}.ts.patch`,
+        })),
+      }),
+    ).toThrow("Export file limit exceeded.");
+
+    expect(() =>
+      enforceSnapshotExportLimits({
+        files: [
+          {
+            ...snapshotFile,
+            exportPath: "snapshot-export/patched/src/app.ts",
+            originalExportPath: "snapshot-export/original-preview/src/app.ts",
+            diffExportPath: "snapshot-export/diffs/src/app.ts.patch",
+            patchedPreviewText: "a".repeat(100_001),
+          },
+        ],
+      }),
+    ).toThrow("Export size limit exceeded.");
   });
 });

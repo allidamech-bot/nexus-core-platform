@@ -16,6 +16,7 @@ import {
   createAiPatchPreview,
   createManualPatchPreview,
   createPatchSnapshot,
+  downloadPatchSnapshotExport,
   getPatchPreviews,
   getPatchSnapshotFiles,
   getPatchSnapshots,
@@ -221,5 +222,11 @@ export function useCreatePatchSnapshotMutation(projectId: string) {
       qc.invalidateQueries({ queryKey: projectKeys.patchSnapshots(projectId) });
       qc.invalidateQueries({ queryKey: projectKeys.patchSnapshotFiles(result.snapshot.id) });
     },
+  });
+}
+
+export function useDownloadPatchSnapshotExportMutation() {
+  return useMutation({
+    mutationFn: (snapshotId: string): Promise<void> => downloadPatchSnapshotExport(snapshotId),
   });
 }

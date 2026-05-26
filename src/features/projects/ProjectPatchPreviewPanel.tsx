@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, FileCode2, Loader2, ShieldCheck, Wand2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileCode2,
+  Loader2,
+  ShieldCheck,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "@/features/i18n/localeContext";
 import { AI_PATCH_LIMITS } from "./aiPatchPreview";
@@ -7,6 +15,7 @@ import {
   useCreateAiPatchPreviewMutation,
   useCreatePatchPreviewMutation,
   useCreatePatchSnapshotMutation,
+  useDownloadPatchSnapshotExportMutation,
   usePatchPreviewsQuery,
   usePatchSnapshotFilesQuery,
   usePatchSnapshotsQuery,
@@ -41,6 +50,7 @@ export function ProjectPatchPreviewPanel({
   const createAiPreview = useCreateAiPatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
   const createSnapshot = useCreatePatchSnapshotMutation(projectId);
+  const downloadSnapshotExport = useDownloadPatchSnapshotExportMutation();
   const [selectedFileId, setSelectedFileId] = useState("");
   const [selectedAiFileIds, setSelectedAiFileIds] = useState<string[]>([]);
   const [selectedPatchPreviewId, setSelectedPatchPreviewId] = useState("");
@@ -73,7 +83,8 @@ export function ProjectPatchPreviewPanel({
     createPreview.isPending ||
     createAiPreview.isPending ||
     sandboxPreview.isPending ||
-    createSnapshot.isPending;
+    createSnapshot.isPending ||
+    downloadSnapshotExport.isPending;
 
   useEffect(() => {
     if (!selectedFileId && previewableTargets[0]) {
@@ -189,6 +200,16 @@ export function ProjectPatchPreviewPanel({
       toast.error(
         message.includes("blocked sandbox") ? t("cannotCreateSnapshotFromBlockedSandbox") : message,
       );
+    }
+  }
+
+  async function handleDownloadSnapshotExport(snapshotId: string) {
+    if (disabled || downloadSnapshotExport.isPending) return;
+    try {
+      await downloadSnapshotExport.mutateAsync(snapshotId);
+      toast.success(t("exportCreated"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("exportFailed"));
     }
   }
 
@@ -374,7 +395,9 @@ export function ProjectPatchPreviewPanel({
             snapshot={latestSnapshotForSelected}
             files={displayedSnapshotFiles}
             loading={createSnapshot.isPending}
+            exportLoading={downloadSnapshotExport.isPending}
             onCreate={handleCreateSnapshot}
+            onExport={handleDownloadSnapshotExport}
           />
           {sandboxPreview.error && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
@@ -397,14 +420,18 @@ function PatchSnapshotAction({
   snapshot,
   files,
   loading,
+  exportLoading,
   onCreate,
+  onExport,
 }: {
   disabled?: boolean;
   sandbox: PatchSandboxResult | null;
   snapshot: ProjectPatchSnapshot | null;
   files: ProjectPatchSnapshotFile[];
   loading: boolean;
+  exportLoading: boolean;
   onCreate: () => void;
+  onExport: (snapshotId: string) => void;
 }) {
   const { t } = useLocale();
   const canCreate = sandbox?.status === "verified" || sandbox?.status === "partial";
@@ -420,6 +447,10 @@ function PatchSnapshotAction({
           <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             {t("derivedSnapshotOnly")} {t("originalProjectFilesWereNotModified")}{" "}
             {t("sourceWritebackUnavailableYet")}
+          </div>
+          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            {t("derivedPreviewBundle")} {t("exportLimitedToIndexedText")}{" "}
+            {t("sourceWritebackNotIncluded")}
           </div>
         </div>
         {snapshot && (
@@ -451,7 +482,28 @@ function PatchSnapshotAction({
         </div>
       )}
 
-      {snapshot && <PatchSnapshotResult snapshot={snapshot} files={files} />}
+      {snapshot && (
+        <>
+          <button
+            type="button"
+            onClick={() => onExport(snapshot.id)}
+            disabled={disabled || exportLoading}
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exportLoading ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Download className="size-3" />
+            )}
+            {exportLoading ? t("exportSnapshot") : t("downloadSnapshotExport")}
+          </button>
+          <div className="rounded border border-white/5 bg-black/10 p-2 text-[10px] leading-relaxed text-muted-foreground">
+            {t("snapshotExportIncludesPatchedPreviewFilesOnly")}{" "}
+            {t("originalProjectFilesWereNotModified")}
+          </div>
+          <PatchSnapshotResult snapshot={snapshot} files={files} />
+        </>
+      )}
     </div>
   );
 }

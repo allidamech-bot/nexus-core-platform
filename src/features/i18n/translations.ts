@@ -142,6 +142,19 @@ export const translations = {
     cannotCreateSnapshotFromBlockedSandbox: "Cannot create snapshot from blocked sandbox",
     snapshotLimitedToIndexedText: "Snapshot is limited to indexed preview text",
     sourceWritebackUnavailableYet: "Source writeback is not available yet",
+    downloadSnapshotExport: "Download snapshot export",
+    exportSnapshot: "Export snapshot",
+    exportCreated: "Export created",
+    exportFailed: "Export failed",
+    exportLimitedToIndexedText: "Export is limited to indexed preview text",
+    derivedPreviewBundle: "Derived preview bundle",
+    snapshotExportIncludesPatchedPreviewFilesOnly:
+      "Snapshot export includes patched preview files only",
+    exportBlocked: "Export blocked",
+    exportFileLimitExceeded: "Export file limit exceeded",
+    exportSizeLimitExceeded: "Export size limit exceeded",
+    snapshotExportReadme: "Snapshot export README",
+    sourceWritebackNotIncluded: "Source writeback is not included",
     aiPatchPreview: "AI patch preview",
     describeChangeYouWant: "Describe the change you want",
     generateAiPatchPreview: "Generate AI patch preview",
@@ -583,6 +596,27 @@ export const translations = {
       "\u0627\u0644\u0644\u0642\u0637\u0629 \u0645\u062d\u062f\u0648\u062f\u0629 \u0628\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0641\u0647\u0631\u0633",
     sourceWritebackUnavailableYet:
       "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+    downloadSnapshotExport:
+      "\u062a\u0646\u0632\u064a\u0644 \u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",
+    exportSnapshot: "\u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",
+    exportCreated:
+      "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062a\u0635\u062f\u064a\u0631",
+    exportFailed: "\u0641\u0634\u0644 \u0627\u0644\u062a\u0635\u062f\u064a\u0631",
+    exportLimitedToIndexedText:
+      "\u0627\u0644\u062a\u0635\u062f\u064a\u0631 \u0645\u062d\u062f\u0648\u062f \u0628\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0641\u0647\u0631\u0633",
+    derivedPreviewBundle:
+      "\u062d\u0632\u0645\u0629 \u0645\u0639\u0627\u064a\u0646\u0629 \u0645\u0634\u062a\u0642\u0629",
+    snapshotExportIncludesPatchedPreviewFilesOnly:
+      "\u064a\u062a\u0636\u0645\u0646 \u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629 \u0645\u0644\u0641\u0627\u062a \u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0645\u0639\u062f\u0644\u0629 \u0641\u0642\u0637",
+    exportBlocked: "\u062a\u0645 \u062d\u0638\u0631 \u0627\u0644\u062a\u0635\u062f\u064a\u0631",
+    exportFileLimitExceeded:
+      "\u062a\u0645 \u062a\u062c\u0627\u0648\u0632 \u062d\u062f \u0645\u0644\u0641\u0627\u062a \u0627\u0644\u062a\u0635\u062f\u064a\u0631",
+    exportSizeLimitExceeded:
+      "\u062a\u0645 \u062a\u062c\u0627\u0648\u0632 \u062d\u062f \u062d\u062c\u0645 \u0627\u0644\u062a\u0635\u062f\u064a\u0631",
+    snapshotExportReadme:
+      "\u0645\u0644\u0641 \u0634\u0631\u062d \u062a\u0635\u062f\u064a\u0631 \u0627\u0644\u0644\u0642\u0637\u0629",
+    sourceWritebackNotIncluded:
+      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u0636\u0645\u0646\u0629",
     aiPatchPreview:
       "\u0645\u0639\u0627\u064a\u0646\u0629 \u062a\u0639\u062f\u064a\u0644 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a",
     describeChangeYouWant:

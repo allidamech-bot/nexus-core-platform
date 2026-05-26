@@ -18,6 +18,7 @@ import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiProjectsSnapshotExportRouteImport } from './routes/api/projects.snapshot-export'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
 
@@ -66,6 +67,12 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProjectsSnapshotExportRoute =
+  ApiProjectsSnapshotExportRouteImport.update({
+    id: '/api/projects/snapshot-export',
+    path: '/api/projects/snapshot-export',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsProcessZipRoute = ApiProjectsProcessZipRouteImport.update({
   id: '/api/projects/process-zip',
   path: '/api/projects/process-zip',
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
+  '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
+  '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
+  '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
+    | '/api/projects/snapshot-export'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
+    | '/api/projects/snapshot-export'
   id:
     | '__root__'
     | '/'
@@ -156,6 +168,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/process-zip'
+    | '/api/projects/snapshot-export'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -166,6 +179,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
+  ApiProjectsSnapshotExportRoute: typeof ApiProjectsSnapshotExportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -233,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/snapshot-export': {
+      id: '/api/projects/snapshot-export'
+      path: '/api/projects/snapshot-export'
+      fullPath: '/api/projects/snapshot-export'
+      preLoaderRoute: typeof ApiProjectsSnapshotExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/process-zip': {
       id: '/api/projects/process-zip'
       path: '/api/projects/process-zip'
@@ -274,6 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
+  ApiProjectsSnapshotExportRoute: ApiProjectsSnapshotExportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
