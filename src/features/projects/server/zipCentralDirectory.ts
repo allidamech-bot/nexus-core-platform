@@ -271,15 +271,35 @@ export function toProjectFileInsert(
   };
 }
 
+async function decompressDeflateWithNode(bytes: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const { inflateRawSync } = await import("node:zlib");
+    const input = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const output = inflateRawSync(input);
+    return new Uint8Array(output.buffer, output.byteOffset, output.byteLength);
+  } catch {
+    return null;
+  }
+}
+
 async function decompressDeflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
-  if (typeof DecompressionStream === "undefined") {
-    throw new Error("Deflate decompression is not available in this runtime.");
+  if (typeof DecompressionStream !== "undefined") {
+    try {
+      const data = new ArrayBuffer(bytes.byteLength);
+      new Uint8Array(data).set(bytes);
+      const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    } catch {
+      const nodeResult = await decompressDeflateWithNode(bytes);
+      if (nodeResult) return nodeResult;
+      throw new Error("ZIP deflate decompression failed in this runtime.");
+    }
   }
 
-  const data = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(data).set(bytes);
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const nodeResult = await decompressDeflateWithNode(bytes);
+  if (nodeResult) return nodeResult;
+
+  throw new Error("Deflate decompression is not available in this runtime.");
 }
 
 export async function readZipEntryBytes(
