@@ -615,7 +615,7 @@ function ThreadView() {
                 <StatusMetric
                   label="Ingestion"
                   value={
-                    projectContextProject?.latest_job?.status.replace("_", " ") ??
+                    projectContextProject?.latest_job?.status.replaceAll("_", " ") ??
                     projectContextProject?.status ??
                     t("checkZipProcessingStatus")
                   }

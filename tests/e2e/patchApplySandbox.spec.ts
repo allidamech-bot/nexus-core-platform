@@ -1096,7 +1096,7 @@ test.describe("pipeline diagnostics release gate", () => {
     );
     expect(doc).toContain("LOVABLE_API_KEY");
     expect(doc).toContain("ACCEPT_WITH_LIMITATIONS");
-    expect(doc).toContain("4302767");
+    expect(doc).toContain("b09ec61");
     expect(doc).toContain("monthly successful ZIP quota");
     expect(doc).toContain("Source ZIP overwrite");
     expect(doc).toContain("Object storage writeback");
@@ -1116,6 +1116,8 @@ test.describe("pipeline diagnostics release gate", () => {
 
     expect(rcDoc).toContain("Nexus Core RC-1");
     expect(rcDoc).toContain("4302767");
+    expect(rcDoc).toContain("b09ec61");
+    expect(rcDoc).toContain("Fix folder import quota RLS blocker");
     expect(rcDoc).toContain("Phase 96D");
     expect(rcDoc).toContain("ACCEPT_WITH_LIMITATIONS");
     expect(rcDoc).toContain("monthly successful ZIP upload quota");
@@ -1148,7 +1150,64 @@ test.describe("pipeline diagnostics release gate", () => {
     );
     expect(releaseInfo.releaseName).toBe("Nexus Core RC-1");
     expect(releaseInfo.releaseStatus).toBe("ACCEPT_WITH_LIMITATIONS");
-    expect(releaseInfo.latestStabilization).toBe("Phase 96D");
-    expect(releaseInfo.expectedCommitLabel).toBe("4302767 or newer");
+    expect(releaseInfo.latestStabilization).toContain("Phase 96D");
+    expect(releaseInfo.latestStabilization).toContain("quota RLS unblock");
+    expect(releaseInfo.expectedCommitLabel).toBe("b09ec61 or newer");
+  });
+
+  test("keeps folder import exempt from ZIP monthly quota without weakening ZIP quota", () => {
+    const migrationPath = resolve(
+      process.cwd(),
+      "supabase/migrations/20260527120000_folder_import_quota_rls_unblock.sql",
+    );
+    const uploadServicePath = resolve(
+      process.cwd(),
+      "src/features/projects/projectUploadService.ts",
+    );
+    const ingestionProcessorPath = resolve(
+      process.cwd(),
+      "src/features/projects/server/ingestionProcessor.ts",
+    );
+
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migration = readFileSync(migrationPath, "utf8");
+    expect(migration).toContain(
+      'drop policy if exists "project_ingestion_jobs_insert_own_project"',
+    );
+    expect(migration).toContain("auth.uid() = user_id");
+    expect(migration).toContain("projects.user_id = auth.uid()");
+    expect(migration).toContain(
+      "public.is_within_usage_limit(auth.uid(), 'max_uploads_monthly', 1)",
+    );
+    expect(migration).toContain("projects.source_type = 'local'");
+    expect(migration).toContain(
+      "coalesce(project_ingestion_jobs.metadata->>'source_type', '') in ('folder', 'local')",
+    );
+    expect(migration).toContain("client_folder_manifest_only");
+
+    const uploadService = readFileSync(uploadServicePath, "utf8");
+    const zipUpload = uploadService.slice(
+      uploadService.indexOf("export async function uploadProjectZip"),
+      uploadService.indexOf("export async function importProjectFolder"),
+    );
+    const folderImport = uploadService.slice(
+      uploadService.indexOf("export async function importProjectFolder"),
+    );
+
+    expect(zipUpload).toContain('requireQuota(input.userId, "max_uploads_monthly")');
+    expect(folderImport).toContain('requireQuota(input.userId, "max_projects")');
+    expect(folderImport).not.toContain("max_uploads_monthly");
+    expect(folderImport).toContain('eventType: "folder_import_completed"');
+    expect(folderImport).not.toContain('eventType: "project_upload_completed"');
+
+    const ingestionProcessor = readFileSync(ingestionProcessorPath, "utf8");
+    const statusUpdateIndex = ingestionProcessor.indexOf(
+      'await updateProjectStatus(supabase, projectId, "indexed_manifest")',
+    );
+    const usageRecordIndex = ingestionProcessor.indexOf("await recordSuccessfulZipUploadUsage");
+    expect(statusUpdateIndex).toBeGreaterThan(-1);
+    expect(usageRecordIndex).toBeGreaterThan(statusUpdateIndex);
+    expect(ingestionProcessor).toContain('event_type: "project_upload_completed"');
   });
 });

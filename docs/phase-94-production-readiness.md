@@ -30,7 +30,7 @@ Do not commit or print secrets, tokens, cookies, JWTs, service-role keys, auth h
 
 ## Lovable Deployment Checklist
 
-- Confirm Lovable is publishing commit `4302767` or newer.
+- Confirm Lovable is publishing commit `b09ec61` or newer plus the folder import quota RLS blocker fix.
 - Confirm Phase 96D project-context hydration behavior: the thread header, inspector, safe preview, diagnostics, and patch preview agree on the attached project.
 - Confirm required environment variables are configured in Lovable without exposing values in logs.
 - Confirm `/`, `/login`, `/signup`, `/app`, `/app/admin`, and project API routes return expected authenticated or unauthenticated boundaries.

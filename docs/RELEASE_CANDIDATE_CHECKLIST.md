@@ -2,7 +2,7 @@
 
 This checklist defines the required manual and automated smoke validation steps to authorize a Release Candidate (RC) build for usable deployment.
 
-Current RC-1 decision: **ACCEPT_WITH_LIMITATIONS**. Production should deploy `4302767` or newer. Phase 96D fixed project-context hydration for attached thread projects.
+Current RC-1 decision: **ACCEPT_WITH_LIMITATIONS**. Production should deploy `b09ec61` or newer plus the folder import quota RLS blocker fix. Phase 96D fixed project-context hydration for attached thread projects.
 
 > [!IMPORTANT]
 > Nexus Core is strictly **pre-execution** and **read-only** for project files. Direct execution, sandbox script running, object storage writeback, Stripe checkout, or autonomous changes remain disabled.
@@ -53,6 +53,7 @@ pnpm test:e2e
 - [ ] Confirm a safe metadata manifest is generated, and files are indexed safely.
 - [ ] Confirm no scripts are executed or packages installed.
 - [ ] If quota is blocked, confirm the UI explains that monthly successful ZIP quota is based on successful ZIP processing, not archived projects.
+- [ ] If ZIP quota is exhausted, confirm folder/local import can proceed without requiring or consuming monthly successful ZIP quota.
 
 ### B. Safe Error post-limit / Fallbacks
 
