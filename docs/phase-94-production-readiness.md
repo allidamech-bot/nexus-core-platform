@@ -30,7 +30,8 @@ Do not commit or print secrets, tokens, cookies, JWTs, service-role keys, auth h
 
 ## Lovable Deployment Checklist
 
-- Confirm Lovable is publishing commit `df949bc` or newer.
+- Confirm Lovable is publishing commit `4302767` or newer.
+- Confirm Phase 96D project-context hydration behavior: the thread header, inspector, safe preview, diagnostics, and patch preview agree on the attached project.
 - Confirm required environment variables are configured in Lovable without exposing values in logs.
 - Confirm `/`, `/login`, `/signup`, `/app`, `/app/admin`, and project API routes return expected authenticated or unauthenticated boundaries.
 - Confirm production URL: `https://nexus-core-ai-os.lovable.app`.
@@ -46,6 +47,8 @@ Do not commit or print secrets, tokens, cookies, JWTs, service-role keys, auth h
 - Use a trusted QA account with available project and upload quota.
 - Confirm over-quota upload attempts fail safely.
 - Confirm successful ZIP uploads are counted only after real storage-backed processing.
+- Confirm the monthly successful ZIP quota is not freed by archiving projects.
+- If the existing admin account is over quota, use a fresh QA account or wait for the next monthly window.
 
 ## ZIP Upload Smoke
 
@@ -74,6 +77,7 @@ Do not commit or print secrets, tokens, cookies, JWTs, service-role keys, auth h
 - Create a versioned working copy from an approved request.
 - Download a working-copy export.
 - Confirm exported JSON includes README, manifest, metadata, sanitized paths, and bounded text only.
+- Confirm exports are JSON bundles, not ZIP archives.
 
 ## Credentialed Tests
 
@@ -87,3 +91,7 @@ Local e2e runs skip credentialed tests unless trusted E2E credentials are config
 - Uploaded/generated code execution
 - Dependency installation
 - Package script execution
+
+## Current RC-1 Decision
+
+RC-1 is **ACCEPT_WITH_LIMITATIONS**. The remaining production first-use blocker is quota availability for real ZIP upload smoke on the current admin account; full pipeline smoke requires a fresh QA account or monthly quota availability.

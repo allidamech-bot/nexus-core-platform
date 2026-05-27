@@ -396,11 +396,8 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
 export async function importProjectFolder(input: ImportFolderInput): Promise<UploadProjectResult> {
   if (input.summary.error) throw new Error(input.summary.error);
 
-  const [projectQuota, uploadQuota] = await Promise.all([
-    requireQuota(input.userId, "max_projects"),
-    requireQuota(input.userId, "max_uploads_monthly"),
-  ]);
-  const blockedQuota = [projectQuota, uploadQuota].find((quota) => quota && !quota.allowed);
+  const projectQuota = await requireQuota(input.userId, "max_projects");
+  const blockedQuota = [projectQuota].find((quota) => quota && !quota.allowed);
   if (blockedQuota) {
     await recordAuditEvent({
       userId: input.userId,

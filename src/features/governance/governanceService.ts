@@ -102,6 +102,7 @@ async function usageTotal(userId: string, metricName: string): Promise<number> {
 }
 
 export async function getUsageOverview(userId: string): Promise<UsageOverview> {
+  const quotaWindowStart = MONTH_START();
   const planId = await getPlanId(userId);
   const limits = await getLimits(planId);
 
@@ -127,7 +128,7 @@ export async function getUsageOverview(userId: string): Promise<UsageOverview> {
     .from("usage_events")
     .select("event_type,size_bytes,token_estimate,quantity,metadata")
     .eq("user_id", userId)
-    .gte("created_at", MONTH_START());
+    .gte("created_at", quotaWindowStart);
   if (error) throw error;
 
   const uploadedZipBytesThisMonth = (monthlyEvents ?? [])
@@ -157,6 +158,7 @@ export async function getUsageOverview(userId: string): Promise<UsageOverview> {
   return {
     planId,
     limits,
+    quotaWindowStart,
     projects,
     uploadsThisMonth,
     uploadedZipBytesThisMonth,

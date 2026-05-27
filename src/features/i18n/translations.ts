@@ -67,7 +67,16 @@ export const translations = {
     projectLimitReachedForUpload:
       "Project limit reached. Archive an existing project when project lifecycle is available, use a QA account with an open project slot, or upgrade your plan before uploading another ZIP.",
     monthlyUploadLimitReached:
-      "Monthly successful ZIP upload limit reached. Wait for the monthly reset, use a QA account or plan with available uploads, upgrade your plan, or continue with an existing ZIP-backed project that already has safe previews.",
+      "Monthly successful ZIP upload limit reached. This monthly quota is based on successful ZIP processing, not archived projects. Use a fresh QA account or wait for the next monthly window.",
+    monthlyZipQuotaArchiveNotice:
+      "This monthly quota is based on successful ZIP processing, not archived projects.",
+    usedThisMonth: "Used this month",
+    monthlyLimit: "Monthly limit",
+    remainingUploads: "Remaining uploads",
+    quotaWindow: "Quota window",
+    useFreshQaAccountOrWait: "Use a fresh QA account or wait for the next monthly window.",
+    quotaBlocked: "Quota blocked",
+    quotaAvailable: "Quota available",
     zipUploadProcessingFailed:
       "ZIP upload could not be processed. Safe previews were not generated.",
     zipProcessingStarted: "ZIP processing started.",
@@ -562,7 +571,16 @@ export const translations = {
     projectLimitReachedForUpload:
       "تم بلوغ حد المشاريع. أرشف مشروعًا موجودًا عندما تتوفر دورة حياة المشاريع، أو استخدم حساب QA لديه مساحة مشروع، أو قم بترقية الخطة قبل رفع ZIP آخر.",
     monthlyUploadLimitReached:
-      "\u062a\u0645 \u0628\u0644\u0648\u063a \u062d\u062f \u0631\u0641\u0639\u0627\u062a ZIP \u0627\u0644\u0646\u0627\u062c\u062d\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0646\u062a\u0638\u0631 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0636\u0628\u0637 \u0627\u0644\u0634\u0647\u0631\u064a\u0629\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u062d\u0633\u0627\u0628 QA \u0623\u0648 \u062e\u0637\u0629 \u0628\u0647\u0627 \u0631\u0641\u0639\u0627\u062a \u0645\u062a\u0627\u062d\u0629\u060c \u0623\u0648 \u0631\u0642\u0651 \u0627\u0644\u062e\u0637\u0629\u060c \u0623\u0648 \u062a\u0627\u0628\u0639 \u0628\u0645\u0634\u0631\u0648\u0639 ZIP \u0645\u0648\u062c\u0648\u062f \u0644\u062f\u064a\u0647 \u0645\u0639\u0627\u064a\u0646\u0627\u062a \u0622\u0645\u0646\u0629.",
+      "تم بلوغ حد رفع ZIP الناجحة لهذا الشهر. هذا الحد الشهري يعتمد على عمليات ZIP الناجحة، وليس على أرشفة المشاريع. استخدم حساب اختبار جديد أو انتظر نافذة الشهر التالية.",
+    monthlyZipQuotaArchiveNotice:
+      "هذا الحد الشهري يعتمد على عمليات ZIP الناجحة، وليس على أرشفة المشاريع.",
+    usedThisMonth: "المستخدم هذا الشهر",
+    monthlyLimit: "الحد الشهري",
+    remainingUploads: "عدد الرفعات المتبقية",
+    quotaWindow: "نافذة الحصة",
+    useFreshQaAccountOrWait: "استخدم حساب اختبار جديد أو انتظر نافذة الشهر التالية.",
+    quotaBlocked: "الحصة محظورة",
+    quotaAvailable: "الحصة متاحة",
     zipUploadProcessingFailed: "تعذرت معالجة رفع ZIP. لم يتم إنشاء معاينات آمنة.",
     zipProcessingStarted:
       "\u0628\u062f\u0623\u062a \u0645\u0639\u0627\u0644\u062c\u0629 \u0645\u0644\u0641 ZIP.",

@@ -89,6 +89,11 @@ test.describe("public routes and unauthenticated boundaries", () => {
       data: { projectId: "00000000-0000-0000-0000-000000000000" },
     });
     expect(processZip.status()).toBe(401);
+
+    const processZipWithoutProjectId = await request.post("/api/projects/process-zip", {
+      data: {},
+    });
+    expect(processZipWithoutProjectId.status()).toBe(401);
   });
 
   test("persists Arabic RTL preference without credentials", async ({ page }) => {

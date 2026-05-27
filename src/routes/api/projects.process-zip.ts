@@ -118,6 +118,9 @@ export const Route = createFileRoute("/api/projects/process-zip")({
       POST: async ({ request }: { request: Request }) => {
         const correlationId = getRequestCorrelationId(request);
         const context = { correlationId };
+        const auth = await createAuthenticatedClient(request, context);
+        if (auth.response) return auth.response;
+
         let body: Body;
         try {
           body = (await request.json()) as Body;
@@ -128,9 +131,6 @@ export const Route = createFileRoute("/api/projects/process-zip")({
         if (typeof body.projectId !== "string" || !body.projectId) {
           return textResponse("Project id required", 400);
         }
-
-        const auth = await createAuthenticatedClient(request, context);
-        if (auth.response) return auth.response;
 
         try {
           const result = await processProjectArchive({

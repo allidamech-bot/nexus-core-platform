@@ -19,6 +19,7 @@ export interface UsageLimitSet {
 export interface UsageOverview {
   planId: PlanId;
   limits: UsageLimitSet | null;
+  quotaWindowStart: string;
   projects: number;
   uploadsThisMonth: number;
   uploadedZipBytesThisMonth: number;

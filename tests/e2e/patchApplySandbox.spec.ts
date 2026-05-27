@@ -39,6 +39,7 @@ import {
   buildPipelineSafetyInvariants,
 } from "../../src/features/projects/projectPipelineDiagnostics";
 import { resolveThreadProjectContext } from "../../src/features/projects/projectThreadContext";
+import { releaseInfo } from "../../src/lib/releaseInfo";
 import type {
   GroundedPatchPreview,
   ProjectFile,
@@ -1094,9 +1095,13 @@ test.describe("pipeline diagnostics release gate", () => {
       "\u0627\u0644\u0625\u0646\u062a\u0627\u062c",
     );
     expect(doc).toContain("LOVABLE_API_KEY");
+    expect(doc).toContain("ACCEPT_WITH_LIMITATIONS");
+    expect(doc).toContain("4302767");
+    expect(doc).toContain("monthly successful ZIP quota");
     expect(doc).toContain("Source ZIP overwrite");
     expect(doc).toContain("Object storage writeback");
     expect(doc).toContain("Uploaded/generated code execution");
+    expect(doc).toContain("exports are JSON bundles");
   });
 
   test("keeps release candidate report and checklists available", () => {
@@ -1110,14 +1115,40 @@ test.describe("pipeline diagnostics release gate", () => {
     const checklistDoc = readFileSync(checklistPath, "utf8");
 
     expect(rcDoc).toContain("Nexus Core RC-1");
+    expect(rcDoc).toContain("4302767");
+    expect(rcDoc).toContain("Phase 96D");
+    expect(rcDoc).toContain("ACCEPT_WITH_LIMITATIONS");
+    expect(rcDoc).toContain("monthly successful ZIP upload quota");
     expect(rcDoc).toContain("What Is Intentionally Unavailable");
     expect(rcDoc).toContain("Source ZIP Overwrite");
     expect(rcDoc).toContain("Object Storage Writeback");
+    expect(rcDoc).toContain("Snapshot export as a bounded JSON review bundle");
     expect(rcDoc).toContain("Required Production Smoke Checklist");
-    expect(rcDoc).toContain("Ready for production smoke, not final production source writeback");
 
     expect(checklistDoc).toContain("Nexus Core Release Candidate Checklist");
+    expect(checklistDoc).toContain("ACCEPT_WITH_LIMITATIONS");
+    expect(checklistDoc).toContain("monthly successful ZIP quota");
+    expect(checklistDoc).toContain("bounded JSON bundle");
     expect(checklistDoc).toContain("source ZIP");
     expect(checklistDoc).toContain("object storage writeback");
+  });
+
+  test("keeps RC stabilization copy and release labels explicit", () => {
+    expect(translations.en.monthlyUploadLimitReached).toContain("not archived projects");
+    expect(translations.en.monthlyZipQuotaArchiveNotice).toBe(
+      "This monthly quota is based on successful ZIP processing, not archived projects.",
+    );
+    expect(translations.en.usedThisMonth).toBe("Used this month");
+    expect(translations.en.monthlyLimit).toBe("Monthly limit");
+    expect(translations.en.remainingUploads).toBe("Remaining uploads");
+    expect(translations.en.quotaWindow).toBe("Quota window");
+    expect(translations.en.useFreshQaAccountOrWait).toContain("fresh QA account");
+    expect(translations.ar.monthlyUploadLimitReached).toContain(
+      "هذا الحد الشهري يعتمد على عمليات ZIP الناجحة",
+    );
+    expect(releaseInfo.releaseName).toBe("Nexus Core RC-1");
+    expect(releaseInfo.releaseStatus).toBe("ACCEPT_WITH_LIMITATIONS");
+    expect(releaseInfo.latestStabilization).toBe("Phase 96D");
+    expect(releaseInfo.expectedCommitLabel).toBe("4302767 or newer");
   });
 });

@@ -7,6 +7,7 @@ import {
   type PipelineStageStatus,
   type ProjectPipelineDiagnosticsInput,
 } from "./projectPipelineDiagnostics";
+import { releaseInfo } from "@/lib/releaseInfo";
 
 function statusTone(status: PipelineStageStatus) {
   if (status === "complete") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-300";
@@ -69,6 +70,10 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
             {diagnostics.health.hasBlockers
               ? t("notReadyForProductionSmoke")
               : t("readyForProductionSmoke")}
+          </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            {releaseInfo.releaseName} / {releaseInfo.releaseStatus} /{" "}
+            {releaseInfo.latestStabilization} / {releaseInfo.expectedCommitLabel}
           </div>
         </div>
         <span

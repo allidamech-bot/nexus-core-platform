@@ -18,6 +18,7 @@ import { deriveProjectName, validateProjectZip } from "./projectUploadService";
 import { PROJECT_UPLOAD_MAX_MB } from "./constants";
 import { useLocale } from "@/features/i18n/localeContext";
 import { summarizeFolderFiles, type FolderImportSummary } from "./folderImportService";
+import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
 
 export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigger: ReactNode }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,9 +31,36 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
   const [description, setDescription] = useState("");
   const uploadProject = useUploadProjectMutation();
   const importFolder = useImportFolderMutation();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const { data: usageOverview } = useUsageOverviewQuery(userId);
 
   const validationError = useMemo(() => (file ? validateProjectZip(file) : null), [file]);
+  const uploadLimit = usageOverview?.limits?.max_uploads_monthly ?? null;
+  const uploadsUsed = usageOverview?.uploadsThisMonth ?? 0;
+  const remainingUploads =
+    uploadLimit === null || uploadLimit === undefined
+      ? null
+      : Math.max(0, uploadLimit - uploadsUsed);
+  const uploadQuotaBlocked = remainingUploads !== null && remainingUploads <= 0;
+  const numberLocale = locale === "ar" ? "ar-EG" : "en-US";
+  const uploadQuotaRows = [
+    [t("plan"), usageOverview?.planId?.toUpperCase() ?? "..."],
+    [t("usedThisMonth"), usageOverview ? uploadsUsed.toLocaleString(numberLocale) : "..."],
+    [
+      t("monthlyLimit"),
+      uploadLimit === null || uploadLimit === undefined
+        ? t("unlimited")
+        : uploadLimit.toLocaleString(numberLocale),
+    ],
+    [
+      t("remainingUploads"),
+      remainingUploads === null ? t("unlimited") : remainingUploads.toLocaleString(numberLocale),
+    ],
+    [
+      t("quotaWindow"),
+      usageOverview ? new Date(usageOverview.quotaWindowStart).toLocaleDateString(locale) : "...",
+    ],
+  ] as const;
   const busy = uploadProject.isPending || importFolder.isPending;
   const canSubmit =
     mode === "zip"
@@ -162,6 +190,33 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
           <div className="rounded-md border border-border bg-background/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
             {mode === "zip" ? t("zipPreviewPath") : t("folderInventoryOnly")}
           </div>
+          {mode === "zip" && (
+            <div
+              className={`rounded-md border px-3 py-2 text-xs leading-relaxed ${
+                uploadQuotaBlocked
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-border bg-background/40 text-muted-foreground"
+              }`}
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="font-semibold text-zinc-200">
+                  {uploadQuotaBlocked ? t("quotaBlocked") : t("quotaAvailable")}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-widest">
+                  {t("uploadZip")}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {uploadQuotaRows.map(([label, value]) => (
+                  <Metric key={label} label={label} value={value} />
+                ))}
+              </div>
+              <div className="mt-2 text-[11px]">
+                {t("monthlyZipQuotaArchiveNotice")}{" "}
+                {uploadQuotaBlocked ? t("useFreshQaAccountOrWait") : ""}
+              </div>
+            </div>
+          )}
 
           <button
             type="button"
