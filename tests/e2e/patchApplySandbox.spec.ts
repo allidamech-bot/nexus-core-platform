@@ -38,10 +38,12 @@ import {
   buildProjectPipelineDiagnostics,
   buildPipelineSafetyInvariants,
 } from "../../src/features/projects/projectPipelineDiagnostics";
+import { resolveThreadProjectContext } from "../../src/features/projects/projectThreadContext";
 import type {
   GroundedPatchPreview,
   ProjectFile,
   ProjectTextPreviewWithPath,
+  ProjectWithLatestJob,
 } from "../../src/features/projects/types";
 import { translations } from "../../src/features/i18n/translations";
 
@@ -66,6 +68,18 @@ const baseFile: ProjectFile = {
 };
 
 const basePreviewText = "export const value = 'old';\n";
+
+const baseProject: ProjectWithLatestJob = {
+  id: "project-1",
+  user_id: "user-1",
+  name: "Attached project",
+  description: null,
+  source_type: "zip",
+  status: "completed",
+  created_at: "2026-05-26T00:00:00.000Z",
+  updated_at: "2026-05-26T00:00:00.000Z",
+  latest_job: null,
+};
 
 function textPreview(file = baseFile, previewText = basePreviewText): ProjectTextPreviewWithPath {
   return {
@@ -220,6 +234,38 @@ test.describe("patch apply sandbox verifier", () => {
 
     expect(result.files[0].truncated).toBeTruthy();
     expect(result.summary.displayLimited).toBeTruthy();
+  });
+});
+
+test.describe("thread project context hydration", () => {
+  test("uses the hydrated attached project when it is not the workspace active project", () => {
+    const activeProject = { ...baseProject, id: "project-2", name: "Workspace project" };
+    const attachedProject = { ...baseProject, id: "project-1", name: "Hydrated project" };
+    const resolved = resolveThreadProjectContext({
+      threadProjectId: "project-1",
+      threadProjectName: "Thread project name",
+      activeProject,
+      attachedProject,
+    });
+
+    expect(resolved.state).toBe("attached");
+    expect(resolved.projectId).toBe("project-1");
+    expect(resolved.project).toBe(attachedProject);
+    expect(resolved.projectName).toBe("Thread project name");
+  });
+
+  test("keeps attached context non-null by id even when preview data is unavailable", () => {
+    const resolved = resolveThreadProjectContext({
+      threadProjectId: "project-1",
+      threadProjectName: "Thread project name",
+      activeProject: null,
+      attachedProject: null,
+    });
+
+    expect(resolved.state).toBe("attached");
+    expect(resolved.projectId).toBe("project-1");
+    expect(resolved.project).toBeNull();
+    expect(resolved.projectName).toBe("Thread project name");
   });
 });
 

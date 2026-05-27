@@ -48,12 +48,14 @@ export function ProjectSafePreviewPanel({
   manifest,
   latestJob,
   loading,
+  emptyMessage,
 }: {
   files: ProjectFile[];
   previews: ProjectTextPreviewWithPath[];
   manifest: ProjectManifest | null;
   latestJob: ProjectIngestionJob | null;
   loading: boolean;
+  emptyMessage?: string;
 }) {
   const { t } = useLocale();
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
@@ -71,7 +73,7 @@ export function ProjectSafePreviewPanel({
   const skippedCount = files.filter((file) => file.skipped).length;
   const indexedCount = files.filter((file) => !file.skipped).length;
   const status = latestJob?.status ?? null;
-  const ready = status === "completed" || files.length > 0;
+  const ready = files.length > 0 || Boolean(manifest);
 
   if (loading) {
     return (
@@ -88,7 +90,7 @@ export function ProjectSafePreviewPanel({
           <ShieldCheck className="size-3 text-accent" />
           {t("safePreview")}
         </div>
-        {statusMessage(status, t)}
+        {emptyMessage ?? statusMessage(status, t)}
       </div>
     );
   }

@@ -24,6 +24,18 @@ export async function listProjects(): Promise<Project[]> {
   return (data ?? []) as Project[];
 }
 
+export async function getProject(projectId: string): Promise<Project | null> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .neq("status", "archived")
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data ?? null) as Project | null;
+}
+
 export async function listLatestIngestionJobs(
   projectIds: string[],
 ): Promise<ProjectIngestionJob[]> {

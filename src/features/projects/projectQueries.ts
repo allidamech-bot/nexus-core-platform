@@ -7,6 +7,7 @@ import {
 } from "./projectUploadService";
 import {
   archiveProject,
+  getProject,
   listLatestIngestionJobs,
   listProjectFiles,
   listProjects,
@@ -62,6 +63,7 @@ import {
 
 export const projectKeys = {
   all: ["projects"] as const,
+  detail: (projectId: string) => ["projects", projectId, "detail"] as const,
   files: (projectId: string) => ["projects", projectId, "files"] as const,
   previews: (projectId: string) => ["projects", projectId, "text-previews"] as const,
   patchPreviews: (projectId: string) => ["projects", projectId, "patch-previews"] as const,
@@ -99,6 +101,24 @@ export function useProjectsQuery(enabled = true) {
         ...project,
         latest_job: latestJobs.get(project.id) ?? null,
       }));
+    },
+  });
+}
+
+export function useProjectQuery(projectId: string | null) {
+  return useQuery({
+    enabled: Boolean(projectId),
+    queryKey: projectId ? projectKeys.detail(projectId) : ["projects", "detail", "disabled"],
+    queryFn: async (): Promise<ProjectWithLatestJob | null> => {
+      if (!projectId) return null;
+      const project = await getProject(projectId);
+      if (!project) return null;
+      const jobs = await listLatestIngestionJobs([project.id]);
+
+      return {
+        ...project,
+        latest_job: jobs[0] ?? null,
+      };
     },
   });
 }

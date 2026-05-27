@@ -17,7 +17,12 @@ import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewP
 import { ProjectSafePreviewPanel } from "@/features/projects/ProjectSafePreviewPanel";
 import { ProjectPatchPreviewPanel } from "@/features/projects/ProjectPatchPreviewPanel";
 import { getProjectManifest } from "@/features/projects/projectManifest";
-import { useProjectFilesQuery } from "@/features/projects/projectQueries";
+import {
+  useProjectFilesQuery,
+  useProjectQuery,
+  useProjectTextPreviewsQuery,
+} from "@/features/projects/projectQueries";
+import { resolveThreadProjectContext } from "@/features/projects/projectThreadContext";
 import {
   attachProjectToThread,
   logThreadContextSelection,
@@ -72,18 +77,8 @@ function ThreadView() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const {
-    activeProject,
-    activeProjectPreviews,
-    activeProjectPreviewsLoading,
-    selectedPreviewIds,
-    setSelectedPreviewIds,
-    setSelectedProjectId,
-  } = useProjectWorkspace();
-  const activeProjectManifest = useMemo(() => getProjectManifest(activeProject), [activeProject]);
-  const { data: projectFiles = [], isLoading: projectFilesLoading } = useProjectFilesQuery(
-    activeProject?.id ?? null,
-  );
+  const { activeProject, selectedPreviewIds, setSelectedPreviewIds, setSelectedProjectId } =
+    useProjectWorkspace();
   const { data: usageOverview } = useUsageOverviewQuery(session?.user.id ?? null);
 
   const { data: thread } = useQuery({
@@ -100,13 +95,44 @@ function ThreadView() {
   });
 
   const threadProjectId = typeof thread?.project_id === "string" ? thread.project_id : null;
-  const attachedProjectName =
+  const threadProjectName =
     typeof thread?.project_name === "string" && thread.project_name.trim()
       ? thread.project_name
-      : activeProject && threadProjectId === activeProject.id
-        ? activeProject.name
-        : null;
-  const projectContextState = threadProjectId ? "attached" : activeProject ? "detached" : "none";
+      : null;
+  const {
+    data: hydratedAttachedProject = null,
+    isLoading: attachedProjectLoading,
+    isError: attachedProjectError,
+  } = useProjectQuery(threadProjectId);
+  const resolvedProjectContext = resolveThreadProjectContext({
+    threadProjectId,
+    threadProjectName,
+    activeProject,
+    attachedProject: hydratedAttachedProject,
+  });
+  const projectContextProjectId = resolvedProjectContext.projectId;
+  const projectContextProject = resolvedProjectContext.project;
+  const projectContextName = resolvedProjectContext.projectName;
+  const activeProjectManifest = useMemo(
+    () => getProjectManifest(projectContextProject),
+    [projectContextProject],
+  );
+  const {
+    data: projectFiles = [],
+    isLoading: projectFilesLoading,
+    isError: projectFilesError,
+  } = useProjectFilesQuery(projectContextProjectId);
+  const {
+    data: projectPreviews = [],
+    isLoading: projectPreviewsLoading,
+    isError: projectPreviewsError,
+  } = useProjectTextPreviewsQuery(projectContextProjectId);
+  const projectContextState = resolvedProjectContext.state;
+  const projectPreviewDataUnavailable =
+    attachedProjectError || projectFilesError || projectPreviewsError;
+  const projectContextEmptyMessage = projectPreviewDataUnavailable
+    ? `${t("projectPreviewDataUnavailable")}. ${t("checkZipProcessingStatus")}.`
+    : t("projectContextAttachedNoProcessedFiles");
   const hasThreadLifecycle = thread
     ? "status" in thread && "archived_at" in thread && "archived_by" in thread
     : false;
@@ -269,7 +295,7 @@ function ThreadView() {
   }
 
   async function handleTogglePreview(preview: ProjectTextPreviewWithPath) {
-    if (!session || !activeProject || isArchived) return;
+    if (!session || !projectContextProjectId || isArchived) return;
     const selected = selectedPreviewIds.includes(preview.id);
     const previewLimit = usageOverview?.limits?.max_context_previews ?? 6;
     if (!selected && selectedPreviewIds.length >= previewLimit) {
@@ -280,7 +306,7 @@ function ThreadView() {
         userId: session.user.id,
         actorUserId: session.user.id,
         threadId,
-        projectId: activeProject.id,
+        projectId: projectContextProjectId,
         eventType: "quota_hit_context_previews",
         severity: "warning",
         payload: { limit: previewLimit, selected: selectedPreviewIds.length },
@@ -297,7 +323,7 @@ function ThreadView() {
       await recordUsageEvent({
         userId: session.user.id,
         threadId,
-        projectId: activeProject.id,
+        projectId: projectContextProjectId,
         eventType: "context_preview_selected",
         sizeBytes: estimateByteSize(preview.preview_text),
         tokenEstimate: preview.token_estimate,
@@ -307,7 +333,7 @@ function ThreadView() {
 
     await logThreadContextSelection({
       threadId,
-      projectId: activeProject.id,
+      projectId: projectContextProjectId,
       userId: session.user.id,
       action: selected ? "cleared_preview" : "selected_preview",
       previewId: preview.id,
@@ -366,7 +392,7 @@ function ThreadView() {
             <div className="text-sm font-semibold truncate">{thread?.title ?? "Session"}</div>
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               Agent #{threadId.slice(0, 6)} / {mode}
-              {attachedProjectName ? ` / ${attachedProjectName}` : ""}
+              {projectContextName ? ` / ${projectContextName}` : ""}
               {isArchived ? ` / ${t("archivedSession")}` : ""}
             </div>
           </div>
@@ -433,7 +459,7 @@ function ThreadView() {
             )}
             <ProjectContextStatus
               state={projectContextState}
-              projectName={attachedProjectName ?? activeProject?.name ?? null}
+              projectName={projectContextName}
               isArchived={isArchived}
               onAttach={handleAttachProject}
               t={t}
@@ -508,30 +534,53 @@ function ThreadView() {
       {isInspectorOpen && (
         <aside className="w-72 shrink-0 bg-surface/40 flex flex-col border-l border-border overflow-y-auto">
           <DrawerSection title="Active Project">
-            {activeProject ? (
+            {projectContextProject ? (
               <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="truncate text-xs font-semibold text-zinc-200">
-                    {activeProject.name}
+                    {projectContextProject.name}
                   </div>
                   <ProjectStatusBadge
-                    status={activeProject.latest_job?.status ?? activeProject.status}
+                    status={
+                      projectContextProject.latest_job?.status ?? projectContextProject.status
+                    }
                   />
                 </div>
                 <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {activeProject.source_type} / ingestion{" "}
-                  {activeProject.latest_job?.status.replace(/_/g, " ") ?? "not started"}
+                  {projectContextProject.source_type} / ingestion{" "}
+                  {projectContextProject.latest_job?.status.replace(/_/g, " ") ?? "not started"}
                 </div>
                 <button
                   type="button"
                   onClick={handleAttachProject}
-                  disabled={threadProjectId === activeProject.id || isArchived}
+                  disabled={threadProjectId === projectContextProject.id || isArchived}
                   className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {threadProjectId === activeProject.id
+                  {threadProjectId === projectContextProject.id
                     ? t("projectContextAttached")
                     : t("attachThisProject")}
                 </button>
+              </div>
+            ) : threadProjectId ? (
+              <div className="rounded-md border border-accent/20 bg-accent/5 p-3 text-xs leading-relaxed text-muted-foreground">
+                <div className="font-medium text-zinc-200">{t("projectContextIsAttached")}</div>
+                {projectContextName && (
+                  <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {projectContextName}
+                  </div>
+                )}
+                <div className="mt-2">
+                  {attachedProjectLoading
+                    ? t("loadingProjects")
+                    : projectPreviewDataUnavailable
+                      ? t("projectContextCouldNotBeLoaded")
+                      : t("projectContextAttachedNoProcessedFiles")}
+                </div>
+                {!attachedProjectLoading && (
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    {t("checkZipProcessingStatus")}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
@@ -543,10 +592,16 @@ function ThreadView() {
           </DrawerSection>
 
           <DrawerSection title="Project Summary">
-            <ProjectManifestCard manifest={activeProjectManifest} />
+            {threadProjectId && !activeProjectManifest ? (
+              <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
+                {t("projectContextAttachedNoProcessedFiles")}
+              </div>
+            ) : (
+              <ProjectManifestCard manifest={activeProjectManifest} />
+            )}
           </DrawerSection>
 
-          {activeProject && (
+          {projectContextProjectId && (
             <DrawerSection title="Project Health">
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <StatusMetric
@@ -555,13 +610,15 @@ function ThreadView() {
                 />
                 <StatusMetric
                   label="Previews"
-                  value={
-                    activeProjectPreviewsLoading ? "..." : activeProjectPreviews.length.toString()
-                  }
+                  value={projectPreviewsLoading ? "..." : projectPreviews.length.toString()}
                 />
                 <StatusMetric
                   label="Ingestion"
-                  value={activeProject.latest_job?.status.replace("_", " ") ?? activeProject.status}
+                  value={
+                    projectContextProject?.latest_job?.status.replace("_", " ") ??
+                    projectContextProject?.status ??
+                    t("checkZipProcessingStatus")
+                  }
                 />
                 <StatusMetric label="Context" value={`${selectedPreviewIds.length} selected`} />
               </div>
@@ -573,7 +630,7 @@ function ThreadView() {
                   <div key={step} className="flex items-center gap-2 py-1 text-[11px]">
                     <span
                       className={`size-1.5 rounded-full ${
-                        index <= 2 && activeProject.latest_job?.status === "completed"
+                        index <= 2 && projectContextProject?.latest_job?.status === "completed"
                           ? "bg-emerald-400"
                           : "bg-muted-foreground"
                       }`}
@@ -585,38 +642,39 @@ function ThreadView() {
             </DrawerSection>
           )}
 
-          <DrawerSection title={activeProject ? t("safePreview") : "Example file scope"}>
-            {activeProject ? (
+          <DrawerSection title={projectContextProjectId ? t("safePreview") : "Example file scope"}>
+            {projectContextProjectId ? (
               <ProjectSafePreviewPanel
                 files={projectFiles}
-                previews={activeProjectPreviews}
+                previews={projectPreviews}
                 manifest={activeProjectManifest}
-                latestJob={activeProject.latest_job}
-                loading={projectFilesLoading || activeProjectPreviewsLoading}
+                latestJob={projectContextProject?.latest_job ?? null}
+                loading={projectFilesLoading || projectPreviewsLoading || attachedProjectLoading}
+                emptyMessage={threadProjectId ? projectContextEmptyMessage : undefined}
               />
             ) : (
               <FileTree nodes={mockFileTree} depth={0} />
             )}
           </DrawerSection>
 
-          {activeProject && (
+          {projectContextProjectId && (
             <DrawerSection title="Safe Text Previews">
               <ProjectTextPreviewPanel
-                previews={activeProjectPreviews}
-                loading={activeProjectPreviewsLoading}
+                previews={projectPreviews}
+                loading={projectPreviewsLoading}
                 selectedPreviewIds={selectedPreviewIds}
                 onTogglePreview={handleTogglePreview}
               />
             </DrawerSection>
           )}
 
-          {activeProject && session && (
+          {projectContextProjectId && session && (
             <DrawerSection title={t("groundedPatchPreview")}>
               <ProjectPatchPreviewPanel
-                projectId={activeProject.id}
+                projectId={projectContextProjectId}
                 userId={session.user.id}
-                previews={activeProjectPreviews}
-                disabled={isArchived}
+                previews={projectPreviews}
+                disabled={isArchived || !projectContextProject || projectPreviewDataUnavailable}
               />
             </DrawerSection>
           )}
