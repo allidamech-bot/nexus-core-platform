@@ -50,12 +50,16 @@ function isExpectedSetupError(error: unknown) {
 }
 
 function getSupabaseEnv() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.SUPABASE_ANON_KEY ??
+    process.env.VITE_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     throw new Error(
-      "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY.",
+      "Missing Supabase environment variable(s): SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY.",
     );
   }
 
