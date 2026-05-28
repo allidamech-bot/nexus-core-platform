@@ -189,7 +189,7 @@ async function requestManifestProcessing(
     }
     throw new Error(
       message ||
-        "Project ZIP processing is unavailable. Check Supabase configuration and migrations.",
+        "Project ZIP processing is unavailable. Check Lovable Cloud runtime configuration.",
     );
   }
 
@@ -342,20 +342,75 @@ export async function uploadProjectZip(input: UploadProjectInput): Promise<Uploa
 
     let processingSummary: ZipProcessingSummary | undefined;
     if (upload.storageAvailable) {
-      processingSummary = await requestManifestProcessing(project.id, correlationId);
-      job = { ...job, status: "completed", stage: "completed" };
+      try {
+        processingSummary = await requestManifestProcessing(project.id, correlationId);
+        job = { ...job, status: "completed", stage: "completed" };
+        await recordAuditEvent({
+          userId: input.userId,
+          projectId: project.id,
+          eventType: "project_upload_completed",
+          correlationId,
+          payload: { size_bytes: input.file.size, storage_available: true },
+        }).catch(() => {});
+      } catch (processingError) {
+        const message = safeErrorMessage(
+          processingError,
+          "Lovable Cloud ZIP processing failed after the archive was stored.",
+        );
+        console.warn(
+          "[project-upload] ZIP processing unavailable; keeping stored archive project",
+          withLogContext({ correlationId }, { message }),
+        );
+        await updateProjectStatus(project.id, "indexing_mocked").catch(() => {});
+        await updateIngestionJob(job.id, {
+          status: "completed",
+          stage: "zip_processing_unavailable_lovable_fallback",
+          error_message: null,
+          metadata: {
+            file_name: input.file.name,
+            size_bytes: input.file.size,
+            mime_type: input.file.type || null,
+            checksum,
+            correlationId,
+            storage_path: upload.storagePath,
+            storage_bucket: PROJECT_UPLOAD_BUCKET,
+            storage_available: true,
+            extraction: "lovable_cloud_zip_processing_fallback",
+            processing_fallback: true,
+            processing_error: message,
+          },
+        }).catch(() => {});
+        await recordUsageEvent({
+          userId: input.userId,
+          projectId: project.id,
+          eventType: "zip_processing_deferred",
+          correlationId,
+          metadata: { message, source_type: "zip", storage_available: true },
+        }).catch(() => {});
+        await recordAuditEvent({
+          userId: input.userId,
+          projectId: project.id,
+          eventType: "zip_processing_deferred",
+          correlationId,
+          severity: "warning",
+          payload: { message, storage_available: true },
+        }).catch(() => {});
+        job = {
+          ...job,
+          status: "completed",
+          stage: "zip_processing_unavailable_lovable_fallback",
+        };
+      }
     }
 
-    await recordAuditEvent({
-      userId: input.userId,
-      projectId: project.id,
-      eventType: "project_upload_completed",
-      correlationId,
-      payload: { size_bytes: input.file.size, storage_available: upload.storageAvailable },
-    }).catch(() => {});
+    const finalStatus = processingSummary
+      ? "indexed_manifest"
+      : upload.storageAvailable
+        ? "indexing_mocked"
+        : status;
 
     return {
-      project: { ...project, status: upload.storageAvailable ? "indexed_manifest" : status },
+      project: { ...project, status: finalStatus },
       job,
       storagePath: upload.storagePath,
       storageAvailable: upload.storageAvailable,
