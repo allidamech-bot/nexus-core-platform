@@ -97,21 +97,23 @@ export function ProjectActionCard() {
 
       {activeProject &&
         (activeProject.status === "failed" || activeProject.status === "rejected") && (
-          <button
-            onClick={handleArchiveProject}
-            disabled={archiveProject.isPending}
-            className="flex items-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/10 hover:bg-destructive/20 text-sm font-medium transition-colors text-left group"
-          >
-            <div className="grid place-items-center size-8 rounded-lg bg-destructive/20 text-destructive group-hover:bg-destructive/30 transition-colors">
-              <Archive className="size-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-destructive">أرشفة المشروع</span>
-              <span className="text-[10px] text-destructive/70 uppercase tracking-widest mt-0.5">
-                Archive Project
-              </span>
-            </div>
-          </button>
+          <div className="col-span-full mt-2">
+            <button
+              onClick={handleArchiveProject}
+              disabled={archiveProject.isPending}
+              className="w-full flex items-center justify-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/10 hover:bg-destructive/20 text-sm font-medium transition-colors group"
+            >
+              <div className="grid place-items-center size-8 rounded-lg bg-destructive/20 text-destructive group-hover:bg-destructive/30 transition-colors">
+                <Archive className="size-4" />
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-destructive">أرشفة المشروع الحالي وبدء مشروع جديد</span>
+                <span className="text-[10px] text-destructive/70 uppercase tracking-widest mt-0.5">
+                  Archive & Start Fresh
+                </span>
+              </div>
+            </button>
+          </div>
         )}
     </div>
   );
