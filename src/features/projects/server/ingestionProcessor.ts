@@ -161,6 +161,7 @@ async function recordSuccessfulZipUploadUsage(input: {
       storage_available: true,
       status: "indexed_manifest",
       ingestion_job_id: input.jobId,
+      idempotency_key: idempotencyKey,
     },
   });
 
@@ -328,7 +329,9 @@ export async function processProjectArchive({
       for (let index = 0; index < rows.length; index += 500) {
         const { error } = await supabase
           .from("project_files")
-          .insert(rows.slice(index, index + 500) as any);
+          .upsert(rows.slice(index, index + 500), {
+            onConflict: "project_id,path",
+          });
         if (error) throw error;
       }
 
