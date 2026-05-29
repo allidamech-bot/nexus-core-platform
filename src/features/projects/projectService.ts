@@ -255,26 +255,23 @@ export async function createProjectFile(input: {
 }): Promise<ProjectFile> {
   const { data, error } = await supabase
     .from("project_files")
-    .upsert(
-      {
-        project_id: input.projectId,
-        user_id: input.userId,
-        path: input.path,
-        name: input.name,
-        extension: input.extension,
-        size_bytes: input.sizeBytes,
-        mime_type: input.mimeType,
-        checksum: input.checksum,
-        content_sha256: input.contentSha256 ?? null,
-        ingestion_job_id: input.ingestionJobId ?? null,
-        is_text: input.isText ?? false,
-        is_previewable: input.isPreviewable ?? false,
-        skipped: input.skipped ?? false,
-        skip_reason: input.skipReason ?? null,
-        indexed_at: input.indexedAt ?? null,
-      },
-      { onConflict: "project_id,path" },
-    )
+    .upsert({
+      project_id: input.projectId,
+      user_id: input.userId,
+      path: input.path,
+      name: input.name,
+      extension: input.extension,
+      size_bytes: input.sizeBytes,
+      mime_type: input.mimeType,
+      checksum: input.checksum,
+      // content_sha256 removed for Lovable Cloud compatibility
+      ingestion_job_id: input.ingestionJobId ?? null,
+      is_text: input.isText ?? false,
+      is_previewable: input.isPreviewable ?? false,
+      skipped: input.skipped ?? false,
+      skip_reason: input.skipReason ?? null,
+      indexed_at: input.indexedAt ?? null,
+    } as any)
     .select()
     .single();
 

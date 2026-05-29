@@ -53,9 +53,9 @@ export async function recordUsageEvent(input: UsageEventInput): Promise<void> {
     token_estimate: input.tokenEstimate ?? 0,
     project_id: input.projectId ?? null,
     thread_id: input.threadId ?? null,
-    idempotency_key: input.idempotencyKey ?? null,
+    // idempotency_key removed for Lovable Cloud compatibility
     metadata,
-  });
+  } as any);
   if (error) throw error;
 }
 
