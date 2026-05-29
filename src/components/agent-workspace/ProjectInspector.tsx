@@ -1,4 +1,4 @@
-import { FileText, Code2, Activity, AlertCircle } from "lucide-react";
+﻿import { FileText, Code2, Activity, AlertCircle } from "lucide-react";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
 import { ProjectPipelineDiagnosticsPanel } from "@/features/projects/ProjectPipelineDiagnosticsPanel";
@@ -58,7 +58,7 @@ export function ProjectInspector() {
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-sm truncate">{activeProject.name}</h3>
             <p className="text-[11px] text-muted-foreground mt-1 truncate uppercase tracking-wider">
-              {activeProject.source_type} • {activeProject.id.slice(0, 8)}
+              {activeProject.source_type} â€¢ {activeProject.id.slice(0, 8)}
             </p>
           </div>
           <div
@@ -100,7 +100,10 @@ export function ProjectInspector() {
             Diagnostics
           </div>
           <div className="rounded-md border border-border/50 bg-background/50 overflow-hidden">
-            <ProjectPipelineDiagnosticsPanel projectId={activeProject.id} />
+            <ProjectPipelineDiagnosticsPanel
+  projectId={activeProject.id}
+  safePreviews={activeProjectPreviews}
+/>
           </div>
         </div>
 
@@ -117,3 +120,4 @@ export function ProjectInspector() {
     </div>
   );
 }
+
