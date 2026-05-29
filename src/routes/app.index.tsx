@@ -161,36 +161,63 @@ function AppIndex() {
             <Terminal className="size-6" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t("tellNexusToChange")}
+            {!activeProject
+              ? "ابدأ بربط مشروعك مع Nexus"
+              : activeProject.status === "failed" ||
+                  activeProject.latest_job?.status === "failed" ||
+                  activeProject.latest_job?.status === "rejected"
+                ? "المشروع الحالي فشل في المعالجة"
+                : activeProject.status === "indexed_manifest" ||
+                    activeProject.status === "completed"
+                  ? "ماذا تريد أن يفعل Nexus في مشروعك؟"
+                  : "المشروع موجود لكن السياق غير جاهز بالكامل"}
           </h1>
         </div>
 
-        <div className="relative">
-          <textarea
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              if (status !== "creating") setComposerStatus("idle", "");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder={t("tellNexusToChange")}
-            className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[120px] resize-none shadow-sm"
-            dir="auto"
-          />
-          <button
-            onClick={handleSend}
-            disabled={busy || !input.trim()}
-            className="absolute bottom-3 right-3 flex items-center gap-1.5 px-4 py-2 bg-foreground text-background rounded-md text-[13px] font-bold disabled:opacity-50 transition-colors"
-          >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            {t("createAiSession") || "Send"}
-          </button>
-        </div>
+        {activeProject &&
+          (activeProject.status === "failed" ||
+            activeProject.latest_job?.status === "failed" ||
+            activeProject.latest_job?.status === "rejected") && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-center">
+              <p className="text-sm text-destructive mb-4">
+                لا يمكن بدء جلسة جديدة. يرجى حذف المشروع أو رفع نسخة جديدة.
+              </p>
+              <ProjectActionCard />
+            </div>
+          )}
+        {!(
+          activeProject &&
+          (activeProject.status === "failed" ||
+            activeProject.latest_job?.status === "failed" ||
+            activeProject.latest_job?.status === "rejected")
+        ) && (
+          <div className="relative">
+            <textarea
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                if (status !== "creating") setComposerStatus("idle", "");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={t("tellNexusToChange")}
+              className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[120px] resize-none shadow-sm"
+              dir="auto"
+            />
+            <button
+              onClick={handleSend}
+              disabled={busy || !input.trim()}
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 px-4 py-2 bg-foreground text-background rounded-md text-[13px] font-bold disabled:opacity-50 transition-colors"
+            >
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {t("createAiSession") || "Send"}
+            </button>
+          </div>
+        )}
 
         {status !== "idle" && (
           <div
@@ -241,9 +268,19 @@ function AppIndex() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
-          {[t("examplePrompt1"), t("examplePrompt2"), t("examplePrompt3"), t("examplePrompt4")].map(
-            (prompt, i) => (
+        {!(
+          activeProject &&
+          (activeProject.status === "failed" ||
+            activeProject.latest_job?.status === "failed" ||
+            activeProject.latest_job?.status === "rejected")
+        ) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
+            {[
+              t("examplePrompt1"),
+              t("examplePrompt2"),
+              t("examplePrompt3"),
+              t("examplePrompt4"),
+            ].map((prompt, i) => (
               <button
                 key={i}
                 onClick={() => setInput(prompt)}
@@ -251,9 +288,9 @@ function AppIndex() {
               >
                 {prompt}
               </button>
-            ),
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
         {!activeProject && session && <ProjectActionCard />}
       </div>

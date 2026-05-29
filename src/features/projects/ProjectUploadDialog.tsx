@@ -24,10 +24,12 @@ export function ProjectUploadDialog({
   userId,
   trigger,
   defaultMode = "zip",
+  onSuccess,
 }: {
   userId: string;
   trigger: ReactNode;
   defaultMode?: "zip" | "folder";
+  onSuccess?: (projectId: string) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -111,7 +113,7 @@ export function ProjectUploadDialog({
       }
 
       try {
-        await importFolder.mutateAsync({
+        const result = await importFolder.mutateAsync({
           userId,
           summary: folderSummary,
           projectName: name,
@@ -120,6 +122,7 @@ export function ProjectUploadDialog({
         toast.success(t("folderImportSuccess"));
         setOpen(false);
         resetForm();
+        if (onSuccess) onSuccess(result.project.id);
       } catch (error) {
         toast.error(friendlyUploadError(error));
       }
@@ -157,6 +160,7 @@ export function ProjectUploadDialog({
       );
       setOpen(false);
       resetForm();
+      if (onSuccess) onSuccess(result.project.id);
     } catch (error) {
       toast.error(friendlyUploadError(error));
     }

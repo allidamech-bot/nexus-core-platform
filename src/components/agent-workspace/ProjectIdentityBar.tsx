@@ -12,7 +12,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 export function ProjectIdentityBar() {
   const { session } = useAuth();
   const { t } = useLocale();
-  const { activeProject } = useProjectWorkspace();
+  const { activeProject, setSelectedProjectId } = useProjectWorkspace();
   const archiveProject = useArchiveProjectMutation();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -40,7 +40,12 @@ export function ProjectIdentityBar() {
     <div className="flex items-center gap-3 pl-4 border-l border-border/50">
       {activeProject ? (
         <>
-          <span className="text-sm font-medium truncate max-w-[200px]">{activeProject.name}</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium truncate max-w-[200px]">{activeProject.name}</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              {activeProject.source_type}
+            </span>
+          </div>
           <ProjectStatusBadge status={activeProject.latest_job?.status ?? activeProject.status} />
         </>
       ) : (
@@ -64,6 +69,7 @@ export function ProjectIdentityBar() {
         <ProjectUploadDialog
           userId={session.user.id}
           defaultMode="zip"
+          onSuccess={setSelectedProjectId}
           trigger={
             <button className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5">
               <FileArchive className="size-3" />
@@ -75,6 +81,7 @@ export function ProjectIdentityBar() {
         <ProjectUploadDialog
           userId={session.user.id}
           defaultMode="folder"
+          onSuccess={setSelectedProjectId}
           trigger={
             <button className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5">
               <FolderOpen className="size-3" />

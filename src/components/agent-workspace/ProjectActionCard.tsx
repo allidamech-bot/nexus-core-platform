@@ -1,9 +1,11 @@
 import { FileArchive, FolderOpen, FolderSync } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
+import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 
 export function ProjectActionCard() {
   const { session } = useAuth();
+  const { setSelectedProjectId } = useProjectWorkspace();
 
   if (!session) return null;
 
@@ -12,6 +14,7 @@ export function ProjectActionCard() {
       <ProjectUploadDialog
         userId={session.user.id}
         defaultMode="zip"
+        onSuccess={setSelectedProjectId}
         trigger={
           <button className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface/50 hover:bg-surface text-sm font-medium transition-colors text-left group">
             <div className="grid place-items-center size-8 rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
@@ -30,6 +33,7 @@ export function ProjectActionCard() {
       <ProjectUploadDialog
         userId={session.user.id}
         defaultMode="folder"
+        onSuccess={setSelectedProjectId}
         trigger={
           <button className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface/50 hover:bg-surface text-sm font-medium transition-colors text-left group">
             <div className="grid place-items-center size-8 rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
