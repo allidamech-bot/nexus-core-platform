@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocale } from "@/features/i18n/localeContext";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
+import { ProjectActionCard } from "@/components/agent-workspace/ProjectActionCard";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { checkQuota } from "@/features/governance/governanceService";
 import { governanceKeys } from "@/features/governance/governanceQueries";
@@ -254,18 +255,7 @@ function AppIndex() {
           )}
         </div>
 
-        {!activeProject && session && (
-          <div className="pt-8 flex justify-center">
-            <ProjectUploadDialog
-              userId={session.user.id}
-              trigger={
-                <button className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors">
-                  {t("uploadOrImport")}
-                </button>
-              }
-            />
-          </div>
-        )}
+        {!activeProject && session && <ProjectActionCard />}
       </div>
     </div>
   );

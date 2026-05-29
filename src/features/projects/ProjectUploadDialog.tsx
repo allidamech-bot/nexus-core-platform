@@ -20,11 +20,19 @@ import { useLocale } from "@/features/i18n/localeContext";
 import { summarizeFolderFiles, type FolderImportSummary } from "./folderImportService";
 import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
 
-export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigger: ReactNode }) {
+export function ProjectUploadDialog({
+  userId,
+  trigger,
+  defaultMode = "zip",
+}: {
+  userId: string;
+  trigger: ReactNode;
+  defaultMode?: "zip" | "folder";
+}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"zip" | "folder">("zip");
+  const [mode, setMode] = useState<"zip" | "folder">(defaultMode);
   const [file, setFile] = useState<File | null>(null);
   const [folderSummary, setFolderSummary] = useState<FolderImportSummary | null>(null);
   const [name, setName] = useState("");
@@ -155,7 +163,16 @@ export function ProjectUploadDialog({ userId, trigger }: { userId: string; trigg
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (isOpen) {
+          setMode(defaultMode);
+          resetForm();
+        }
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="border-border bg-background p-0 sm:max-w-xl">
         <div className="border-b border-border px-6 py-5">

@@ -9,7 +9,9 @@ import { projectKeys, useArchiveProjectMutation } from "@/features/projects/proj
 import { useIsAdminQuery } from "@/features/admin/adminQueries";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useLocale } from "@/features/i18n/localeContext";
-import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
+import { ProjectSidebar } from "@/components/agent-workspace/ProjectSidebar";
+import { ProjectInspector } from "@/components/agent-workspace/ProjectInspector";
+import { ProjectIdentityBar } from "@/components/agent-workspace/ProjectIdentityBar";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -92,26 +94,7 @@ function AppWorkspace({
             </div>
             <span className="text-sm font-bold tracking-tighter uppercase">Nexus</span>
           </Link>
-          {activeProject && (
-            <div className="flex items-center gap-3 pl-4 border-l border-border/50">
-              <span className="text-sm font-medium truncate max-w-[200px]">
-                {activeProject.name}
-              </span>
-              <ProjectStatusBadge
-                status={activeProject.latest_job?.status ?? activeProject.status}
-              />
-              <button
-                type="button"
-                onClick={handleArchiveProject}
-                disabled={archiveProject.isPending}
-                className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:opacity-60"
-                title={t("archiveProject")}
-              >
-                <Archive className="me-1 inline size-3" />
-                {t("archiveProject")}
-              </button>
-            </div>
-          )}
+          <ProjectIdentityBar />
         </div>
 
         <div className="flex items-center gap-2">
@@ -145,9 +128,22 @@ function AppWorkspace({
         </div>
       </header>
 
-      <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <Outlet />
-      </main>
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Left Sidebar */}
+        <aside className="w-72 shrink-0 border-r border-border hidden md:flex flex-col">
+          <ProjectSidebar />
+        </aside>
+
+        {/* Center */}
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
+          <Outlet />
+        </main>
+
+        {/* Right Inspector */}
+        <aside className="w-[22rem] shrink-0 border-l border-border hidden xl:flex flex-col bg-surface/10">
+          <ProjectInspector />
+        </aside>
+      </div>
     </div>
   );
 }
