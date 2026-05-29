@@ -296,22 +296,22 @@ They must not show:
 
 ## 7. Security QA Matrix
 
-| Area | Scenario | Expected Result |
-| --- | --- | --- |
-| Secret retention prevention | User tries to remember text containing credential-like content | Memory is blocked or redacted; raw secret is not stored, displayed, logged, cited, or retrieved |
-| JWT detection | User tries to remember a JWT-like string | Memory is blocked; UI explains sensitive credential detection without echoing value |
-| API key detection | User tries to remember an API-key-like string | Memory is blocked or redacted; audit logs contain only safe metadata and correlation ID |
-| Password detection | User tries to remember a password-like field | Memory is blocked or requires a redacted summary; raw password is not persisted |
-| Cross-project leakage | User searches memory from Project A while scoped to Project B | Project A memory is not returned unless future explicit permission model allows it |
-| Admin memory exposed to non-admin | Non-admin opens/searches admin-only memory | Access denied or hidden; no admin memory card, citation, metrics, or source metadata appears |
-| Raw uploaded content persistence | User attempts to remember raw uploaded file contents | Raw content is not stored as memory; only approved safe summary may be saved |
-| Hallucinated memory approval | AI suggests unsupported project fact | Memory remains draft or requires explicit user approval; it is not auto-loaded as fact |
-| Poisoning attempt | Uploaded or user text instructs the app to ignore memory policy | Instruction is treated as untrusted content; policy is preserved; memory may be blocked |
-| Archived auto-load prevention | Archived memory matches current query | Archived memory is not auto-loaded; appears only when archive search is explicitly enabled |
-| Rejected auto-load prevention | Rejected memory matches current query | Rejected memory is not auto-loaded or cited |
-| Correlation propagation | Memory creation/retrieval fails | User sees generic error with safe trace ID when appropriate; logs/audit include same correlation ID |
-| Logout boundary | User logs out after viewing memory panel | Private memory UI clears; protected memory routes redirect to `/login` |
-| Browser/network exposure | Inspect console and network after memory actions | No secrets, raw auth headers, cookies, JWTs, API keys, or raw uploaded content are visible |
+| Area                              | Scenario                                                        | Expected Result                                                                                     |
+| --------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Secret retention prevention       | User tries to remember text containing credential-like content  | Memory is blocked or redacted; raw secret is not stored, displayed, logged, cited, or retrieved     |
+| JWT detection                     | User tries to remember a JWT-like string                        | Memory is blocked; UI explains sensitive credential detection without echoing value                 |
+| API key detection                 | User tries to remember an API-key-like string                   | Memory is blocked or redacted; audit logs contain only safe metadata and correlation ID             |
+| Password detection                | User tries to remember a password-like field                    | Memory is blocked or requires a redacted summary; raw password is not persisted                     |
+| Cross-project leakage             | User searches memory from Project A while scoped to Project B   | Project A memory is not returned unless future explicit permission model allows it                  |
+| Admin memory exposed to non-admin | Non-admin opens/searches admin-only memory                      | Access denied or hidden; no admin memory card, citation, metrics, or source metadata appears        |
+| Raw uploaded content persistence  | User attempts to remember raw uploaded file contents            | Raw content is not stored as memory; only approved safe summary may be saved                        |
+| Hallucinated memory approval      | AI suggests unsupported project fact                            | Memory remains draft or requires explicit user approval; it is not auto-loaded as fact              |
+| Poisoning attempt                 | Uploaded or user text instructs the app to ignore memory policy | Instruction is treated as untrusted content; policy is preserved; memory may be blocked             |
+| Archived auto-load prevention     | Archived memory matches current query                           | Archived memory is not auto-loaded; appears only when archive search is explicitly enabled          |
+| Rejected auto-load prevention     | Rejected memory matches current query                           | Rejected memory is not auto-loaded or cited                                                         |
+| Correlation propagation           | Memory creation/retrieval fails                                 | User sees generic error with safe trace ID when appropriate; logs/audit include same correlation ID |
+| Logout boundary                   | User logs out after viewing memory panel                        | Private memory UI clears; protected memory routes redirect to `/login`                              |
+| Browser/network exposure          | Inspect console and network after memory actions                | No secrets, raw auth headers, cookies, JWTs, API keys, or raw uploaded content are visible          |
 
 ## 8. Role-Based QA
 

@@ -149,7 +149,10 @@ async function uploadArchive(input: {
     });
 
   if (error) {
-    console.warn("[project-upload] Lovable Cloud ZIP storage unavailable; staging without object storage", safeErrorLog(error));
+    console.warn(
+      "[project-upload] Lovable Cloud ZIP storage unavailable; staging without object storage",
+      safeErrorLog(error),
+    );
     return { storagePath: null, storageAvailable: false };
   }
 

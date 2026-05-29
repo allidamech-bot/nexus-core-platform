@@ -6,24 +6,24 @@ This document is the final approval gate before Project Memory implementation be
 
 First implementation wave scope is intentionally narrow. It may prepare the database and authorization foundation only after explicit implementation approval.
 
-| Ticket | Status | Decision |
-| --- | --- | --- |
-| PM-001 Memory Schema Migration | APPROVED | Approved for first implementation wave after final migration review. |
-| PM-002 Memory RLS Policies | APPROVED | Approved for first implementation wave; must ship with PM-001 or block PM-001 from release. |
-| PM-003 Memory Category Contract | APPROVED | Approved for first implementation wave as product-managed category metadata only. |
-| PM-004 Memory Create API | BLOCKED | Blocked until PM-001 through PM-003 are merged, RLS tests pass, and safety scanner plan is implementation-ready. |
-| PM-005 Memory Search API | BLOCKED | Blocked until PM-001 through PM-003 are merged and RLS denial tests pass. |
-| PM-006 Memory Approval, Archive, and Reject APIs | BLOCKED | Blocked until create/search APIs and safety scanner are complete. |
-| PM-007 Memory Safety Scanner | DEFERRED | Deferred to a dedicated security-focused PR before writes are enabled. |
-| PM-008 Retrieval Ranking Engine | DEFERRED | Deferred until manual memory, safety, and search are stable. |
-| PM-009 Project Memory Panel | DEFERRED | Deferred until read/write API contracts are implemented behind feature flags. |
-| PM-010 Remember Decision Flow | DEFERRED | Deferred until panel, create API, and safety scanner pass QA. |
-| PM-011 Correlation and Memory Audit Integration | DEFERRED | Deferred to observability PR before production rollout. |
-| PM-012 Memory Citations | DEFERRED | Deferred until retrieval ranking is approved. |
-| PM-013 Automatic Retrieval in Chat | BLOCKED | Blocked until security verification, archive/reject exclusion, RLS, and production smoke pass. |
-| PM-014 Memory Events API and Diagnostics | DEFERRED | Deferred until audit event shape is proven safe. |
-| PM-015 E2E Memory QA | DEFERRED | Deferred as an expanding test suite across all implementation PRs. |
-| PM-016 Production Rollout | BLOCKED | Blocked until all release blockers pass. |
+| Ticket                                           | Status   | Decision                                                                                                         |
+| ------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| PM-001 Memory Schema Migration                   | APPROVED | Approved for first implementation wave after final migration review.                                             |
+| PM-002 Memory RLS Policies                       | APPROVED | Approved for first implementation wave; must ship with PM-001 or block PM-001 from release.                      |
+| PM-003 Memory Category Contract                  | APPROVED | Approved for first implementation wave as product-managed category metadata only.                                |
+| PM-004 Memory Create API                         | BLOCKED  | Blocked until PM-001 through PM-003 are merged, RLS tests pass, and safety scanner plan is implementation-ready. |
+| PM-005 Memory Search API                         | BLOCKED  | Blocked until PM-001 through PM-003 are merged and RLS denial tests pass.                                        |
+| PM-006 Memory Approval, Archive, and Reject APIs | BLOCKED  | Blocked until create/search APIs and safety scanner are complete.                                                |
+| PM-007 Memory Safety Scanner                     | DEFERRED | Deferred to a dedicated security-focused PR before writes are enabled.                                           |
+| PM-008 Retrieval Ranking Engine                  | DEFERRED | Deferred until manual memory, safety, and search are stable.                                                     |
+| PM-009 Project Memory Panel                      | DEFERRED | Deferred until read/write API contracts are implemented behind feature flags.                                    |
+| PM-010 Remember Decision Flow                    | DEFERRED | Deferred until panel, create API, and safety scanner pass QA.                                                    |
+| PM-011 Correlation and Memory Audit Integration  | DEFERRED | Deferred to observability PR before production rollout.                                                          |
+| PM-012 Memory Citations                          | DEFERRED | Deferred until retrieval ranking is approved.                                                                    |
+| PM-013 Automatic Retrieval in Chat               | BLOCKED  | Blocked until security verification, archive/reject exclusion, RLS, and production smoke pass.                   |
+| PM-014 Memory Events API and Diagnostics         | DEFERRED | Deferred until audit event shape is proven safe.                                                                 |
+| PM-015 E2E Memory QA                             | DEFERRED | Deferred as an expanding test suite across all implementation PRs.                                               |
+| PM-016 Production Rollout                        | BLOCKED  | Blocked until all release blockers pass.                                                                         |
 
 Approved first wave:
 
@@ -258,24 +258,24 @@ Admin-only memory and diagnostics must never render before existing admin valida
 
 ## 6. First Implementation Approval Matrix
 
-| Ticket | Risk | Dependencies | Rollback Ready | Approval Status |
-| --- | --- | --- | --- | --- |
-| PM-001 | High | Data model, RLS plan, rollback plan | Partial; final migration rollback required | APPROVED |
-| PM-002 | High | PM-001, project ownership checks, admin validation | Partial; policy rollback required | APPROVED |
-| PM-003 | Medium | PM-001, PM-002, category contract | Yes; feature gate can hide categories | APPROVED |
-| PM-004 | High | PM-001, PM-002, PM-003, PM-007 | No; safety scanner not implemented | BLOCKED |
-| PM-005 | High | PM-001, PM-002, PM-003 | No; read/search authorization not proven | BLOCKED |
-| PM-006 | High | PM-004, PM-007 | No; state transitions not proven | BLOCKED |
-| PM-007 | High | Safety spec | Yes for writes; disable write gate | DEFERRED |
-| PM-008 | Medium-high | PM-005, PM-007, PM-011 | Yes; disable automatic retrieval | DEFERRED |
-| PM-009 | Medium | PM-003 through PM-006 | Yes; hide UI gate | DEFERRED |
-| PM-010 | Medium-high | PM-004, PM-007, PM-009 | Yes; disable action gate | DEFERRED |
-| PM-011 | Medium | API events, correlation baseline | Partial; reduce diagnostics verbosity | DEFERRED |
-| PM-012 | Medium | PM-005, PM-008, PM-009, PM-011 | Yes; disable citations/retrieval | DEFERRED |
-| PM-013 | High | Full security QA | Yes; disable retrieval first | BLOCKED |
-| PM-014 | Medium | PM-011, PM-002 | Yes; disable diagnostics gate | DEFERRED |
-| PM-015 | High | Implementation PRs | Not applicable; gate remains closed | DEFERRED |
-| PM-016 | High | All tickets and release approval | Yes; staged rollback required | BLOCKED |
+| Ticket | Risk        | Dependencies                                       | Rollback Ready                             | Approval Status |
+| ------ | ----------- | -------------------------------------------------- | ------------------------------------------ | --------------- |
+| PM-001 | High        | Data model, RLS plan, rollback plan                | Partial; final migration rollback required | APPROVED        |
+| PM-002 | High        | PM-001, project ownership checks, admin validation | Partial; policy rollback required          | APPROVED        |
+| PM-003 | Medium      | PM-001, PM-002, category contract                  | Yes; feature gate can hide categories      | APPROVED        |
+| PM-004 | High        | PM-001, PM-002, PM-003, PM-007                     | No; safety scanner not implemented         | BLOCKED         |
+| PM-005 | High        | PM-001, PM-002, PM-003                             | No; read/search authorization not proven   | BLOCKED         |
+| PM-006 | High        | PM-004, PM-007                                     | No; state transitions not proven           | BLOCKED         |
+| PM-007 | High        | Safety spec                                        | Yes for writes; disable write gate         | DEFERRED        |
+| PM-008 | Medium-high | PM-005, PM-007, PM-011                             | Yes; disable automatic retrieval           | DEFERRED        |
+| PM-009 | Medium      | PM-003 through PM-006                              | Yes; hide UI gate                          | DEFERRED        |
+| PM-010 | Medium-high | PM-004, PM-007, PM-009                             | Yes; disable action gate                   | DEFERRED        |
+| PM-011 | Medium      | API events, correlation baseline                   | Partial; reduce diagnostics verbosity      | DEFERRED        |
+| PM-012 | Medium      | PM-005, PM-008, PM-009, PM-011                     | Yes; disable citations/retrieval           | DEFERRED        |
+| PM-013 | High        | Full security QA                                   | Yes; disable retrieval first               | BLOCKED         |
+| PM-014 | Medium      | PM-011, PM-002                                     | Yes; disable diagnostics gate              | DEFERRED        |
+| PM-015 | High        | Implementation PRs                                 | Not applicable; gate remains closed        | DEFERRED        |
+| PM-016 | High        | All tickets and release approval                   | Yes; staged rollback required              | BLOCKED         |
 
 ## 7. Rollback Readiness Confirmation
 
