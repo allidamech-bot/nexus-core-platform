@@ -61,9 +61,10 @@ export function ProjectIdentityBar() {
             }
           }}
           className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5"
+          title="تبديل المشروع"
         >
           <FolderSync className="size-3" />
-          تبديل المشروع
+          <span className="hidden md:inline">تبديل المشروع</span>
         </button>
 
         <ProjectUploadDialog
@@ -71,9 +72,12 @@ export function ProjectIdentityBar() {
           defaultMode="zip"
           onSuccess={setSelectedProjectId}
           trigger={
-            <button className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5">
+            <button
+              className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5"
+              title="رفع مشروع"
+            >
               <FileArchive className="size-3" />
-              رفع مشروع
+              <span className="hidden md:inline">رفع مشروع</span>
             </button>
           }
         />
@@ -83,9 +87,12 @@ export function ProjectIdentityBar() {
           defaultMode="folder"
           onSuccess={setSelectedProjectId}
           trigger={
-            <button className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5">
+            <button
+              className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5"
+              title="استيراد مجلد"
+            >
               <FolderOpen className="size-3" />
-              استيراد مجلد
+              <span className="hidden md:inline">استيراد مجلد</span>
             </button>
           }
         />
@@ -99,7 +106,7 @@ export function ProjectIdentityBar() {
             title={t("archiveProject")}
           >
             <Archive className="size-3" />
-            {t("archiveProject")}
+            <span className="hidden md:inline">{t("archiveProject")}</span>
           </button>
         )}
       </div>
