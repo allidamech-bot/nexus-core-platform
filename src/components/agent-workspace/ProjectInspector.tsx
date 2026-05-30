@@ -9,6 +9,7 @@ import {
   useWritebackRequestsQuery,
   useWorkingCopiesQuery,
   useCreatePatchPreviewMutation,
+  usePatchPreviewSandboxMutation,
 } from "@/features/projects/projectQueries";
 import { useLocale } from "@/features/i18n/localeContext";
 import { useAuth } from "@/lib/auth";
@@ -21,7 +22,9 @@ export function ProjectInspector() {
   const { t } = useLocale();
   const { session } = useAuth();
   const [isGeneratingPatch, setIsGeneratingPatch] = useState(false);
+  const [isVerifyingSandbox, setIsVerifyingSandbox] = useState(false);
   const createPatchPreview = useCreatePatchPreviewMutation();
+  const sandboxPreview = usePatchPreviewSandboxMutation();
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
@@ -117,6 +120,28 @@ export function ProjectInspector() {
     }
   };
 
+  const handleRunSandbox = async () => {
+    const readyPreview = patchPreviews.find((p) => p.status === "ready");
+    if (!readyPreview) return;
+
+    try {
+      setIsVerifyingSandbox(true);
+      const result = await sandboxPreview.mutateAsync(readyPreview.id);
+      if (result.status === "blocked" || result.status === "failed") {
+        const errorMsg = result.blockers.map((b) => b.message).join(", ") || "Verification failed";
+        toast.error(`Sandbox verification failed: ${errorMsg}`);
+      } else {
+        toast.success(
+          `Sandbox verification successful! Applied ${result.summary.changesApplied} changes across ${result.summary.changedFiles} files.`,
+        );
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to run sandbox verification");
+    } finally {
+      setIsVerifyingSandbox(false);
+    }
+  };
+
   let readinessState = "empty";
   let readinessColor = "text-muted-foreground bg-surface";
   let readinessLabel = "Empty Context";
@@ -201,7 +226,19 @@ export function ProjectInspector() {
             />
           </div>
           {hasPreviews && (
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-end mt-2 gap-2">
+              {patchPreviews.some((p) => p.status === "ready") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  disabled={isVerifyingSandbox}
+                  onClick={handleRunSandbox}
+                >
+                  {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  Run sandbox verification
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
