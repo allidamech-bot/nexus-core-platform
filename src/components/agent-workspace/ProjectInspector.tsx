@@ -101,9 +101,9 @@ export function ProjectInspector() {
           </div>
           <div className="rounded-md border border-border/50 bg-background/50 overflow-hidden">
             <ProjectPipelineDiagnosticsPanel
-  projectId={activeProject.id}
-  safePreviews={activeProjectPreviews}
-/>
+              projectId={activeProject.id}
+              safePreviews={activeProjectPreviews}
+            />
           </div>
         </div>
 
@@ -120,4 +120,3 @@ export function ProjectInspector() {
     </div>
   );
 }
-
