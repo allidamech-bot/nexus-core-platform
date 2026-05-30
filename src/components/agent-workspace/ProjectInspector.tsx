@@ -1,4 +1,4 @@
-import { FileText, Code2, Activity, AlertCircle } from "lucide-react";
+import { FileText, Code2, Activity, AlertCircle, Loader2 } from "lucide-react";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
 import { ProjectPipelineDiagnosticsPanel } from "@/features/projects/ProjectPipelineDiagnosticsPanel";
@@ -8,12 +8,20 @@ import {
   usePatchSnapshotsQuery,
   useWritebackRequestsQuery,
   useWorkingCopiesQuery,
+  useCreatePatchPreviewMutation,
 } from "@/features/projects/projectQueries";
 import { useLocale } from "@/features/i18n/localeContext";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export function ProjectInspector() {
   const { activeProject, activeProjectPreviews } = useProjectWorkspace();
   const { t } = useLocale();
+  const { session } = useAuth();
+  const [isGeneratingPatch, setIsGeneratingPatch] = useState(false);
+  const createPatchPreview = useCreatePatchPreviewMutation();
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
@@ -35,6 +43,41 @@ export function ProjectInspector() {
   const isFailed = status === "failed" || status === "rejected";
   const hasPreviews = activeProjectPreviews.length > 0;
   const hasFiles = files.length > 0;
+
+  const handleGeneratePatch = async () => {
+    if (!activeProject || !session?.user?.id || activeProjectPreviews.length === 0) return;
+    try {
+      setIsGeneratingPatch(true);
+      const targetPreview = activeProjectPreviews.find(
+        (p) => p.preview_text && p.preview_text.length > 10,
+      );
+      if (!targetPreview) {
+        toast.error("No suitable text preview found");
+        return;
+      }
+
+      const oldText = targetPreview.preview_text.substring(
+        0,
+        Math.min(50, targetPreview.preview_text.length),
+      );
+      const newText = `/* Grounded Patch */\n${oldText}`;
+
+      await createPatchPreview.mutateAsync({
+        projectId: activeProject.id,
+        userId: session.user.id,
+        fileId: targetPreview.file_id,
+        title: "Test deterministic patch",
+        summary: "Created via smoke test UI",
+        oldText,
+        newText,
+      });
+      toast.success("Patch preview generated successfully");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate patch preview");
+    } finally {
+      setIsGeneratingPatch(false);
+    }
+  };
 
   let readinessState = "empty";
   let readinessColor = "text-muted-foreground bg-surface";
@@ -119,6 +162,20 @@ export function ProjectInspector() {
               workingCopies={workingCopies}
             />
           </div>
+          {hasPreviews && (
+            <div className="flex justify-end mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                disabled={isGeneratingPatch}
+                onClick={handleGeneratePatch}
+              >
+                {isGeneratingPatch && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                Generate grounded patch preview
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
