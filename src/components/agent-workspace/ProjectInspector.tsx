@@ -1,8 +1,14 @@
-﻿import { FileText, Code2, Activity, AlertCircle } from "lucide-react";
+import { FileText, Code2, Activity, AlertCircle } from "lucide-react";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { ProjectFileInventory } from "@/features/projects/ProjectFileInventory";
 import { ProjectPipelineDiagnosticsPanel } from "@/features/projects/ProjectPipelineDiagnosticsPanel";
-import { useProjectFilesQuery } from "@/features/projects/projectQueries";
+import {
+  useProjectFilesQuery,
+  usePatchPreviewsQuery,
+  usePatchSnapshotsQuery,
+  useWritebackRequestsQuery,
+  useWorkingCopiesQuery,
+} from "@/features/projects/projectQueries";
 import { useLocale } from "@/features/i18n/localeContext";
 
 export function ProjectInspector() {
@@ -11,6 +17,10 @@ export function ProjectInspector() {
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
+  const { data: patchPreviews = [] } = usePatchPreviewsQuery(activeProject?.id ?? null);
+  const { data: patchSnapshots = [] } = usePatchSnapshotsQuery(activeProject?.id ?? null);
+  const { data: writebackRequests = [] } = useWritebackRequestsQuery(activeProject?.id ?? null);
+  const { data: workingCopies = [] } = useWorkingCopiesQuery(activeProject?.id ?? null);
 
   if (!activeProject) {
     return (
@@ -103,6 +113,10 @@ export function ProjectInspector() {
             <ProjectPipelineDiagnosticsPanel
               projectId={activeProject.id}
               safePreviews={activeProjectPreviews}
+              patchPreviews={patchPreviews}
+              patchSnapshots={patchSnapshots}
+              writebackRequests={writebackRequests}
+              workingCopies={workingCopies}
             />
           </div>
         </div>
