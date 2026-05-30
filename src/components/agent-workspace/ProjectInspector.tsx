@@ -249,45 +249,52 @@ export function ProjectInspector() {
               workingCopies={workingCopies}
             />
           </div>
-          {hasPreviews && (
-            <div className="flex justify-end mt-2 gap-2">
+        </div>
+
+        {hasPreviews && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-widest px-1">
+              <Activity className="size-3.5 text-accent" />
+              Pipeline actions
+            </div>
+            <div className="flex flex-wrap gap-2 w-full">
               {patchPreviews.some((p) => p.status === "ready") && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs"
+                    className="text-xs flex-1 min-w-[200px]"
                     disabled={isCreatingSnapshot}
                     onClick={handleCreateSnapshot}
                   >
                     {isCreatingSnapshot && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                    Create patch snapshot
+                    {isCreatingSnapshot ? "Creating snapshot..." : "Create patch snapshot"}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs"
+                    className="text-xs flex-1 min-w-[200px]"
                     disabled={isVerifyingSandbox}
                     onClick={handleRunSandbox}
                   >
                     {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                    Run sandbox verification
+                    {isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification"}
                   </Button>
                 </>
               )}
               <Button
                 variant="outline"
                 size="sm"
-                className="text-xs"
+                className="text-xs flex-1 min-w-[200px]"
                 disabled={isGeneratingPatch}
                 onClick={handleGeneratePatch}
               >
                 {isGeneratingPatch && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                Generate grounded patch preview
+                {isGeneratingPatch ? "Generating preview..." : "Generate grounded patch preview"}
               </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-widest px-1">
