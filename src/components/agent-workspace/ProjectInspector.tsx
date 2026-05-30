@@ -46,21 +46,54 @@ export function ProjectInspector() {
 
   const handleGeneratePatch = async () => {
     if (!activeProject || !session?.user?.id || activeProjectPreviews.length === 0) return;
+
+    let targetPreviewPath = "unknown";
+    let oldTextLength = 0;
+
     try {
       setIsGeneratingPatch(true);
-      const targetPreview = activeProjectPreviews.find(
-        (p) => p.preview_text && p.preview_text.length > 10,
-      );
+
+      const eligiblePreviews = activeProjectPreviews.filter((p) => {
+        if (!p.preview_text) return false;
+        const lines = p.preview_text.split("\n");
+        return lines.some((l) => l.trim().length >= 6);
+      });
+
+      let targetPreview = eligiblePreviews.find((p) => p.path.endsWith("src/App.tsx"));
       if (!targetPreview) {
-        toast.error("No suitable text preview found");
+        targetPreview = eligiblePreviews.find((p) => p.path.endsWith("package.json"));
+      }
+      if (!targetPreview) {
+        targetPreview = eligiblePreviews[0];
+      }
+
+      if (!targetPreview) {
+        toast.error("No eligible safe preview text found.");
+        setIsGeneratingPatch(false);
         return;
       }
 
-      const oldText = targetPreview.preview_text.substring(
-        0,
-        Math.min(50, targetPreview.preview_text.length),
-      );
-      const newText = `/* Grounded Patch */\n${oldText}`;
+      if (targetPreview.path.match(/\.json$/i)) {
+        const commentSafe = eligiblePreviews.find((p) => p.path.match(/\.(tsx|ts|jsx|js|css)$/i));
+        if (commentSafe) {
+          targetPreview = commentSafe;
+        }
+      }
+
+      targetPreviewPath = targetPreview.path;
+
+      const lines = targetPreview.preview_text!.split("\n");
+      const oldText = lines.find((l) => l.trim().length >= 6) || "";
+      oldTextLength = oldText.length;
+
+      let newText = "";
+      if (targetPreview.path.match(/\.(tsx|ts|jsx|js)$/i)) {
+        newText = oldText + " // Nexus grounded preview";
+      } else if (targetPreview.path.match(/\.css$/i)) {
+        newText = oldText + " /* Nexus grounded preview */";
+      } else {
+        newText = oldText + " ";
+      }
 
       await createPatchPreview.mutateAsync({
         projectId: activeProject.id,
@@ -72,8 +105,13 @@ export function ProjectInspector() {
         newText,
       });
       toast.success("Patch preview generated successfully");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to generate patch preview");
+    } catch (error) {
+      console.error(
+        "Context:",
+        { projectId: activeProject.id, path: targetPreviewPath, oldTextLength },
+        error,
+      );
+      toast.error(error instanceof Error ? error.message : "Failed to generate patch preview");
     } finally {
       setIsGeneratingPatch(false);
     }
