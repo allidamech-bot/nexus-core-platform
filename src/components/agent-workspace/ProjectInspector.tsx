@@ -10,6 +10,7 @@ import {
   useWorkingCopiesQuery,
   useCreatePatchPreviewMutation,
   usePatchPreviewSandboxMutation,
+  useCreatePatchSnapshotMutation,
 } from "@/features/projects/projectQueries";
 import { useLocale } from "@/features/i18n/localeContext";
 import { useAuth } from "@/lib/auth";
@@ -23,8 +24,10 @@ export function ProjectInspector() {
   const { session } = useAuth();
   const [isGeneratingPatch, setIsGeneratingPatch] = useState(false);
   const [isVerifyingSandbox, setIsVerifyingSandbox] = useState(false);
+  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
   const createPatchPreview = useCreatePatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
+  const createPatchSnapshot = useCreatePatchSnapshotMutation(activeProject?.id ?? "");
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
@@ -142,6 +145,27 @@ export function ProjectInspector() {
     }
   };
 
+  const handleCreateSnapshot = async () => {
+    const readyPreview = patchPreviews.find((p) => p.status === "ready");
+    if (!readyPreview) return;
+
+    try {
+      setIsCreatingSnapshot(true);
+      const result = await createPatchSnapshot.mutateAsync(readyPreview.id);
+      if (result.alreadyExists) {
+        toast.info("A patch snapshot already exists for this preview.");
+      } else {
+        toast.success(
+          `Patch snapshot created successfully! Modified ${result.snapshot.changedFilesCount} files.`,
+        );
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create patch snapshot");
+    } finally {
+      setIsCreatingSnapshot(false);
+    }
+  };
+
   let readinessState = "empty";
   let readinessColor = "text-muted-foreground bg-surface";
   let readinessLabel = "Empty Context";
@@ -228,16 +252,28 @@ export function ProjectInspector() {
           {hasPreviews && (
             <div className="flex justify-end mt-2 gap-2">
               {patchPreviews.some((p) => p.status === "ready") && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  disabled={isVerifyingSandbox}
-                  onClick={handleRunSandbox}
-                >
-                  {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  Run sandbox verification
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    disabled={isCreatingSnapshot}
+                    onClick={handleCreateSnapshot}
+                  >
+                    {isCreatingSnapshot && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Create patch snapshot
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    disabled={isVerifyingSandbox}
+                    onClick={handleRunSandbox}
+                  >
+                    {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Run sandbox verification
+                  </Button>
+                </>
               )}
               <Button
                 variant="outline"
