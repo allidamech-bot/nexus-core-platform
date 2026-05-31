@@ -191,8 +191,20 @@ export function ProjectInspector() {
       } else {
         toast.success("Writeback review requested successfully.");
       }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to request writeback review");
+    } catch (err) {
+      const error = err as Error & { code?: string; details?: string; hint?: string };
+      console.error("Writeback request failed", {
+        snapshotId: latestSnapshot.id,
+        projectId: activeProject?.id,
+        userId: session?.user?.id,
+        error,
+      });
+      const supabaseDetails = error?.code
+        ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
+        : "";
+      toast.error(
+        `Failed to request writeback review: ${error.message || "Unknown error"}${supabaseDetails}`,
+      );
     } finally {
       setIsRequestingWriteback(false);
     }
