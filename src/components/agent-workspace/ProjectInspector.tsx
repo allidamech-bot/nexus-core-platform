@@ -11,6 +11,7 @@ import {
   useCreatePatchPreviewMutation,
   usePatchPreviewSandboxMutation,
   useCreatePatchSnapshotMutation,
+  useCreateWritebackRequestMutation,
 } from "@/features/projects/projectQueries";
 import { useLocale } from "@/features/i18n/localeContext";
 import { useAuth } from "@/lib/auth";
@@ -25,9 +26,11 @@ export function ProjectInspector() {
   const [isGeneratingPatch, setIsGeneratingPatch] = useState(false);
   const [isVerifyingSandbox, setIsVerifyingSandbox] = useState(false);
   const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
+  const [isRequestingWriteback, setIsRequestingWriteback] = useState(false);
   const createPatchPreview = useCreatePatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
   const createPatchSnapshot = useCreatePatchSnapshotMutation(activeProject?.id ?? "");
+  const createWritebackRequest = useCreateWritebackRequestMutation(activeProject?.id ?? "");
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
@@ -48,6 +51,16 @@ export function ProjectInspector() {
   const status = activeProject.latest_job?.status ?? activeProject.status;
   const isFailed = status === "failed" || status === "rejected";
   const hasPreviews = activeProjectPreviews.length > 0;
+
+  const latestSnapshot = patchSnapshots[0];
+  const activeWritebackForSnapshot = latestSnapshot
+    ? writebackRequests.find(
+        (r) =>
+          r.snapshotId === latestSnapshot.id &&
+          ["draft", "submitted", "approved", "blocked"].includes(r.status),
+      )
+    : null;
+  const canRequestWriteback = !!latestSnapshot && !activeWritebackForSnapshot;
   const hasFiles = files.length > 0;
 
   const handleGeneratePatch = async () => {
@@ -163,6 +176,25 @@ export function ProjectInspector() {
       toast.error(error instanceof Error ? error.message : "Failed to create patch snapshot");
     } finally {
       setIsCreatingSnapshot(false);
+    }
+  };
+
+  const handleRequestWriteback = async () => {
+    const latestSnapshot = patchSnapshots[0];
+    if (!latestSnapshot) return;
+
+    try {
+      setIsRequestingWriteback(true);
+      const result = await createWritebackRequest.mutateAsync({ snapshotId: latestSnapshot.id });
+      if (result.alreadyExists) {
+        toast.info("A writeback request already exists for this snapshot.");
+      } else {
+        toast.success("Writeback review requested successfully.");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to request writeback review");
+    } finally {
+      setIsRequestingWriteback(false);
     }
   };
 
@@ -292,6 +324,20 @@ export function ProjectInspector() {
                 {isGeneratingPatch && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                 {isGeneratingPatch ? "Generating preview..." : "Generate grounded patch preview"}
               </Button>
+              {canRequestWriteback && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs flex-1 min-w-[200px]"
+                  disabled={isRequestingWriteback}
+                  onClick={handleRequestWriteback}
+                >
+                  {isRequestingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  {isRequestingWriteback
+                    ? "Requesting review..."
+                    : "Request source writeback review"}
+                </Button>
+              )}
             </div>
           </div>
         )}
