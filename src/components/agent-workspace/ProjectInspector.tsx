@@ -12,6 +12,7 @@ import {
   usePatchPreviewSandboxMutation,
   useCreatePatchSnapshotMutation,
   useCreateWritebackRequestMutation,
+  useSubmitWritebackRequestMutation,
 } from "@/features/projects/projectQueries";
 import { useLocale } from "@/features/i18n/localeContext";
 import { useAuth } from "@/lib/auth";
@@ -27,10 +28,12 @@ export function ProjectInspector() {
   const [isVerifyingSandbox, setIsVerifyingSandbox] = useState(false);
   const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
   const [isRequestingWriteback, setIsRequestingWriteback] = useState(false);
+  const [isSubmittingWriteback, setIsSubmittingWriteback] = useState(false);
   const createPatchPreview = useCreatePatchPreviewMutation();
   const sandboxPreview = usePatchPreviewSandboxMutation();
   const createPatchSnapshot = useCreatePatchSnapshotMutation(activeProject?.id ?? "");
   const createWritebackRequest = useCreateWritebackRequestMutation(activeProject?.id ?? "");
+  const submitWritebackRequest = useSubmitWritebackRequestMutation(activeProject?.id ?? "");
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
@@ -61,6 +64,8 @@ export function ProjectInspector() {
       )
     : null;
   const canRequestWriteback = !!latestSnapshot && !activeWritebackForSnapshot;
+  const latestWritebackRequest = writebackRequests[0];
+  const canSubmitWriteback = latestWritebackRequest?.status === "draft";
   const hasFiles = files.length > 0;
 
   const handleGeneratePatch = async () => {
@@ -210,6 +215,33 @@ export function ProjectInspector() {
     }
   };
 
+  const handleSubmitWriteback = async () => {
+    const latestRequest = writebackRequests[0];
+    if (!latestRequest || latestRequest.status !== "draft") return;
+
+    try {
+      setIsSubmittingWriteback(true);
+      await submitWritebackRequest.mutateAsync(latestRequest.id);
+      toast.success("Writeback review submitted successfully.");
+    } catch (err) {
+      const error = err as Error & { code?: string; details?: string; hint?: string };
+      console.error("Writeback submit failed", {
+        requestId: latestRequest.id,
+        projectId: activeProject?.id,
+        userId: session?.user?.id,
+        error,
+      });
+      const supabaseDetails = error?.code
+        ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
+        : "";
+      toast.error(
+        `Failed to submit writeback review: ${error.message || "Unknown error"}${supabaseDetails}`,
+      );
+    } finally {
+      setIsSubmittingWriteback(false);
+    }
+  };
+
   let readinessState = "empty";
   let readinessColor = "text-muted-foreground bg-surface";
   let readinessLabel = "Empty Context";
@@ -348,6 +380,20 @@ export function ProjectInspector() {
                   {isRequestingWriteback
                     ? "Requesting review..."
                     : "Request source writeback review"}
+                </Button>
+              )}
+              {canSubmitWriteback && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs flex-1 min-w-[200px]"
+                  disabled={isSubmittingWriteback}
+                  onClick={handleSubmitWriteback}
+                >
+                  {isSubmittingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  {isSubmittingWriteback
+                    ? "Submitting review..."
+                    : "Submit writeback request for review"}
                 </Button>
               )}
             </div>
