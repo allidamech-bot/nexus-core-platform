@@ -387,7 +387,7 @@ function ThreadView() {
   return (
     <div className="flex-1 flex min-w-0 h-full">
       <section className="flex-1 flex flex-col min-w-0 border-r border-border">
-        <div className="h-14 px-6 flex items-center justify-between border-b border-border bg-surface/30">
+        <div className="h-14 px-4 md:px-6 flex items-center justify-between border-b border-border bg-surface/30">
           <div className="min-w-0">
             <div className="text-sm font-semibold truncate">{thread?.title ?? "Session"}</div>
             <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
@@ -450,7 +450,7 @@ function ThreadView() {
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
             {isArchived && (
               <div className="rounded-md border border-border bg-surface/70 px-3 py-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{t("thisSessionIsArchived")}</span>{" "}
@@ -479,7 +479,7 @@ function ThreadView() {
           </div>
         </div>
 
-        <div className="border-t border-border bg-background px-6 py-4">
+        <div className="border-t border-border bg-background px-4 sm:px-6 py-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex gap-1.5 mb-3 overflow-x-auto">
               {agentModes.map((m) => {

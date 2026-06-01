@@ -154,8 +154,8 @@ function AppIndex() {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background overflow-y-auto">
-      <div className="w-full max-w-3xl space-y-10 my-auto">
+    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 bg-background overflow-y-auto">
+      <div className="w-full max-w-3xl space-y-8 sm:space-y-10 my-auto">
         <div className="text-center">
           <div className="mx-auto mb-6 grid size-12 place-items-center rounded-2xl border border-border bg-surface text-foreground shadow-sm">
             <Terminal className="size-6" />

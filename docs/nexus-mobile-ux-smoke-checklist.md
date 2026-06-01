@@ -10,6 +10,7 @@ This checklist documents the invariants and viewport testing requirements for th
 - [ ] **Single Column:** The main chat/workspace area takes full width. Left (Sidebar) and Right (Inspector) panels must be hidden by default.
 - [ ] **Height constraints:** The layout should use `h-[100dvh]` to account for mobile browser address bars.
 - [ ] **Header:** The top navigation bar must wrap or collapse cleanly (e.g., using icons or hiding text labels like "Nexus").
+- [ ] **Regression Check:** App must not render as a centered narrow frame on mobile.
 
 ## 3. Navigation Controls (Drawers/Sheets)
 - [ ] **Left Drawer (Projects):** A hamburger menu icon (`Menu`) on the left side of the header opens the `ProjectSidebar`.
