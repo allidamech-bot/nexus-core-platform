@@ -513,12 +513,12 @@ function ThreadView() {
                 }}
                 placeholder="Ask Nexus Core to analyze, plan, scope, or review..."
                 disabled={isArchived}
-                className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full bg-surface border border-border rounded-xl p-4 pb-14 sm:pb-4 sm:pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-60"
               />
               <button
                 onClick={handleSend}
                 disabled={busy || !input.trim() || isArchived}
-                className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-md text-[12px] font-bold disabled:opacity-50"
+                className="absolute bottom-3 right-3 left-3 sm:left-auto flex justify-center items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-md text-[12px] font-bold disabled:opacity-50"
               >
                 {busy ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
                 Send

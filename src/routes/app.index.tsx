@@ -205,13 +205,13 @@ function AppIndex() {
                 }
               }}
               placeholder={t("tellNexusToChange")}
-              className="w-full bg-surface border border-border rounded-xl p-4 pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[120px] resize-none shadow-sm"
+              className="w-full bg-surface border border-border rounded-xl p-4 pb-14 sm:pb-4 sm:pr-32 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[120px] resize-none shadow-sm"
               dir="auto"
             />
             <button
               onClick={handleSend}
               disabled={busy || !input.trim()}
-              className="absolute bottom-3 right-3 flex items-center gap-1.5 px-4 py-2 bg-foreground text-background rounded-md text-[13px] font-bold disabled:opacity-50 transition-colors"
+              className="absolute bottom-3 right-3 left-3 sm:left-auto flex justify-center items-center gap-1.5 px-4 py-2 bg-foreground text-background rounded-md text-[13px] font-bold disabled:opacity-50 transition-colors"
             >
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               {t("createAiSession") || "Send"}

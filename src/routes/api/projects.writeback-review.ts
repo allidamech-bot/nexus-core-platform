@@ -203,7 +203,19 @@ async function applyTransition(input: {
       supabase: input.supabase,
       correlationId: input.correlationId,
     });
-    if (admin.response) return admin;
+
+    if (admin.response) {
+      // Not an admin. Check if they are the project owner.
+      const { data: project } = await input.supabase
+        .from("projects")
+        .select("user_id")
+        .eq("id", input.request.projectId)
+        .single();
+
+      if (!project || project.user_id !== input.userId) {
+        return admin;
+      }
+    }
   } else if (input.request.requestedBy !== input.userId) {
     return { response: jsonResponse({ message: "Forbidden" }, 403, input.correlationId) };
   }
@@ -348,14 +360,22 @@ export const Route = createFileRoute("/api/projects/writeback-review")({
                     message.includes("rejection")
                   ? 422
                   : 500;
+
           if (status === 500) {
             console.error(
               "[writeback-review] action failed",
               withLogContext({ correlationId }, safeErrorLog(error)),
             );
           }
+
           return jsonResponse(
-            { message: status === 500 ? "Writeback review failed." : message },
+            {
+              message: status === 500 ? "Writeback review failed." : message,
+              error: error instanceof Error ? error.name : "Error",
+              code: status.toString(),
+              details: message,
+              hint: status === 403 ? "You may need project owner or admin privileges." : undefined,
+            },
             status,
             correlationId,
           );

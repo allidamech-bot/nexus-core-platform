@@ -318,9 +318,19 @@ async function postWritebackReviewAction(input: {
   const payload = (await response.json().catch(() => ({}))) as {
     request?: ProjectWritebackRequest;
     message?: string;
+    error?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
   };
   if (!response.ok || !payload.request) {
-    throw new Error(payload.message || "Writeback review action failed.");
+    const error = new Error(payload.message || "Writeback review action failed.");
+    Object.assign(error, {
+      code: payload.code,
+      details: payload.details,
+      hint: payload.hint,
+    });
+    throw error;
   }
   return payload.request;
 }

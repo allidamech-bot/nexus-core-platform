@@ -276,7 +276,12 @@ export function ProjectInspector() {
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
       console.error("Writeback approval failed", { requestId: latestRequest.id, error });
-      toast.error(`Failed to approve writeback request: ${error.message || "Unknown error"}`);
+      const supabaseDetails = error?.code
+        ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
+        : "";
+      toast.error(
+        `Failed to approve writeback request: ${error.message || "Unknown error"}${supabaseDetails}`,
+      );
     } finally {
       setIsApprovingWriteback(false);
     }
@@ -296,7 +301,12 @@ export function ProjectInspector() {
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
       console.error("Writeback rejection failed", { requestId: latestRequest.id, error });
-      toast.error(`Failed to reject writeback request: ${error.message || "Unknown error"}`);
+      const supabaseDetails = error?.code
+        ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
+        : "";
+      toast.error(
+        `Failed to reject writeback request: ${error.message || "Unknown error"}${supabaseDetails}`,
+      );
     } finally {
       setIsRejectingWriteback(false);
     }
@@ -430,7 +440,7 @@ export function ProjectInspector() {
               <Button
                 variant="outline"
                 size="sm"
-                className="text-xs flex-1 min-w-[200px]"
+                className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                 disabled={isGeneratingPatch}
                 onClick={handleGeneratePatch}
               >
@@ -441,7 +451,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs flex-1 min-w-[200px]"
+                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                   disabled={isVerifyingSandbox}
                   onClick={handleRunSandbox}
                 >
@@ -453,7 +463,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs flex-1 min-w-[200px]"
+                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                   disabled={isCreatingSnapshot}
                   onClick={handleCreateSnapshot}
                 >
@@ -465,7 +475,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs flex-1 min-w-[200px]"
+                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                   disabled={isRequestingWriteback}
                   onClick={handleRequestWriteback}
                 >
@@ -479,7 +489,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs flex-1 min-w-[200px]"
+                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                   disabled={isSubmittingWriteback}
                   onClick={handleSubmitWriteback}
                 >
@@ -494,7 +504,7 @@ export function ProjectInspector() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs flex-1 min-w-[200px]"
+                    className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                     disabled={isApprovingWriteback || isRejectingWriteback}
                     onClick={handleApproveWriteback}
                   >
@@ -504,7 +514,7 @@ export function ProjectInspector() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs flex-1 min-w-[200px] text-destructive hover:text-destructive border-destructive/30"
+                    className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px] text-destructive hover:text-destructive border-destructive/30"
                     disabled={isApprovingWriteback || isRejectingWriteback}
                     onClick={handleRejectWriteback}
                   >
@@ -517,7 +527,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs flex-1 min-w-[200px]"
+                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                   disabled={isCreatingWorkingCopy}
                   onClick={handleCreateWorkingCopy}
                 >
@@ -531,7 +541,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs flex-1 min-w-[200px]"
+                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
                   disabled={isExportingWorkingCopy}
                   onClick={handleExportWorkingCopy}
                 >
