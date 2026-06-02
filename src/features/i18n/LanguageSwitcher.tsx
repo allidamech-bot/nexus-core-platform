@@ -18,9 +18,9 @@ export function LanguageSwitcher() {
           onClick={() => setLocale(option)}
           aria-pressed={locale === option}
           aria-label={option === "en" ? t("switchToEnglish") : t("switchToArabic")}
-          className={`min-h-[34px] rounded px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+          className={`min-h-[40px] rounded px-4 py-1 text-xs font-bold uppercase tracking-wider transition-colors ${
             locale === option
-              ? "bg-accent/15 text-accent"
+              ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:bg-white/5"
           }`}
         >

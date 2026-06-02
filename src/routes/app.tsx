@@ -253,40 +253,68 @@ function AppWorkspace({
                   <h2 className="mt-1 text-2xl font-bold leading-tight tracking-tight">
                     {t("more")}
                   </h2>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {t("moreSheetSubtitle")}
+                  </p>
                 </div>
 
-                <div className="space-y-4 px-4 py-4">
-                  <div className="grid gap-2">
+                <div className="space-y-5 px-4 py-4">
+                  <section className="space-y-2">
+                    <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t("navigation")}
+                    </div>
                     <Link
                       to="/app/settings"
-                      className="flex min-h-[48px] items-center gap-3 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-surface-elevated"
+                      className="flex min-h-[56px] min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-foreground transition-colors hover:bg-surface-elevated"
                     >
                       <Settings className="size-5 shrink-0 text-accent" />
-                      <span className="min-w-0 truncate">{t("settings")}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-bold">{t("settings")}</span>
+                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                          {t("settingsMoreSubtitle")}
+                        </span>
+                      </span>
                     </Link>
                     {isAdmin && (
                       <Link
                         to="/app/admin"
-                        className="flex min-h-[48px] items-center gap-3 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-surface-elevated"
+                        className="flex min-h-[56px] min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-foreground transition-colors hover:bg-surface-elevated"
                       >
                         <Boxes className="size-5 shrink-0 text-accent" />
-                        <span className="min-w-0 truncate">{t("adminControl")}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold">
+                            {t("adminControl")}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            {t("adminMoreSubtitle")}
+                          </span>
+                        </span>
                       </Link>
                     )}
-                  </div>
+                  </section>
 
-                  <section className="rounded-2xl border border-border bg-surface p-4">
-                    <div className="mb-3 text-sm font-semibold text-foreground">
-                      {t("language")}
+                  <section className="space-y-2">
+                    <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t("preferences")}
                     </div>
-                    <LanguageSwitcher />
+                    <div className="space-y-2">
+                      <div className="rounded-2xl border border-border bg-surface p-4">
+                        <div className="mb-3 text-sm font-bold text-foreground">
+                          {t("language")}
+                        </div>
+                        <LanguageSwitcher />
+                      </div>
+
+                      <div className="rounded-2xl border border-border bg-surface p-4">
+                        <ThemeSelector />
+                      </div>
+                    </div>
                   </section>
 
-                  <section className="rounded-2xl border border-border bg-surface p-4">
-                    <ThemeSelector />
-                  </section>
-
-                  <div className="grid gap-2">
+                  <section className="space-y-2">
+                    <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t("projectTools")}
+                    </div>
                     <ProjectUploadDialog
                       userId={session.user.id}
                       defaultMode="zip"
@@ -309,34 +337,49 @@ function AppWorkspace({
                         </button>
                       }
                     />
-                  </div>
+                  </section>
 
                   {activeProject && (
-                    <button
-                      onClick={handleArchiveProject}
-                      disabled={archiveProject.isPending}
-                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 text-sm font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {archiveProject.isPending ? (
-                        <Loader2 className="size-5 shrink-0 animate-spin" />
-                      ) : (
-                        <Archive className="size-5 shrink-0" />
-                      )}
-                      {t("archiveProject")}
-                    </button>
+                    <section className="space-y-2">
+                      <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
+                        {t("dangerZone")}
+                      </div>
+                      <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3">
+                        <button
+                          onClick={handleArchiveProject}
+                          disabled={archiveProject.isPending}
+                          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-background/60 px-4 text-sm font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {archiveProject.isPending ? (
+                            <Loader2 className="size-5 shrink-0 animate-spin" />
+                          ) : (
+                            <Archive className="size-5 shrink-0" />
+                          )}
+                          {t("archiveProject")}
+                        </button>
+                        <p className="mt-2 text-xs leading-relaxed text-destructive/80">
+                          {t("archiveProjectWarning")}
+                        </p>
+                      </div>
+                    </section>
                   )}
 
-                  <button
-                    onClick={async () => {
-                      await signOut();
-                      qc.clear();
-                      navigate({ to: "/" });
-                    }}
-                    className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated"
-                  >
-                    <LogOut className="size-5 shrink-0 text-muted-foreground" />
-                    {t("signOut")}
-                  </button>
+                  <section className="space-y-2">
+                    <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t("account")}
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await signOut();
+                        qc.clear();
+                        navigate({ to: "/" });
+                      }}
+                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated"
+                    >
+                      <LogOut className="size-5 shrink-0 text-muted-foreground" />
+                      {t("signOut")}
+                    </button>
+                  </section>
                 </div>
               </div>
             </SheetContent>

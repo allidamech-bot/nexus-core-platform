@@ -65,19 +65,35 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 ## Mobile Navigation Completeness
 
 - [ ] More is reachable from mobile without relying on desktop header actions.
+- [ ] More sheet has a readable subtitle under the More title.
+- [ ] More sheet actions are grouped into Navigation, Preferences, Project tools, Danger zone, and Account.
+- [ ] Settings/Admin rows have clear icon, title, and secondary description.
 - [ ] Settings is reachable from More and renders as a mobile-readable page.
 - [ ] Admin Control appears in mobile navigation only for allowed admin users.
-- [ ] Language switching is reachable on mobile and has tappable controls.
-- [ ] Theme selection is reachable on mobile and works in all supported themes.
+- [ ] Language switching is reachable on mobile, visible in Preferences, and has tappable controls.
+- [ ] Theme selection is reachable on mobile, visible in Preferences, and works in all supported themes.
 - [ ] Upload ZIP is reachable from Projects and More with a full-width tappable CTA.
-- [ ] Folder import is reachable from Projects and More with a full-width tappable CTA.
-- [ ] Archive project is reachable when an active project exists and shows confirmation before action.
+- [ ] Folder import is reachable from Projects and More with a full-width tappable CTA of equal visual weight.
+- [ ] Archive project is under Danger zone, styled destructively, and shows confirmation before action.
+- [ ] Sign out is under Account, not mixed with project tools.
 - [ ] More sheet has no horizontal overflow at `320px`, `390px`, or `430px`.
+
+## Settings Page
+
+- [ ] Settings has a mobile-first hero/header with clear title and subtitle.
+- [ ] Quick controls appear near the top before secondary account cards.
+- [ ] Theme and Language are visible near the top on mobile.
+- [ ] Quick control cards are one-column below `640px`.
+- [ ] Admin Control quick card appears only for allowed admin users.
+- [ ] Project tools quick card appears when an active project exists.
+- [ ] Danger Zone is visually separated and not mixed with normal account settings.
+- [ ] All Settings page buttons are at least `44px` tappable.
 
 ## Theme Sweep
 
 - [ ] Matte Black is soft and professional.
 - [ ] Deep Black is higher contrast and premium.
 - [ ] Light Beige has readable text, visible borders, and no white-on-beige failures.
+- [ ] Light Beige selector contrast is readable for selected and unselected theme/language states.
 - [ ] Status colors and badges remain readable in all themes.
 - [ ] Composer, CTA, prompt cards, drawers, diagnostics, and bottom nav update with theme tokens.

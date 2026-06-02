@@ -50,6 +50,13 @@ export const translations = {
     projects: "Projects",
     inspector: "Inspector",
     more: "More",
+    moreSheetSubtitle: "Tools, preferences, and project controls",
+    navigation: "Navigation",
+    preferences: "Preferences",
+    projectTools: "Project tools",
+    account: "Account",
+    settingsMoreSubtitle: "Preferences and account controls",
+    adminMoreSubtitle: "Governance and platform controls",
     connectRepo: "Connect Repo",
     connectRepoDisabledTooltip: "Repository connection is not supported in this phase.",
 
@@ -471,8 +478,10 @@ export const translations = {
 
     // Settings
     settingsTitle: "Workspace settings",
+    settingsHeroSubtitle: "Manage workspace preferences and account controls.",
     settingsSubtitle:
       "Manage account preferences, language, plan visibility, usage posture, and future enterprise controls.",
+    quickControls: "Quick controls",
     profile: "Profile",
     profileBody:
       "Profile editing, notification preferences, and identity metadata are reserved for the organization phase.",
@@ -560,6 +569,16 @@ export const translations = {
     projects: "المشاريع",
     inspector: "\u0627\u0644\u0641\u0627\u062d\u0635",
     more: "\u0627\u0644\u0645\u0632\u064a\u062f",
+    moreSheetSubtitle:
+      "\u0627\u0644\u0623\u062f\u0648\u0627\u062a\u060c \u0627\u0644\u062a\u0641\u0636\u064a\u0644\u0627\u062a\u060c \u0648\u0627\u0644\u062a\u062d\u0643\u0645 \u0628\u0627\u0644\u0645\u0634\u0631\u0648\u0639",
+    navigation: "\u0627\u0644\u062a\u0646\u0642\u0644",
+    preferences: "\u0627\u0644\u062a\u0641\u0636\u064a\u0644\u0627\u062a",
+    projectTools: "\u0623\u062f\u0648\u0627\u062a \u0627\u0644\u0645\u0634\u0631\u0648\u0639",
+    account: "\u0627\u0644\u062d\u0633\u0627\u0628",
+    settingsMoreSubtitle:
+      "\u0627\u0644\u062a\u0641\u0636\u064a\u0644\u0627\u062a \u0648\u0636\u0648\u0627\u0628\u0637 \u0627\u0644\u062d\u0633\u0627\u0628",
+    adminMoreSubtitle:
+      "\u0627\u0644\u062d\u0648\u0643\u0645\u0629 \u0648\u0636\u0648\u0627\u0628\u0637 \u0627\u0644\u0645\u0646\u0635\u0629",
     connectRepo: "ربط المستودع",
     connectRepoDisabledTooltip: "ربط المستودع غير مدعوم في هذه المرحلة.",
 
@@ -1129,8 +1148,12 @@ export const translations = {
 
     // Settings
     settingsTitle: "إعدادات مساحة العمل",
+    settingsHeroSubtitle:
+      "\u0625\u062f\u0627\u0631\u0629 \u062a\u0641\u0636\u064a\u0644\u0627\u062a \u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u0639\u0645\u0644 \u0648\u0636\u0648\u0627\u0628\u0637 \u0627\u0644\u062d\u0633\u0627\u0628.",
     settingsSubtitle:
       "إدارة تفضيلات الحساب واللغة وحالة الخطة ومؤشرات الاستخدام وضوابط المؤسسة المستقبلية.",
+    quickControls:
+      "\u0639\u0646\u0627\u0635\u0631 \u062a\u062d\u0643\u0645 \u0633\u0631\u064a\u0639\u0629",
     profile: "الملف الشخصي",
     profileBody: "تحرير الملف الشخصي وتفضيلات الإشعارات وبيانات الهوية محجوزة لمرحلة المؤسسات.",
     signedInUser: "المستخدم المسجّل",

@@ -58,7 +58,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`
-                  : `flex min-h-[44px] items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                  : `flex min-h-[48px] items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors ${
                       selected
                         ? "border-accent/40 bg-accent/10 text-foreground"
                         : "border-border bg-surface/60 text-muted-foreground hover:bg-surface hover:text-foreground"
