@@ -300,7 +300,7 @@ export async function validateWritebackReviewerAccess(): Promise<void> {
 async function postWritebackReviewAction(input: {
   requestId: string;
   action: WritebackReviewAction;
-  note?: string;
+  reviewerNote?: string;
 }): Promise<ProjectWritebackRequest> {
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -324,7 +324,10 @@ async function postWritebackReviewAction(input: {
     hint?: string;
   };
   if (!response.ok || !payload.request) {
-    const error = new Error(payload.message || "Writeback review action failed.");
+    const detailText = [payload.details, payload.hint].filter(Boolean).join(" ");
+    const error = new Error(
+      payload.error || payload.message || detailText || "Writeback review action failed.",
+    );
     Object.assign(error, {
       code: payload.code,
       details: payload.details,
@@ -541,11 +544,10 @@ export async function approveWritebackRequest(input: {
   reviewerNote?: string;
 }): Promise<ProjectWritebackRequest> {
   await requireCurrentUserId();
-  await validateWritebackReviewerAccess();
   return postWritebackReviewAction({
     requestId: input.requestId,
     action: "approve",
-    note: input.reviewerNote,
+    reviewerNote: input.reviewerNote,
   });
 }
 
@@ -554,10 +556,9 @@ export async function rejectWritebackRequest(input: {
   reviewerNote: string;
 }): Promise<ProjectWritebackRequest> {
   await requireCurrentUserId();
-  await validateWritebackReviewerAccess();
   return postWritebackReviewAction({
     requestId: input.requestId,
     action: "reject",
-    note: input.reviewerNote,
+    reviewerNote: input.reviewerNote,
   });
 }

@@ -22,6 +22,16 @@ interface Body {
   requestId?: unknown;
   action?: unknown;
   note?: unknown;
+  reviewerNote?: unknown;
+}
+
+interface ReviewFailureLog {
+  action?: WritebackReviewAction;
+  requestId?: string;
+  userId?: string;
+  requestStatus?: WritebackRequestStatus;
+  isAdmin?: boolean;
+  isProjectOwner?: boolean;
 }
 
 function jsonResponse(payload: Record<string, unknown>, status: number, correlationId: string) {
@@ -133,23 +143,76 @@ function parseBody(body: Body) {
   return {
     requestId: body.requestId,
     action: action as WritebackReviewAction,
-    note: typeof body.note === "string" ? body.note.slice(0, 4000) : undefined,
+    note:
+      typeof body.reviewerNote === "string"
+        ? body.reviewerNote.slice(0, 4000)
+        : typeof body.note === "string"
+          ? body.note.slice(0, 4000)
+          : undefined,
   };
 }
 
-async function requireAdmin(input: { supabase: SupabaseAuthedClient; correlationId: string }) {
+function errorDetails(error: unknown) {
+  const maybe = error as {
+    message?: unknown;
+    code?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    name?: unknown;
+  };
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof maybe.message === "string"
+        ? maybe.message
+        : "Writeback review failed.";
+  return {
+    message,
+    error:
+      typeof maybe.name === "string" ? maybe.name : error instanceof Error ? error.name : "Error",
+    code: typeof maybe.code === "string" ? maybe.code : undefined,
+    details: typeof maybe.details === "string" ? maybe.details : undefined,
+    hint: typeof maybe.hint === "string" ? maybe.hint : undefined,
+  };
+}
+
+function logWritebackFailure(input: ReviewFailureLog & { error: unknown }) {
+  const details = errorDetails(input.error);
+  console.error("[writeback-review] failed", {
+    action: input.action,
+    requestId: input.requestId,
+    userId: input.userId,
+    requestStatus: input.requestStatus,
+    isAdmin: input.isAdmin,
+    isProjectOwner: input.isProjectOwner,
+    error: details.message,
+    code: details.code,
+    details: details.details,
+    hint: details.hint,
+  });
+}
+
+async function checkAdmin(input: { supabase: SupabaseAuthedClient }) {
   const { data, error } = await input.supabase.rpc("is_admin");
-  if (error) throw error;
-  if (!data) {
-    return {
-      response: jsonResponse(
-        { message: "Reviewer authorization required." },
-        403,
-        input.correlationId,
-      ),
-    };
+  if (error) {
+    console.warn("[writeback-review] admin check failed", safeErrorLog(error));
+    return false;
   }
-  return { isAdmin: true };
+  return Boolean(data);
+}
+
+async function checkProjectOwner(input: {
+  supabase: SupabaseAuthedClient;
+  projectId: string;
+  userId: string;
+}) {
+  const { data, error } = await input.supabase
+    .from("projects")
+    .select("user_id")
+    .eq("id", input.projectId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.user_id === input.userId;
 }
 
 async function loadRequest(input: { supabase: SupabaseAuthedClient; requestId: string }) {
@@ -196,28 +259,64 @@ async function applyTransition(input: {
   action: WritebackReviewAction;
   note?: string;
   correlationId: string;
+  onAuthorizationChecked?: (auth: { isAdmin: boolean; isProjectOwner: boolean }) => void;
 }): Promise<TransitionResult> {
   const reviewerAction = input.action === "approve" || input.action === "reject";
   if (reviewerAction) {
-    const admin = await requireAdmin({
-      supabase: input.supabase,
-      correlationId: input.correlationId,
-    });
+    const [isAdmin, isProjectOwner] = await Promise.all([
+      checkAdmin({ supabase: input.supabase }),
+      checkProjectOwner({
+        supabase: input.supabase,
+        projectId: input.request.projectId,
+        userId: input.userId,
+      }),
+    ]);
+    input.onAuthorizationChecked?.({ isAdmin, isProjectOwner });
 
-    if (admin.response) {
-      // Not an admin. Check if they are the project owner.
-      const { data: project } = await input.supabase
-        .from("projects")
-        .select("user_id")
-        .eq("id", input.request.projectId)
-        .single();
+    if (!isAdmin && !isProjectOwner) {
+      return {
+        response: jsonResponse(
+          {
+            message: "Reviewer authorization required.",
+            error: "Reviewer authorization required.",
+            code: "403",
+            details: "User must be an admin/reviewer or the owner of the linked project.",
+            hint: "Use an admin account or the project owner's account.",
+          },
+          403,
+          input.correlationId,
+        ),
+      };
+    }
 
-      if (!project || project.user_id !== input.userId) {
-        return admin;
-      }
+    if (input.request.status !== "submitted") {
+      return {
+        response: jsonResponse(
+          {
+            message: "Only submitted requests can be reviewed.",
+            error: "Invalid writeback request status.",
+            code: "422",
+            details: `Current request status is ${input.request.status}.`,
+            hint: "Submit the writeback request before approving or rejecting it.",
+          },
+          422,
+          input.correlationId,
+        ),
+      };
     }
   } else if (input.request.requestedBy !== input.userId) {
-    return { response: jsonResponse({ message: "Forbidden" }, 403, input.correlationId) };
+    return {
+      response: jsonResponse(
+        {
+          message: "Forbidden",
+          error: "Forbidden",
+          code: "403",
+          details: "Only the requester can submit or cancel this writeback request.",
+        },
+        403,
+        input.correlationId,
+      ),
+    };
   }
 
   if (input.action === "approve" && input.request.blockers.length > 0) {
@@ -243,12 +342,6 @@ async function applyTransition(input: {
   });
 
   const now = new Date().toISOString();
-  const reviewSummary = buildWritebackReviewSummary({
-    request: input.request,
-    actorId: input.userId,
-    action: input.action,
-    newStatus,
-  });
   const update =
     input.action === "submit"
       ? { status: newStatus, submitted_at: now }
@@ -260,12 +353,6 @@ async function applyTransition(input: {
             reviewer_note: input.note?.trim() || null,
             reviewed_at: now,
             review_decision: newStatus === "approved" ? "approved" : "rejected",
-            review_metadata: {
-              ...reviewSummary,
-              phase: "90",
-              approval_applies_changes: false,
-              source_writeback_available: false,
-            } as unknown as Json,
           };
 
   const query = input.supabase
@@ -302,11 +389,17 @@ export const Route = createFileRoute("/api/projects/writeback-review")({
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         const correlationId = getRequestCorrelationId(request);
+        let failureContext: ReviewFailureLog = {};
         try {
           const access = await requireAuthenticatedClient(request, correlationId);
           if (access.response) return access.response;
 
           const input = parseBody((await request.json().catch(() => ({}))) as Body);
+          failureContext = {
+            action: input.action,
+            requestId: input.requestId,
+            userId: access.userId,
+          };
           const current = await loadRequest({
             supabase: access.supabase,
             requestId: input.requestId,
@@ -314,6 +407,7 @@ export const Route = createFileRoute("/api/projects/writeback-review")({
           if (!current) {
             return jsonResponse({ message: "Writeback request not found." }, 404, correlationId);
           }
+          failureContext.requestStatus = current.status;
 
           const result = await applyTransition({
             supabase: access.supabase,
@@ -322,6 +416,13 @@ export const Route = createFileRoute("/api/projects/writeback-review")({
             action: input.action,
             note: input.note,
             correlationId,
+            onAuthorizationChecked: (auth) => {
+              failureContext = {
+                ...failureContext,
+                isAdmin: auth.isAdmin,
+                isProjectOwner: auth.isProjectOwner,
+              };
+            },
           });
           if (result.response) return result.response;
           if (!result.request) {
@@ -347,7 +448,8 @@ export const Route = createFileRoute("/api/projects/writeback-review")({
             correlationId,
           );
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Writeback review failed.";
+          const details = errorDetails(error);
+          const message = details.message;
           const status = message.includes("Unauthorized")
             ? 401
             : message.includes("authorization") || message.includes("Forbidden")
@@ -362,19 +464,18 @@ export const Route = createFileRoute("/api/projects/writeback-review")({
                   : 500;
 
           if (status === 500) {
-            console.error(
-              "[writeback-review] action failed",
-              withLogContext({ correlationId }, safeErrorLog(error)),
-            );
+            logWritebackFailure({ ...failureContext, error });
           }
 
           return jsonResponse(
             {
-              message: status === 500 ? "Writeback review failed." : message,
-              error: error instanceof Error ? error.name : "Error",
-              code: status.toString(),
-              details: message,
-              hint: status === 403 ? "You may need project owner or admin privileges." : undefined,
+              message,
+              error: message,
+              code: details.code ?? status.toString(),
+              details: details.details ?? message,
+              hint:
+                details.hint ??
+                (status === 403 ? "You may need project owner or admin privileges." : undefined),
             },
             status,
             correlationId,

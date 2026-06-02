@@ -375,30 +375,35 @@ export function ProjectInspector() {
   const nextSafeAction = hasPreviews
     ? canSubmitWriteback
       ? {
+          key: "submitWriteback",
           label: isSubmittingWriteback ? "Submitting review..." : "Submit writeback request",
           disabled: isSubmittingWriteback,
           onClick: handleSubmitWriteback,
         }
       : canApproveRejectWriteback
         ? {
+            key: "approveWriteback",
             label: isApprovingWriteback ? "Approving request..." : "Approve writeback request",
             disabled: isApprovingWriteback || isRejectingWriteback,
             onClick: handleApproveWriteback,
           }
         : canCreateWorkingCopy
           ? {
+              key: "createWorkingCopy",
               label: isCreatingWorkingCopy ? "Creating working copy..." : "Create working copy",
               disabled: isCreatingWorkingCopy,
               onClick: handleCreateWorkingCopy,
             }
           : canExportWorkingCopy
             ? {
+                key: "exportWorkingCopy",
                 label: isExportingWorkingCopy ? "Exporting..." : "Download working copy export",
                 disabled: isExportingWorkingCopy,
                 onClick: handleExportWorkingCopy,
               }
             : canRequestWriteback
               ? {
+                  key: "requestWriteback",
                   label: isRequestingWriteback
                     ? "Requesting review..."
                     : "Request source writeback review",
@@ -407,11 +412,13 @@ export function ProjectInspector() {
                 }
               : hasReadyPatchPreview
                 ? {
+                    key: "runSandbox",
                     label: isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification",
                     disabled: isVerifyingSandbox,
                     onClick: handleRunSandbox,
                   }
                 : {
+                    key: "generatePatch",
                     label: isGeneratingPatch
                       ? "Generating preview..."
                       : "Generate grounded patch preview",
@@ -542,7 +549,7 @@ export function ProjectInspector() {
                   {isCreatingSnapshot ? "Creating snapshot..." : "Create patch snapshot"}
                 </Button>
               )}
-              {canRequestWriteback && (
+              {canRequestWriteback && nextSafeAction?.key !== "requestWriteback" && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -556,7 +563,7 @@ export function ProjectInspector() {
                     : "Request source writeback review"}
                 </Button>
               )}
-              {canSubmitWriteback && (
+              {canSubmitWriteback && nextSafeAction?.key !== "submitWriteback" && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -572,16 +579,18 @@ export function ProjectInspector() {
               )}
               {canApproveRejectWriteback && (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
-                    disabled={isApprovingWriteback || isRejectingWriteback}
-                    onClick={handleApproveWriteback}
-                  >
-                    {isApprovingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                    {isApprovingWriteback ? "Approving request..." : "Approve writeback request"}
-                  </Button>
+                  {nextSafeAction?.key !== "approveWriteback" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
+                      disabled={isApprovingWriteback || isRejectingWriteback}
+                      onClick={handleApproveWriteback}
+                    >
+                      {isApprovingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                      {isApprovingWriteback ? "Approving request..." : "Approve writeback request"}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
