@@ -323,7 +323,12 @@ export function ProjectInspector() {
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
       console.error("Working copy creation failed", { requestId: latestRequest.id, error });
-      toast.error(`Failed to create versioned working copy: ${error.message || "Unknown error"}`);
+      const supabaseDetails = error?.code
+        ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
+        : "";
+      toast.error(
+        `Failed to create working copy: ${error.message || "Unknown error"}${supabaseDetails}`,
+      );
     } finally {
       setIsCreatingWorkingCopy(false);
     }
@@ -603,7 +608,7 @@ export function ProjectInspector() {
                   </Button>
                 </>
               )}
-              {canCreateWorkingCopy && (
+              {canCreateWorkingCopy && nextSafeAction?.key !== "createWorkingCopy" && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -612,9 +617,7 @@ export function ProjectInspector() {
                   onClick={handleCreateWorkingCopy}
                 >
                   {isCreatingWorkingCopy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  {isCreatingWorkingCopy
-                    ? "Creating working copy..."
-                    : "Create versioned working copy"}
+                  {isCreatingWorkingCopy ? "Creating working copy..." : "Create working copy"}
                 </Button>
               )}
               {canExportWorkingCopy && (

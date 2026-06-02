@@ -40,21 +40,29 @@ function asIssues(value: Json): PatchSandboxIssue[] {
 }
 
 function toWorkingCopy(row: Database["public"]["Tables"]["project_working_copies"]["Row"]) {
+  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
+  const meta = metadata as {
+    patchPreviewId?: string | null;
+    executedBy?: string | null;
+    changedFilesCount?: number;
+    warnings?: PatchSandboxIssue[];
+    blockers?: PatchSandboxIssue[];
+  };
   return {
     id: row.id,
     projectId: row.project_id,
-    writebackRequestId: row.writeback_request_id,
-    patchPreviewId: row.patch_preview_id,
-    patchSnapshotId: row.patch_snapshot_id,
+    writebackRequestId: row.request_id,
+    patchPreviewId: meta.patchPreviewId ?? "",
+    patchSnapshotId: row.snapshot_id,
     createdBy: row.created_by,
-    executedBy: row.executed_by,
+    executedBy: meta.executedBy ?? row.created_by,
     status: row.status as ProjectWorkingCopy["status"],
     title: row.title,
     summary: row.summary,
-    source: row.source as ProjectWorkingCopy["source"],
-    changedFilesCount: row.changed_files_count,
-    warnings: asIssues(row.warnings),
-    blockers: asIssues(row.blockers),
+    source: "approved_writeback_request" as ProjectWorkingCopy["source"],
+    changedFilesCount: meta.changedFilesCount ?? 0,
+    warnings: asIssues((meta.warnings ?? []) as unknown as Json),
+    blockers: asIssues((meta.blockers ?? []) as unknown as Json),
     metadata: row.metadata,
     createdAt: row.created_at,
   };
@@ -67,15 +75,15 @@ function toWorkingCopyFile(
     id: row.id,
     workingCopyId: row.working_copy_id,
     projectId: row.project_id,
-    writebackRequestId: row.writeback_request_id,
-    patchSnapshotId: row.patch_snapshot_id,
+    writebackRequestId: "",
+    patchSnapshotId: "",
     filePath: row.file_path,
-    contentSha256: row.content_sha256,
-    contentText: row.content_text,
-    sizeBytes: row.size_bytes,
+    contentSha256: null,
+    contentText: row.working_copy_text ?? "",
+    sizeBytes: new TextEncoder().encode(row.working_copy_text ?? "").length,
     changed: row.changed,
-    previewLimited: row.preview_limited,
-    truncated: row.truncated,
+    previewLimited: true,
+    truncated: false,
     warnings: asIssues(row.warnings),
     blockers: asIssues(row.blockers),
     createdAt: row.created_at,

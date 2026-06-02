@@ -288,8 +288,16 @@ export function ProjectPatchPreviewPanel({
     try {
       const result = await executeWritebackRequest.mutateAsync(requestId);
       toast.success(result.alreadyExists ? t("workingCopyAlreadyExists") : t("workingCopyCreated"));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("workingCopyCreationFailed"));
+    } catch (err) {
+      const error = err as Error & { code?: string; details?: string; hint?: string };
+      const details = error?.code
+        ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
+        : "";
+      toast.error(
+        error instanceof Error
+          ? `${error.message}${details}`
+          : `${t("workingCopyCreationFailed")}${details}`,
+      );
     }
   }
 

@@ -25,6 +25,16 @@ interface Body {
   requestId?: unknown;
 }
 
+interface ExecuteFailureContext {
+  requestId?: string;
+  userId?: string;
+  requestStatus?: string;
+  projectId?: string;
+  snapshotId?: string;
+  workingCopyId?: string;
+  action?: string;
+}
+
 function jsonResponse(payload: Record<string, unknown>, status: number, correlationId: string) {
   return Response.json(payload, {
     status,
@@ -167,24 +177,73 @@ function toPatchSnapshotFile(
 }
 
 function toWorkingCopy(row: Database["public"]["Tables"]["project_working_copies"]["Row"]) {
+  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
+  const meta = metadata as {
+    patchPreviewId?: string | null;
+    executedBy?: string | null;
+    changedFilesCount?: number;
+    warnings?: PatchSandboxIssue[];
+    blockers?: PatchSandboxIssue[];
+  };
   return {
     id: row.id,
     projectId: row.project_id,
-    writebackRequestId: row.writeback_request_id,
-    patchPreviewId: row.patch_preview_id,
-    patchSnapshotId: row.patch_snapshot_id,
+    writebackRequestId: row.request_id,
+    patchPreviewId: meta.patchPreviewId ?? "",
+    patchSnapshotId: row.snapshot_id,
     createdBy: row.created_by,
-    executedBy: row.executed_by,
+    executedBy: meta.executedBy ?? row.created_by,
     status: row.status as ProjectWorkingCopy["status"],
     title: row.title,
     summary: row.summary,
-    source: row.source as ProjectWorkingCopy["source"],
-    changedFilesCount: row.changed_files_count,
-    warnings: asIssues(row.warnings),
-    blockers: asIssues(row.blockers),
+    source: "approved_writeback_request" as ProjectWorkingCopy["source"],
+    changedFilesCount: meta.changedFilesCount ?? 0,
+    warnings: asIssues((meta.warnings ?? []) as unknown as Json),
+    blockers: asIssues((meta.blockers ?? []) as unknown as Json),
     metadata: row.metadata,
     createdAt: row.created_at,
   };
+}
+
+function errorDetails(error: unknown) {
+  const maybe = error as {
+    message?: unknown;
+    code?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    name?: unknown;
+  };
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof maybe.message === "string"
+        ? maybe.message
+        : "Working copy creation failed.";
+  return {
+    message,
+    error:
+      typeof maybe.name === "string" ? maybe.name : error instanceof Error ? error.name : "Error",
+    code: typeof maybe.code === "string" ? maybe.code : undefined,
+    details: typeof maybe.details === "string" ? maybe.details : undefined,
+    hint: typeof maybe.hint === "string" ? maybe.hint : undefined,
+  };
+}
+
+function logExecuteFailure(input: ExecuteFailureContext & { error: unknown }) {
+  const details = errorDetails(input.error);
+  console.error("[writeback-execute] failed", {
+    requestId: input.requestId,
+    userId: input.userId,
+    requestStatus: input.requestStatus,
+    projectId: input.projectId,
+    snapshotId: input.snapshotId,
+    workingCopyId: input.workingCopyId,
+    action: input.action,
+    error: details.message,
+    code: details.code,
+    details: details.details,
+    hint: details.hint,
+  });
 }
 
 function parseBody(body: Body) {
@@ -196,8 +255,25 @@ function parseBody(body: Body) {
 
 async function isAdmin(supabase: SupabaseAuthedClient) {
   const { data, error } = await supabase.rpc("is_admin");
-  if (error) throw error;
+  if (error) {
+    console.warn("[writeback-execute] admin check failed", safeErrorLog(error));
+    return false;
+  }
   return Boolean(data);
+}
+
+async function isProjectOwner(input: {
+  supabase: SupabaseAuthedClient;
+  projectId: string;
+  userId: string;
+}) {
+  const { data, error } = await input.supabase
+    .from("projects")
+    .select("user_id")
+    .eq("id", input.projectId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.user_id === input.userId;
 }
 
 async function auditExecution(input: {
@@ -244,7 +320,7 @@ async function loadExistingWorkingCopy(input: {
   const { data, error } = await input.supabase
     .from("project_working_copies")
     .select("*")
-    .eq("writeback_request_id", input.requestId)
+    .eq("request_id", input.requestId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -257,7 +333,9 @@ async function execute(input: {
   userId: string;
   requestId: string;
   correlationId: string;
+  onContext?: (context: Partial<ExecuteFailureContext>) => void;
 }) {
+  input.onContext?.({ requestId: input.requestId, userId: input.userId, action: "load_request" });
   const { data: requestRow, error: requestError } = await input.supabase
     .from("project_writeback_requests")
     .select("*")
@@ -269,16 +347,53 @@ async function execute(input: {
   }
 
   const request = toWritebackRequest(requestRow);
-  const admin = await isAdmin(input.supabase);
-  if (!admin && request.requestedBy !== input.userId) {
-    return jsonResponse({ message: "Forbidden" }, 403, input.correlationId);
+  input.onContext?.({
+    requestStatus: request.status,
+    projectId: request.projectId,
+    snapshotId: request.snapshotId,
+  });
+  if (request.status !== "approved") {
+    return jsonResponse(
+      {
+        message: "Request must be approved before execution.",
+        error: "Invalid writeback request status.",
+        code: "422",
+        details: `Current request status is ${request.status}.`,
+      },
+      422,
+      input.correlationId,
+    );
   }
 
+  const [admin, projectOwner] = await Promise.all([
+    isAdmin(input.supabase),
+    isProjectOwner({
+      supabase: input.supabase,
+      projectId: request.projectId,
+      userId: input.userId,
+    }),
+  ]);
+  if (!admin && !projectOwner) {
+    return jsonResponse(
+      {
+        message: "Forbidden",
+        error: "Forbidden",
+        code: "403",
+        details: "User must be an admin/reviewer or the owner of the linked project.",
+        hint: "Use an admin account or the project owner's account.",
+      },
+      403,
+      input.correlationId,
+    );
+  }
+
+  input.onContext?.({ action: "load_existing_working_copy" });
   const existing = await loadExistingWorkingCopy({
     supabase: input.supabase,
     requestId: request.id,
   });
   if (existing) {
+    input.onContext?.({ workingCopyId: existing.id });
     await auditExecution({
       supabase: input.supabase,
       actorId: input.userId,
@@ -302,6 +417,7 @@ async function execute(input: {
     );
   }
 
+  input.onContext?.({ action: "load_snapshot_files" });
   const [{ data: snapshotRow, error: snapshotError }, { data: fileRows, error: fileError }] =
     await Promise.all([
       input.supabase
@@ -320,6 +436,30 @@ async function execute(input: {
 
   const snapshot = snapshotRow ? toPatchSnapshot(snapshotRow) : null;
   const files = (fileRows ?? []).map(toPatchSnapshotFile);
+  if (!snapshot) {
+    return jsonResponse(
+      {
+        message: "Patch snapshot not found.",
+        error: "Patch snapshot not found.",
+        code: "400",
+        details: `Snapshot ${request.snapshotId} was not found.`,
+      },
+      400,
+      input.correlationId,
+    );
+  }
+  if (files.length < 1) {
+    return jsonResponse(
+      {
+        message: "Patch snapshot has no files.",
+        error: "Patch snapshot has no files.",
+        code: "400",
+        details: `Snapshot ${request.snapshotId} has no files to copy.`,
+      },
+      400,
+      input.correlationId,
+    );
+  }
   validateRequestCanExecute({ request, snapshot, files });
 
   const rows = await buildWorkingCopyRows({
@@ -328,22 +468,17 @@ async function execute(input: {
     files,
     actorId: input.userId,
   });
+  input.onContext?.({ action: "insert_working_copy" });
   const { data: workingCopyRow, error: insertError } = await input.supabase
     .from("project_working_copies")
     .insert({
       project_id: rows.workingCopy.projectId,
-      writeback_request_id: rows.workingCopy.writebackRequestId,
-      patch_preview_id: rows.workingCopy.patchPreviewId,
-      patch_snapshot_id: rows.workingCopy.patchSnapshotId,
+      request_id: rows.workingCopy.writebackRequestId,
+      snapshot_id: rows.workingCopy.patchSnapshotId,
       created_by: rows.workingCopy.createdBy,
-      executed_by: rows.workingCopy.executedBy,
       status: rows.workingCopy.status,
       title: rows.workingCopy.title,
       summary: rows.workingCopy.summary,
-      source: rows.workingCopy.source,
-      changed_files_count: rows.workingCopy.changedFilesCount,
-      warnings: rows.workingCopy.warnings as unknown as Json,
-      blockers: rows.workingCopy.blockers as unknown as Json,
       metadata: rows.workingCopy.metadata,
     })
     .select()
@@ -376,6 +511,7 @@ async function execute(input: {
   }
 
   const workingCopy = toWorkingCopy(workingCopyRow);
+  input.onContext?.({ workingCopyId: workingCopy.id, action: "insert_working_copy_files" });
   if (rows.files.length > 0) {
     const { error: filesInsertError } = await input.supabase
       .from("project_working_copy_files")
@@ -417,18 +553,28 @@ export const Route = createFileRoute("/api/projects/writeback-execute")({
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         const correlationId = getRequestCorrelationId(request);
+        let failureContext: ExecuteFailureContext = {};
         try {
           const access = await requireAuthenticatedClient(request, correlationId);
           if (access.response) return access.response;
           const input = parseBody((await request.json().catch(() => ({}))) as Body);
+          failureContext = {
+            requestId: input.requestId,
+            userId: access.userId,
+            action: "start",
+          };
           return execute({
             supabase: access.supabase,
             userId: access.userId,
             requestId: input.requestId,
             correlationId,
+            onContext: (context) => {
+              failureContext = { ...failureContext, ...context };
+            },
           });
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Working copy creation failed.";
+          const details = errorDetails(error);
+          const message = details.message;
           const status = message.includes("Unauthorized")
             ? 401
             : message.includes("Forbidden")
@@ -439,13 +585,16 @@ export const Route = createFileRoute("/api/projects/writeback-execute")({
                   ? 422
                   : 500;
           if (status === 500) {
-            console.error(
-              "[writeback-execute] action failed",
-              withLogContext({ correlationId }, safeErrorLog(error)),
-            );
+            logExecuteFailure({ ...failureContext, error });
           }
           return jsonResponse(
-            { message: status === 500 ? "Working copy creation failed." : message },
+            {
+              message,
+              error: message,
+              code: details.code ?? status.toString(),
+              details: details.details ?? message,
+              hint: details.hint,
+            },
             status,
             correlationId,
           );

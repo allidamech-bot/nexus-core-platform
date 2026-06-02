@@ -2,11 +2,7 @@ import { recordAuditEvent } from "@/features/governance/governanceService";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { PatchSandboxIssue } from "./patchApplySandbox";
-import {
-  hashPatchedText,
-  type ProjectPatchSnapshot,
-  type ProjectPatchSnapshotFile,
-} from "./patchSnapshot";
+import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import { getPatchSnapshot, getPatchSnapshotFiles } from "./projectPatchPreviewService";
 import type { ProjectWritebackRequest } from "./projectWritebackRequestService";
 import { getWritebackRequest } from "./projectWritebackRequestService";
@@ -74,15 +70,10 @@ export interface WorkingCopySummary {
 
 type WorkingCopyFileInsert = {
   project_id: string;
-  writeback_request_id: string;
-  patch_snapshot_id: string;
+  original_preview_text: string | null;
+  working_copy_text: string;
   file_path: string;
-  content_sha256: string | null;
-  content_text: string;
-  size_bytes: number;
   changed: boolean;
-  preview_limited: boolean;
-  truncated: boolean;
   warnings: Json;
   blockers: Json;
 };
@@ -94,36 +85,38 @@ function asIssues(value: Json): PatchSandboxIssue[] {
 function toWorkingCopy(row: {
   id: string;
   project_id: string;
-  writeback_request_id: string;
-  patch_preview_id: string;
-  patch_snapshot_id: string;
+  request_id: string;
+  snapshot_id: string;
   created_by: string;
-  executed_by: string;
   status: string;
   title: string | null;
   summary: string | null;
-  source: string;
-  changed_files_count: number;
-  warnings: Json;
-  blockers: Json;
   metadata: Json;
   created_at: string;
 }): ProjectWorkingCopy {
+  const metadata = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
+  const meta = metadata as {
+    patchPreviewId?: string | null;
+    executedBy?: string | null;
+    changedFilesCount?: number;
+    warnings?: PatchSandboxIssue[];
+    blockers?: PatchSandboxIssue[];
+  };
   return {
     id: row.id,
     projectId: row.project_id,
-    writebackRequestId: row.writeback_request_id,
-    patchPreviewId: row.patch_preview_id,
-    patchSnapshotId: row.patch_snapshot_id,
+    writebackRequestId: row.request_id,
+    patchPreviewId: meta.patchPreviewId ?? "",
+    patchSnapshotId: row.snapshot_id,
     createdBy: row.created_by,
-    executedBy: row.executed_by,
+    executedBy: meta.executedBy ?? row.created_by,
     status: row.status as ProjectWorkingCopyStatus,
     title: row.title,
     summary: row.summary,
-    source: row.source as "approved_writeback_request",
-    changedFilesCount: row.changed_files_count,
-    warnings: asIssues(row.warnings),
-    blockers: asIssues(row.blockers),
+    source: "approved_writeback_request",
+    changedFilesCount: meta.changedFilesCount ?? 0,
+    warnings: asIssues((meta.warnings ?? []) as unknown as Json),
+    blockers: asIssues((meta.blockers ?? []) as unknown as Json),
     metadata: row.metadata,
     createdAt: row.created_at,
   };
@@ -133,15 +126,10 @@ function toWorkingCopyFile(row: {
   id: string;
   working_copy_id: string;
   project_id: string;
-  writeback_request_id: string;
-  patch_snapshot_id: string;
   file_path: string;
-  content_sha256: string | null;
-  content_text: string;
-  size_bytes: number;
+  original_preview_text: string | null;
+  working_copy_text: string | null;
   changed: boolean;
-  preview_limited: boolean;
-  truncated: boolean;
   warnings: Json;
   blockers: Json;
   created_at: string;
@@ -150,15 +138,15 @@ function toWorkingCopyFile(row: {
     id: row.id,
     workingCopyId: row.working_copy_id,
     projectId: row.project_id,
-    writebackRequestId: row.writeback_request_id,
-    patchSnapshotId: row.patch_snapshot_id,
+    writebackRequestId: "",
+    patchSnapshotId: "",
     filePath: row.file_path,
-    contentSha256: row.content_sha256,
-    contentText: row.content_text,
-    sizeBytes: row.size_bytes,
+    contentSha256: null,
+    contentText: row.working_copy_text ?? "",
+    sizeBytes: new TextEncoder().encode(row.working_copy_text ?? "").length,
     changed: row.changed,
-    previewLimited: row.preview_limited,
-    truncated: row.truncated,
+    previewLimited: true,
+    truncated: false,
     warnings: asIssues(row.warnings),
     blockers: asIssues(row.blockers),
     createdAt: row.created_at,
@@ -189,9 +177,22 @@ async function postExecuteWritebackRequest(requestId: string): Promise<ExecuteWr
     workingCopy?: ProjectWorkingCopy;
     alreadyExists?: boolean;
     message?: string;
+    error?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
   };
   if (!response.ok || !payload.workingCopy) {
-    throw new Error(payload.message || "Working copy creation failed.");
+    const detailText = [payload.details, payload.hint].filter(Boolean).join(" ");
+    const error = new Error(
+      payload.error || payload.message || detailText || "Working copy creation failed.",
+    );
+    Object.assign(error, {
+      code: payload.code,
+      details: payload.details,
+      hint: payload.hint,
+    });
+    throw error;
   }
   return {
     workingCopy: payload.workingCopy,
@@ -290,6 +291,11 @@ export async function buildWorkingCopyRows(input: {
       metadata: {
         phase: "91",
         ...summary,
+        patchPreviewId: input.request.patchPreviewId,
+        executedBy: input.actorId,
+        changedFilesCount: changedFiles.length,
+        warnings: input.request.warnings,
+        blockers: [],
       } as unknown as Json,
     },
     files: await Promise.all(
@@ -297,16 +303,10 @@ export async function buildWorkingCopyRows(input: {
         const content = file.patchedPreviewText ?? "";
         return {
           project_id: input.request.projectId,
-          writeback_request_id: input.request.id,
-          patch_snapshot_id: input.request.snapshotId,
           file_path: file.filePath,
-          content_sha256:
-            file.patchedContentSha256 ?? (content ? await hashPatchedText(content) : null),
-          content_text: content,
-          size_bytes: new TextEncoder().encode(content).length,
+          original_preview_text: file.originalPreviewText,
+          working_copy_text: content,
           changed: file.changed,
-          preview_limited: file.previewLimited,
-          truncated: file.truncated,
           warnings: file.warnings as unknown as Json,
           blockers: file.blockers as unknown as Json,
         };
@@ -385,7 +385,7 @@ export async function getLatestWorkingCopyForRequest(
   const { data, error } = await supabase
     .from("project_working_copies")
     .select("*")
-    .eq("writeback_request_id", requestId)
+    .eq("request_id", requestId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
