@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Folder, Plus, Loader2, FolderOpen } from "lucide-react";
+import { FileArchive, Folder, Loader2, FolderOpen } from "lucide-react";
 import { useProjectsQuery } from "@/features/projects/projectQueries";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { useAuth } from "@/lib/auth";
@@ -66,16 +66,30 @@ export function ProjectSidebar() {
           </div>
         )}
 
-        <ProjectUploadDialog
-          userId={session?.user.id ?? ""}
-          onSuccess={setSelectedProjectId}
-          trigger={
-            <button className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-accent-foreground shadow-lg transition-colors hover:bg-accent/90">
-              <Plus className="size-4" />
-              {t("uploadOrImport") || "New Project"}
-            </button>
-          }
-        />
+        <div className="grid gap-2">
+          <ProjectUploadDialog
+            userId={session?.user.id ?? ""}
+            defaultMode="zip"
+            onSuccess={setSelectedProjectId}
+            trigger={
+              <button className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-accent-foreground shadow-lg transition-colors hover:bg-accent/90">
+                <FileArchive className="size-5 shrink-0" />
+                {t("uploadZip")}
+              </button>
+            }
+          />
+          <ProjectUploadDialog
+            userId={session?.user.id ?? ""}
+            defaultMode="folder"
+            onSuccess={setSelectedProjectId}
+            trigger={
+              <button className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated">
+                <FolderOpen className="size-5 shrink-0 text-accent" />
+                {t("folderImport")}
+              </button>
+            }
+          />
+        </div>
 
         <div className="mt-4 grid grid-cols-4 gap-1 rounded-2xl border border-border bg-muted/50 p-1">
           {(["all", "ready", "processing", "failed"] as const).map((f) => (

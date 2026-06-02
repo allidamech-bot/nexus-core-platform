@@ -4,12 +4,15 @@ import {
   Archive,
   LogOut,
   Boxes,
+  FileArchive,
+  FolderOpen,
   Loader2,
   Settings,
   Menu,
   Activity,
   FolderKanban,
   MessageSquare,
+  MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -22,6 +25,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import { ProjectSidebar } from "@/components/agent-workspace/ProjectSidebar";
 import { ProjectInspector } from "@/components/agent-workspace/ProjectInspector";
 import { ProjectIdentityBar } from "@/components/agent-workspace/ProjectIdentityBar";
+import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ThemeSelector } from "@/features/theme/ThemeSelector";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
@@ -30,7 +34,7 @@ export const Route = createFileRoute("/app")({
 });
 
 function AppLayout() {
-  const { session, loading, signOut, user, error } = useAuth();
+  const { session, loading, signOut, error } = useAuth();
 
   if (loading) {
     return (
@@ -57,7 +61,7 @@ function AppLayout() {
 
   return (
     <ProjectWorkspaceProvider enabled={!!session}>
-      <AppWorkspace session={session} signOut={signOut} userEmail={user?.email ?? null} />
+      <AppWorkspace session={session} signOut={signOut} />
     </ProjectWorkspaceProvider>
   );
 }
@@ -65,15 +69,13 @@ function AppLayout() {
 function AppWorkspace({
   session,
   signOut,
-  userEmail,
 }: {
   session: NonNullable<ReturnType<typeof useAuth>["session"]>;
   signOut: () => Promise<void>;
-  userEmail: string | null;
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { activeProject } = useProjectWorkspace();
+  const { activeProject, setSelectedProjectId } = useProjectWorkspace();
   const archiveProject = useArchiveProjectMutation();
   const { data: isAdmin = false } = useIsAdminQuery(!!session, session.user.id);
   const { t } = useLocale();
@@ -193,16 +195,16 @@ function AppWorkspace({
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-2xl backdrop-blur md:hidden">
-        <div className="mx-auto grid min-h-14 max-w-md grid-cols-3 gap-2">
+        <div className="mx-auto grid min-h-14 max-w-md grid-cols-4 gap-1.5">
           <Sheet>
             <SheetTrigger asChild>
               <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 <FolderKanban className="mb-1 size-5" />
-                Projects
+                {t("projects")}
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[95vw] max-w-md p-0 flex flex-col">
-              <SheetTitle className="sr-only">Projects</SheetTitle>
+              <SheetTitle className="sr-only">{t("projects")}</SheetTitle>
               <ProjectSidebar />
             </SheetContent>
           </Sheet>
@@ -212,22 +214,131 @@ function AppWorkspace({
             className="flex min-h-[44px] flex-col items-center justify-center rounded-xl bg-accent/10 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/15"
           >
             <MessageSquare className="mb-1 size-5" />
-            Workspace
+            {t("workspace")}
           </Link>
 
           <Sheet>
             <SheetTrigger asChild>
               <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                 <Activity className="mb-1 size-5" />
-                Inspector
+                {t("inspector")}
               </button>
             </SheetTrigger>
             <SheetContent
               side="right"
               className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto"
             >
-              <SheetTitle className="sr-only">Project Inspector</SheetTitle>
+              <SheetTitle className="sr-only">{t("inspector")}</SheetTitle>
               <ProjectInspector />
+            </SheetContent>
+          </Sheet>
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <MoreHorizontal className="mb-1 size-5" />
+                {t("more")}
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="bottom"
+              className="max-h-[88dvh] rounded-t-2xl border-border bg-background p-0"
+            >
+              <SheetTitle className="sr-only">{t("more")}</SheetTitle>
+              <div className="flex max-h-[88dvh] min-w-0 flex-col overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <div className="sticky top-0 z-10 border-b border-border bg-surface/95 px-4 py-4 backdrop-blur">
+                  <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">
+                    Nexus
+                  </div>
+                  <h2 className="mt-1 text-2xl font-bold leading-tight tracking-tight">
+                    {t("more")}
+                  </h2>
+                </div>
+
+                <div className="space-y-4 px-4 py-4">
+                  <div className="grid gap-2">
+                    <Link
+                      to="/app/settings"
+                      className="flex min-h-[48px] items-center gap-3 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-surface-elevated"
+                    >
+                      <Settings className="size-5 shrink-0 text-accent" />
+                      <span className="min-w-0 truncate">{t("settings")}</span>
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/app/admin"
+                        className="flex min-h-[48px] items-center gap-3 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-surface-elevated"
+                      >
+                        <Boxes className="size-5 shrink-0 text-accent" />
+                        <span className="min-w-0 truncate">{t("adminControl")}</span>
+                      </Link>
+                    )}
+                  </div>
+
+                  <section className="rounded-2xl border border-border bg-surface p-4">
+                    <div className="mb-3 text-sm font-semibold text-foreground">
+                      {t("language")}
+                    </div>
+                    <LanguageSwitcher />
+                  </section>
+
+                  <section className="rounded-2xl border border-border bg-surface p-4">
+                    <ThemeSelector />
+                  </section>
+
+                  <div className="grid gap-2">
+                    <ProjectUploadDialog
+                      userId={session.user.id}
+                      defaultMode="zip"
+                      onSuccess={setSelectedProjectId}
+                      trigger={
+                        <button className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-lg transition-colors hover:bg-accent/90">
+                          <FileArchive className="size-5 shrink-0" />
+                          {t("uploadZip")}
+                        </button>
+                      }
+                    />
+                    <ProjectUploadDialog
+                      userId={session.user.id}
+                      defaultMode="folder"
+                      onSuccess={setSelectedProjectId}
+                      trigger={
+                        <button className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated">
+                          <FolderOpen className="size-5 shrink-0 text-accent" />
+                          {t("folderImport")}
+                        </button>
+                      }
+                    />
+                  </div>
+
+                  {activeProject && (
+                    <button
+                      onClick={handleArchiveProject}
+                      disabled={archiveProject.isPending}
+                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 text-sm font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {archiveProject.isPending ? (
+                        <Loader2 className="size-5 shrink-0 animate-spin" />
+                      ) : (
+                        <Archive className="size-5 shrink-0" />
+                      )}
+                      {t("archiveProject")}
+                    </button>
+                  )}
+
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                      qc.clear();
+                      navigate({ to: "/" });
+                    }}
+                    className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated"
+                  >
+                    <LogOut className="size-5 shrink-0 text-muted-foreground" />
+                    {t("signOut")}
+                  </button>
+                </div>
+              </div>
             </SheetContent>
           </Sheet>
         </div>

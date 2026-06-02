@@ -53,7 +53,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
               onClick={() => setTheme(option)}
               className={
                 compact
-                  ? `flex min-h-[36px] min-w-[44px] items-center justify-center rounded px-2 text-[11px] font-medium transition-colors ${
+                  ? `flex min-h-[44px] min-w-[44px] items-center justify-center rounded px-2 text-[11px] font-medium transition-colors ${
                       selected
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"

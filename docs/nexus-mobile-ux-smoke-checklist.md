@@ -55,12 +55,24 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 ## Bottom Navigation
 
 - [ ] Mobile-only bottom bar appears below `768px`.
-- [ ] Contains Projects, Workspace, and Inspector.
+- [ ] Contains Projects, Workspace, Inspector, and More.
 - [ ] Minimum height is at least `56px`.
 - [ ] Buttons are at least `44px` tappable.
 - [ ] Uses safe-area bottom padding.
 - [ ] Does not cover the composer or important content.
 - [ ] Surface and border are theme-aware.
+
+## Mobile Navigation Completeness
+
+- [ ] More is reachable from mobile without relying on desktop header actions.
+- [ ] Settings is reachable from More and renders as a mobile-readable page.
+- [ ] Admin Control appears in mobile navigation only for allowed admin users.
+- [ ] Language switching is reachable on mobile and has tappable controls.
+- [ ] Theme selection is reachable on mobile and works in all supported themes.
+- [ ] Upload ZIP is reachable from Projects and More with a full-width tappable CTA.
+- [ ] Folder import is reachable from Projects and More with a full-width tappable CTA.
+- [ ] Archive project is reachable when an active project exists and shows confirmation before action.
+- [ ] More sheet has no horizontal overflow at `320px`, `390px`, or `430px`.
 
 ## Theme Sweep
 

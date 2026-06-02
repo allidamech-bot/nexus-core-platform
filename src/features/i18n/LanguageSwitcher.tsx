@@ -6,7 +6,7 @@ export function LanguageSwitcher() {
   return (
     <div
       dir="ltr"
-      className="flex items-center gap-1 rounded-md border border-border bg-background/50 p-1"
+      className="flex min-h-[44px] items-center gap-1 rounded-md border border-border bg-background/50 p-1"
       role="group"
       aria-label={t("language")}
     >
@@ -18,7 +18,7 @@ export function LanguageSwitcher() {
           onClick={() => setLocale(option)}
           aria-pressed={locale === option}
           aria-label={option === "en" ? t("switchToEnglish") : t("switchToArabic")}
-          className={`rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+          className={`min-h-[34px] rounded px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
             locale === option
               ? "bg-accent/15 text-accent"
               : "text-muted-foreground hover:bg-white/5"

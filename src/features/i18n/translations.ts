@@ -48,6 +48,8 @@ export const translations = {
     soon: "Soon",
     settings: "Settings",
     projects: "Projects",
+    inspector: "Inspector",
+    more: "More",
     connectRepo: "Connect Repo",
     connectRepoDisabledTooltip: "Repository connection is not supported in this phase.",
 
@@ -556,6 +558,8 @@ export const translations = {
     soon: "قريبًا",
     settings: "الإعدادات",
     projects: "المشاريع",
+    inspector: "\u0627\u0644\u0641\u0627\u062d\u0635",
+    more: "\u0627\u0644\u0645\u0632\u064a\u062f",
     connectRepo: "ربط المستودع",
     connectRepoDisabledTooltip: "ربط المستودع غير مدعوم في هذه المرحلة.",
 
@@ -1135,7 +1139,7 @@ export const translations = {
       "عضوية المؤسسة والأدوار وصلاحيات مساحة العمل وضوابط النطاق مخطّط لها ولم تُفعَّل بعد.",
     languageBody: "يُحفظ تفضيل اللغة محليًا، ويُحدِّث اتجاه التخطيط تلقائيًا عند اختيار العربية.",
     appearance: "\u0627\u0644\u0645\u0638\u0647\u0631",
-    theme: "\u0627\u0644\u0633\u0645\u0629",
+    theme: "\u0627\u0644\u062b\u064a\u0645",
     themeBody:
       "\u064a\u062a\u0645 \u062d\u0641\u0638 \u062a\u0641\u0636\u064a\u0644 \u0627\u0644\u0633\u0645\u0629 \u0645\u062d\u0644\u064a\u0627\u064b \u0648\u064a\u062d\u062f\u062b \u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u0639\u0645\u0644 \u0641\u0648\u0631\u0627\u064b \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632.",
     apiAccess: "واجهات API والوصول",
