@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocale } from "@/features/i18n/localeContext";
-import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectActionCard } from "@/components/agent-workspace/ProjectActionCard";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { checkQuota } from "@/features/governance/governanceService";
@@ -154,13 +153,13 @@ function AppIndex() {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 bg-background overflow-y-auto">
-      <div className="w-full max-w-3xl space-y-8 sm:space-y-10 my-auto">
-        <div className="text-center">
-          <div className="mx-auto mb-6 grid size-12 place-items-center rounded-2xl border border-border bg-surface text-foreground shadow-sm">
+    <div className="flex-1 flex min-w-0 flex-col items-stretch justify-center overflow-x-hidden overflow-y-auto bg-background px-3 py-4 md:items-center md:px-6">
+      <div className="my-auto w-full max-w-none min-w-0 space-y-6 sm:space-y-10 md:max-w-3xl">
+        <div className="w-full min-w-0 text-center">
+          <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-border bg-surface text-foreground shadow-sm sm:mb-6">
             <Terminal className="size-6" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="w-full text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl lg:text-3xl">
             {!activeProject
               ? "ابدأ بربط مشروعك مع Nexus"
               : activeProject.status === "failed" ||
@@ -191,7 +190,7 @@ function AppIndex() {
             activeProject.latest_job?.status === "failed" ||
             activeProject.latest_job?.status === "rejected")
         ) && (
-          <div className="relative">
+          <div className="relative min-w-0">
             <textarea
               value={input}
               onChange={(e) => {
@@ -205,13 +204,13 @@ function AppIndex() {
                 }
               }}
               placeholder={t("tellNexusToChange")}
-              className="w-full bg-surface border border-border rounded-xl p-4 pb-14 sm:pb-4 sm:pr-32 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[120px] resize-none shadow-sm"
+              className="min-h-[132px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-base shadow-sm focus:outline-none focus:ring-1 focus:ring-accent md:min-h-[120px] md:pb-4 md:pr-32 md:text-sm"
               dir="auto"
             />
             <button
               onClick={handleSend}
               disabled={busy || !input.trim()}
-              className="absolute bottom-3 right-3 left-3 sm:left-auto flex justify-center items-center gap-1.5 px-4 py-2 bg-foreground text-background rounded-md text-[13px] font-bold disabled:opacity-50 transition-colors"
+              className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-[13px] font-bold text-background transition-colors disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:w-auto"
             >
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               {t("createAiSession") || "Send"}
@@ -253,14 +252,14 @@ function AppIndex() {
         </div>
 
         {recentThreads.length > 0 && (
-          <div className="-mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span>{t("openRecentSession")}</span>
+          <div className="-mt-2 flex min-w-0 flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+            <span className="min-h-[32px] content-center">{t("openRecentSession")}</span>
             {recentThreads.map((thread) => (
               <Link
                 key={thread.id}
                 to="/app/$threadId"
                 params={{ threadId: thread.id }}
-                className="max-w-48 truncate rounded-md border border-border bg-surface/50 px-2.5 py-1 text-foreground hover:bg-surface"
+                className="min-h-[36px] max-w-full truncate rounded-md border border-border bg-surface/50 px-3 py-2 text-foreground hover:bg-surface sm:max-w-48 sm:py-1"
               >
                 {thread.title || t("untitled")}
               </Link>
@@ -274,7 +273,7 @@ function AppIndex() {
             activeProject.latest_job?.status === "failed" ||
             activeProject.latest_job?.status === "rejected")
         ) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
+          <div className="mt-6 grid min-w-0 grid-cols-1 gap-3 sm:mt-8 md:grid-cols-2">
             {[
               t("examplePrompt1"),
               t("examplePrompt2"),
@@ -284,7 +283,7 @@ function AppIndex() {
               <button
                 key={i}
                 onClick={() => setInput(prompt)}
-                className="text-start p-4 rounded-xl border border-border bg-surface/50 hover:bg-surface text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="min-h-[72px] rounded-xl border border-border bg-surface/50 p-4 text-start text-sm leading-relaxed text-zinc-400 transition-colors hover:bg-surface hover:text-zinc-200"
               >
                 {prompt}
               </button>

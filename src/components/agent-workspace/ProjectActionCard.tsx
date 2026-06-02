@@ -36,17 +36,17 @@ export function ProjectActionCard() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl mx-auto mt-8">
+    <div className="mx-auto mt-6 grid w-full max-w-none min-w-0 grid-cols-1 gap-3 sm:mt-8 md:max-w-3xl md:grid-cols-3">
       <ProjectUploadDialog
         userId={session.user.id}
         defaultMode="zip"
         onSuccess={setSelectedProjectId}
         trigger={
-          <button className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface/50 hover:bg-surface text-sm font-medium transition-colors text-left group">
+          <button className="group flex min-h-[72px] min-w-0 items-center gap-3 rounded-xl border border-border bg-surface/50 p-4 text-left text-sm font-medium transition-colors hover:bg-surface">
             <div className="grid place-items-center size-8 rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
               <FileArchive className="size-4" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex min-w-0 flex-col">
               <span className="text-foreground">رفع مشروع ZIP</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
                 Upload Archive
@@ -61,11 +61,11 @@ export function ProjectActionCard() {
         defaultMode="folder"
         onSuccess={setSelectedProjectId}
         trigger={
-          <button className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface/50 hover:bg-surface text-sm font-medium transition-colors text-left group">
+          <button className="group flex min-h-[72px] min-w-0 items-center gap-3 rounded-xl border border-border bg-surface/50 p-4 text-left text-sm font-medium transition-colors hover:bg-surface">
             <div className="grid place-items-center size-8 rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
               <FolderOpen className="size-4" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex min-w-0 flex-col">
               <span className="text-foreground">استيراد مجلد</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
                 Import Folder
@@ -82,12 +82,12 @@ export function ProjectActionCard() {
             sidebar.scrollIntoView({ behavior: "smooth" });
           }
         }}
-        className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface/50 hover:bg-surface text-sm font-medium transition-colors text-left group"
+        className="group flex min-h-[72px] min-w-0 items-center gap-3 rounded-xl border border-border bg-surface/50 p-4 text-left text-sm font-medium transition-colors hover:bg-surface"
       >
         <div className="grid place-items-center size-8 rounded-lg bg-foreground/10 text-foreground group-hover:bg-foreground/20 transition-colors">
           <FolderSync className="size-4" />
         </div>
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <span className="text-foreground">اختيار مشروع موجود</span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
             Choose Existing
@@ -101,7 +101,7 @@ export function ProjectActionCard() {
             <button
               onClick={handleArchiveProject}
               disabled={archiveProject.isPending}
-              className="w-full flex items-center justify-center gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/10 hover:bg-destructive/20 text-sm font-medium transition-colors group"
+              className="group flex min-h-[72px] w-full min-w-0 items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium transition-colors hover:bg-destructive/20"
             >
               <div className="grid place-items-center size-8 rounded-lg bg-destructive/20 text-destructive group-hover:bg-destructive/30 transition-colors">
                 <Archive className="size-4" />

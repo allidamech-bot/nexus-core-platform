@@ -37,11 +37,13 @@ export function ProjectIdentityBar() {
   }
 
   return (
-    <div className="flex items-center gap-3 pl-4 border-l border-border/50">
+    <div className="flex min-w-0 items-center gap-2 border-l border-border/50 pl-2 sm:gap-3 sm:pl-4">
       {activeProject ? (
         <>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium truncate max-w-[200px]">{activeProject.name}</span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="max-w-[42vw] truncate text-sm font-medium sm:max-w-[200px]">
+              {activeProject.name}
+            </span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
               {activeProject.source_type}
             </span>
@@ -49,10 +51,10 @@ export function ProjectIdentityBar() {
           <ProjectStatusBadge status={activeProject.latest_job?.status ?? activeProject.status} />
         </>
       ) : (
-        <span className="text-sm text-muted-foreground italic">No Project Selected</span>
+        <span className="truncate text-sm italic text-muted-foreground">No Project Selected</span>
       )}
 
-      <div className="flex items-center gap-2 ml-4">
+      <div className="ml-4 hidden items-center gap-2 md:flex">
         <button
           onClick={() => {
             const sidebar = document.querySelector('[data-project-sidebar="true"]');
@@ -60,7 +62,7 @@ export function ProjectIdentityBar() {
               sidebar.scrollIntoView({ behavior: "smooth" });
             }
           }}
-          className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5"
+          className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
           title="تبديل المشروع"
         >
           <FolderSync className="size-3" />
@@ -73,7 +75,7 @@ export function ProjectIdentityBar() {
           onSuccess={setSelectedProjectId}
           trigger={
             <button
-              className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5"
+              className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
               title="رفع مشروع"
             >
               <FileArchive className="size-3" />
@@ -88,7 +90,7 @@ export function ProjectIdentityBar() {
           onSuccess={setSelectedProjectId}
           trigger={
             <button
-              className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-surface hover:text-foreground transition-colors flex items-center gap-1.5"
+              className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
               title="استيراد مجلد"
             >
               <FolderOpen className="size-3" />
@@ -102,7 +104,7 @@ export function ProjectIdentityBar() {
             type="button"
             onClick={handleArchiveProject}
             disabled={archiveProject.isPending}
-            className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:opacity-60 transition-colors flex items-center gap-1.5"
+            className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-white/5 disabled:opacity-60"
             title={t("archiveProject")}
           >
             <Archive className="size-3" />

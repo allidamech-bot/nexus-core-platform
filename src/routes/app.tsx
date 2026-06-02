@@ -1,15 +1,6 @@
 import { Link, Navigate, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Archive,
-  LogOut,
-  Boxes,
-  Loader2,
-  Settings,
-  Menu,
-  Activity,
-  MoreVertical,
-} from "lucide-react";
+import { Archive, LogOut, Boxes, Loader2, Settings, Menu, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
@@ -96,11 +87,11 @@ function AppWorkspace({
   return (
     <div className="h-[100dvh] w-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* Top Navigation */}
-      <header className="h-14 shrink-0 px-2 md:px-6 border-b border-border flex items-center justify-between bg-surface/30 gap-2">
-        <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+      <header className="min-h-14 shrink-0 px-2 md:px-6 border-b border-border flex items-center justify-between bg-surface/30 gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden md:gap-4">
           <Sheet>
             <SheetTrigger asChild>
-              <button className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground">
+              <button className="-ml-2 grid min-h-[44px] min-w-[44px] place-items-center text-muted-foreground hover:text-foreground md:hidden">
                 <Menu className="size-5" />
               </button>
             </SheetTrigger>
@@ -110,11 +101,11 @@ function AppWorkspace({
             </SheetContent>
           </Sheet>
 
-          <Link to="/app" className="flex items-center gap-2 shrink-0">
+          <Link to="/app" className="flex min-h-[44px] shrink-0 items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
               <span className="font-mono text-[11px] font-bold">NX</span>
             </div>
-            <span className="text-sm font-bold tracking-tighter uppercase hidden sm:inline">
+            <span className="hidden text-sm font-bold tracking-tighter uppercase md:inline">
               Nexus
             </span>
           </Link>
@@ -144,7 +135,7 @@ function AppWorkspace({
 
           <Sheet>
             <SheetTrigger asChild>
-              <button className="xl:hidden p-2 text-muted-foreground hover:text-foreground">
+              <button className="grid min-h-[44px] min-w-[44px] place-items-center text-muted-foreground hover:text-foreground xl:hidden">
                 <Activity className="size-5" />
               </button>
             </SheetTrigger>
@@ -163,7 +154,7 @@ function AppWorkspace({
               qc.clear();
               navigate({ to: "/" });
             }}
-            className="size-8 shrink-0 grid place-items-center rounded-md border border-border hover:bg-white/5 md:ml-2 transition-colors"
+            className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-white/5 md:ml-2 md:min-h-8 md:min-w-8"
             title={t("signOut")}
             aria-label={t("signOut")}
           >

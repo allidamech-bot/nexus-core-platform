@@ -385,27 +385,30 @@ function ThreadView() {
   }
 
   return (
-    <div className="flex-1 flex min-w-0 h-full">
-      <section className="flex-1 flex flex-col min-w-0 border-r border-border">
-        <div className="h-14 px-4 md:px-6 flex items-center justify-between border-b border-border bg-surface/30">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold truncate">{thread?.title ?? "Session"}</div>
-            <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+    <div className="flex h-full min-w-0 flex-1 overflow-hidden">
+      <section className="flex min-w-0 flex-1 flex-col border-r border-border">
+        <div className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-surface/30 px-3 py-2 sm:px-4 md:px-6">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-semibold leading-tight md:text-sm">
+              {thread?.title ?? "Session"}
+            </div>
+            <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground md:text-[11px]">
               Agent #{threadId.slice(0, 6)} / {mode}
               {projectContextName ? ` / ${projectContextName}` : ""}
               {isArchived ? ` / ${t("archivedSession")}` : ""}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 md:gap-2">
             {session && (
               <ProjectUploadDialog
                 userId={session.user.id}
                 trigger={
                   <button
                     type="button"
-                    className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
+                    className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
                   >
-                    <Upload className="size-3" /> Upload ZIP
+                    <Upload className="size-4 md:size-3" />
+                    <span className="hidden md:inline">Upload ZIP</span>
                   </button>
                 }
               />
@@ -415,10 +418,11 @@ function ThreadView() {
                 <TooltipTrigger asChild>
                   <span className="inline-block">
                     <button
-                      className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                       disabled
                     >
-                      <GitBranch className="size-3" /> {t("connectRepo")}
+                      <GitBranch className="size-4 md:size-3" />
+                      <span className="hidden md:inline">{t("connectRepo")}</span>
                     </button>
                   </span>
                 </TooltipTrigger>
@@ -431,26 +435,28 @@ function ThreadView() {
               <button
                 type="button"
                 onClick={handleArchiveThread}
-                className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-border text-muted-foreground hover:bg-white/5 flex items-center gap-1.5"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
               >
-                <Archive className="size-3" /> {t("archiveSession")}
+                <Archive className="size-4 md:size-3" />
+                <span className="hidden md:inline">{t("archiveSession")}</span>
               </button>
             )}
             <button
               onClick={() => setIsInspectorOpen((o) => !o)}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-md border flex items-center gap-1.5 transition-colors ${
+              className={`flex min-h-[44px] items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 isInspectorOpen
                   ? "bg-accent/10 border-accent/20 text-accent"
                   : "border-border text-muted-foreground hover:bg-white/5"
               }`}
             >
-              <PanelRight className="size-3" /> Inspector
+              <PanelRight className="size-4 md:size-3" />
+              <span className="hidden md:inline">Inspector</span>
             </button>
           </div>
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
+          <div className="mx-auto w-full max-w-none min-w-0 space-y-4 px-3 py-4 md:max-w-3xl md:px-6 md:py-8 md:space-y-6">
             {isArchived && (
               <div className="rounded-md border border-border bg-surface/70 px-3 py-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{t("thisSessionIsArchived")}</span>{" "}
@@ -479,9 +485,9 @@ function ThreadView() {
           </div>
         </div>
 
-        <div className="border-t border-border bg-background px-4 sm:px-6 py-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex gap-1.5 mb-3 overflow-x-auto">
+        <div className="border-t border-border bg-background px-3 py-4 md:px-6">
+          <div className="mx-auto w-full max-w-none min-w-0 md:max-w-3xl">
+            <div className="mb-3 flex min-w-0 gap-1.5 overflow-x-auto">
               {agentModes.map((m) => {
                 const active = mode === m.id;
                 return (
@@ -500,7 +506,7 @@ function ThreadView() {
                 );
               })}
             </div>
-            <div className="relative">
+            <div className="relative min-w-0">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -513,12 +519,12 @@ function ThreadView() {
                 }}
                 placeholder="Ask Nexus Core to analyze, plan, scope, or review..."
                 disabled={isArchived}
-                className="w-full bg-surface border border-border rounded-xl p-4 pb-14 sm:pb-4 sm:pr-28 text-sm focus:outline-none focus:ring-1 focus:ring-accent min-h-[100px] resize-none disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-[116px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-base focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:min-h-[100px] md:pb-4 md:pr-28 md:text-sm"
               />
               <button
                 onClick={handleSend}
                 disabled={busy || !input.trim() || isArchived}
-                className="absolute bottom-3 right-3 left-3 sm:left-auto flex justify-center items-center gap-1.5 px-3 py-1.5 bg-foreground text-background rounded-md text-[12px] font-bold disabled:opacity-50"
+                className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-[12px] font-bold text-background disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:w-auto"
               >
                 {busy ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
                 Send
@@ -532,7 +538,7 @@ function ThreadView() {
       </section>
 
       {isInspectorOpen && (
-        <aside className="w-72 shrink-0 bg-surface/40 flex flex-col border-l border-border overflow-y-auto">
+        <aside className="fixed inset-y-0 right-0 z-40 flex w-[90vw] max-w-sm shrink-0 flex-col overflow-y-auto border-l border-border bg-surface shadow-xl md:static md:w-72 md:bg-surface/40 md:shadow-none">
           <DrawerSection title="Active Project">
             {projectContextProject ? (
               <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
@@ -730,18 +736,20 @@ function ThreadView() {
 function EmptyChat() {
   const { t } = useLocale();
   return (
-    <div className="py-12 text-center">
+    <div className="min-w-0 py-10 text-center sm:py-12">
       <div className="mx-auto mb-4 grid size-10 place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
         <Terminal className="size-4" />
       </div>
-      <h2 className="mb-2 text-xl font-semibold tracking-tight">{t("tellNexusToChange")}</h2>
+      <h2 className="mb-2 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">
+        {t("tellNexusToChange")}
+      </h2>
       <div className="text-sm text-muted-foreground font-medium">{t("nexusHelperText")}</div>
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-xl mx-auto text-left">
+      <div className="mx-auto mt-6 grid w-full max-w-none grid-cols-1 gap-2 text-left md:max-w-xl md:grid-cols-2">
         {[t("examplePrompt1"), t("examplePrompt2"), t("examplePrompt3"), t("examplePrompt4")].map(
           (p, i) => (
             <div
               key={i}
-              className="p-3 rounded-lg border border-border bg-surface text-xs text-zinc-400 text-start"
+              className="min-h-[64px] rounded-lg border border-border bg-surface p-3 text-start text-sm leading-relaxed text-zinc-400 md:text-xs"
             >
               {p}
             </div>
@@ -784,8 +792,8 @@ function ProjectContextStatus({
         isAttached ? "border-accent/30 bg-accent/5" : "border-border bg-surface/50"
       }`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <div className={isAttached ? "font-semibold text-accent" : "font-semibold text-zinc-200"}>
             {title}
           </div>
@@ -807,7 +815,7 @@ function ProjectContextStatus({
           <button
             type="button"
             onClick={onAttach}
-            className="shrink-0 rounded border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
+            className="min-h-[44px] shrink-0 rounded border border-border px-3 py-2 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
           >
             {t("attachThisProject")}
           </button>
@@ -834,7 +842,7 @@ function MessageBlock({ message }: { message: UIMessage }) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-xl bg-accent text-accent-foreground px-4 py-2.5 text-sm whitespace-pre-wrap">
+        <div className="max-w-[92%] rounded-xl bg-accent px-4 py-2.5 text-sm text-accent-foreground whitespace-pre-wrap sm:max-w-[85%]">
           {text}
         </div>
       </div>
@@ -842,7 +850,7 @@ function MessageBlock({ message }: { message: UIMessage }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
         <div className="size-1.5 rounded-full bg-accent" />
         Nexus Core
@@ -894,7 +902,7 @@ function StructuredAssistant({ text }: { text: string }) {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {sections.map((s, i) => (
         <SectionBlock key={i} name={s.name} body={s.body} />
       ))}
@@ -921,7 +929,7 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
       >
         {name}
       </header>
-      <div className="p-4">
+      <div className="min-w-0 p-4">
         {isPatchPreview ? (
           <pre className="overflow-x-auto rounded border border-white/5 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-wrap">
             {stripCodeFence(body)}
