@@ -414,7 +414,7 @@ export function ProjectInspector() {
         ) : null}
 
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-widest px-1">
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-widest px-1">
             <Activity className="size-3.5 text-accent" />
             Diagnostics
           </div>
@@ -432,7 +432,7 @@ export function ProjectInspector() {
 
         {hasPreviews && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-widest px-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-widest px-1">
               <Activity className="size-3.5 text-accent" />
               Pipeline actions
             </div>
@@ -557,7 +557,7 @@ export function ProjectInspector() {
         )}
 
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200 uppercase tracking-widest px-1">
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-widest px-1">
             <Code2 className="size-3.5 text-accent" />
             Project Files
           </div>

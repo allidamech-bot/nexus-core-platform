@@ -405,7 +405,7 @@ function ThreadView() {
                 trigger={
                   <button
                     type="button"
-                    className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
+                    className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted"
                   >
                     <Upload className="size-4 md:size-3" />
                     <span className="hidden md:inline">Upload ZIP</span>
@@ -418,7 +418,7 @@ function ThreadView() {
                 <TooltipTrigger asChild>
                   <span className="inline-block">
                     <button
-                      className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                       disabled
                     >
                       <GitBranch className="size-4 md:size-3" />
@@ -435,7 +435,7 @@ function ThreadView() {
               <button
                 type="button"
                 onClick={handleArchiveThread}
-                className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
+                className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted"
               >
                 <Archive className="size-4 md:size-3" />
                 <span className="hidden md:inline">{t("archiveSession")}</span>
@@ -446,7 +446,7 @@ function ThreadView() {
               className={`flex min-h-[44px] items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 isInspectorOpen
                   ? "bg-accent/10 border-accent/20 text-accent"
-                  : "border-border text-muted-foreground hover:bg-white/5"
+                  : "border-border text-muted-foreground hover:bg-muted"
               }`}
             >
               <PanelRight className="size-4 md:size-3" />
@@ -498,7 +498,7 @@ function ThreadView() {
                     className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap border transition-colors ${
                       active
                         ? "bg-accent/10 text-accent border-accent/30"
-                        : "bg-white/5 text-muted-foreground border-border hover:text-foreground"
+                        : "bg-muted/60 text-muted-foreground border-border hover:text-foreground"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     {m.label}
@@ -543,7 +543,7 @@ function ThreadView() {
             {projectContextProject ? (
               <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="truncate text-xs font-semibold text-zinc-200">
+                  <div className="truncate text-xs font-semibold text-foreground">
                     {projectContextProject.name}
                   </div>
                   <ProjectStatusBadge
@@ -560,7 +560,7 @@ function ThreadView() {
                   type="button"
                   onClick={handleAttachProject}
                   disabled={threadProjectId === projectContextProject.id || isArchived}
-                  className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {threadProjectId === projectContextProject.id
                     ? t("projectContextAttached")
@@ -569,7 +569,7 @@ function ThreadView() {
               </div>
             ) : threadProjectId ? (
               <div className="rounded-md border border-accent/20 bg-accent/5 p-3 text-xs leading-relaxed text-muted-foreground">
-                <div className="font-medium text-zinc-200">{t("projectContextIsAttached")}</div>
+                <div className="font-medium text-foreground">{t("projectContextIsAttached")}</div>
                 {projectContextName && (
                   <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                     {projectContextName}
@@ -590,7 +590,9 @@ function ThreadView() {
               </div>
             ) : (
               <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium text-zinc-200">{t("noProjectContextAvailable")}</span>
+                <span className="font-medium text-foreground">
+                  {t("noProjectContextAvailable")}
+                </span>
                 <br />
                 {t("responsesMayBeGeneralWithoutProjectContext")}
               </div>
@@ -694,7 +696,7 @@ function ThreadView() {
                     className={`size-2 rounded-full ring-4 ring-background ${statusDot(s.status)}`}
                   />
                   <span
-                    className={`text-[11px] ${s.status === "completed" ? "text-zinc-400" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}
+                    className={`text-[11px] ${s.status === "completed" ? "text-muted-foreground" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}
                   >
                     {s.title}
                   </span>
@@ -707,7 +709,7 @@ function ThreadView() {
             <div className="space-y-2">
               {mockVerification.map((v) => (
                 <div key={v.id} className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-300">{v.type}</span>
+                  <span className="text-xs text-foreground">{v.type}</span>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(v.status)}`}
                   >
@@ -720,7 +722,9 @@ function ThreadView() {
 
           <DrawerSection title="Guardrails">
             <div className="p-3 rounded-md border border-border bg-background/40">
-              <div className="text-[11px] font-semibold text-zinc-200 mb-1">Pre-execution mode</div>
+              <div className="text-[11px] font-semibold text-foreground mb-1">
+                Pre-execution mode
+              </div>
               <div className="text-[11px] leading-relaxed text-muted-foreground">
                 Nexus can analyze manifest and preview context, but cannot execute commands, install
                 dependencies, modify files, or open pull requests in this phase.
@@ -749,7 +753,7 @@ function EmptyChat() {
           (p, i) => (
             <div
               key={i}
-              className="min-h-[64px] rounded-lg border border-border bg-surface p-3 text-start text-sm leading-relaxed text-zinc-400 md:text-xs"
+              className="min-h-[64px] rounded-lg border border-border bg-surface p-3 text-start text-sm leading-relaxed text-muted-foreground md:text-xs"
             >
               {p}
             </div>
@@ -794,13 +798,15 @@ function ProjectContextStatus({
     >
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className={isAttached ? "font-semibold text-accent" : "font-semibold text-zinc-200"}>
+          <div
+            className={isAttached ? "font-semibold text-accent" : "font-semibold text-foreground"}
+          >
             {title}
           </div>
           <div className="mt-1 text-muted-foreground">
             {projectName ? (
               <>
-                <span className="font-medium text-zinc-300">
+                <span className="font-medium text-foreground">
                   {isAttached ? t("attachedProject") : t("activeProject")}:
                 </span>{" "}
                 {projectName}
@@ -815,7 +821,7 @@ function ProjectContextStatus({
           <button
             type="button"
             onClick={onAttach}
-            className="min-h-[44px] shrink-0 rounded border border-border px-3 py-2 text-[11px] font-medium text-muted-foreground hover:bg-white/5"
+            className="min-h-[44px] shrink-0 rounded border border-border px-3 py-2 text-[11px] font-medium text-muted-foreground hover:bg-muted"
           >
             {t("attachThisProject")}
           </button>
@@ -831,7 +837,7 @@ function StatusMetric({ label, value }: { label: string; value: string }) {
       <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
         {label}
       </div>
-      <div className="mt-1 truncate text-xs font-semibold text-zinc-200">{value}</div>
+      <div className="mt-1 truncate text-xs font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -893,7 +899,9 @@ function StructuredAssistant({ text }: { text: string }) {
     }
   }
   if (indices.length === 0) {
-    return <div className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{text}</div>;
+    return (
+      <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{text}</div>
+    );
   }
   indices.forEach((it, i) => {
     const start = it.index + it.len;
@@ -923,7 +931,7 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
       } overflow-hidden`}
     >
       <header
-        className={`px-4 py-2 border-b border-white/5 font-mono text-[10px] uppercase tracking-widest ${
+        className={`px-4 py-2 border-b border-border font-mono text-[10px] uppercase tracking-widest ${
           isRisk ? "text-destructive" : "text-accent"
         }`}
       >
@@ -931,17 +939,17 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
       </header>
       <div className="min-w-0 p-4">
         {isPatchPreview ? (
-          <pre className="overflow-x-auto rounded border border-white/5 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-wrap">
+          <pre className="overflow-x-auto rounded border border-border bg-muted/50 p-3 font-mono text-[11px] leading-relaxed text-foreground whitespace-pre-wrap">
             {stripCodeFence(body)}
           </pre>
         ) : isLog ? (
-          <pre className="font-mono text-[11px] text-zinc-300 whitespace-pre-wrap leading-relaxed bg-black/40 rounded p-3 border border-white/5">
+          <pre className="font-mono text-[11px] text-foreground whitespace-pre-wrap leading-relaxed bg-muted/50 rounded p-3 border border-border">
             {stripCodeFence(body)}
           </pre>
         ) : isVerif ? (
           <VerificationFromText text={body} />
         ) : (
-          <div className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{body}</div>
+          <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{body}</div>
         )}
       </div>
     </section>
@@ -974,7 +982,7 @@ function VerificationFromText({ text }: { text: string }) {
     <div className="space-y-1.5">
       {parsed.map((p, i) => (
         <div key={i} className="flex items-center justify-between text-xs">
-          <span className="text-zinc-300">{p.label}</span>
+          <span className="text-foreground">{p.label}</span>
           <span
             className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(p.status)}`}
           >
@@ -1003,7 +1011,7 @@ function FileTree({ nodes, depth }: { nodes: FileNode[]; depth: number }) {
       {nodes.map((n) => (
         <div key={n.id}>
           <div
-            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/5"
+            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted"
             style={{ paddingLeft: 8 + depth * 12 }}
           >
             {n.type === "dir" ? (
@@ -1021,7 +1029,9 @@ function FileTree({ nodes, depth }: { nodes: FileNode[]; depth: number }) {
                 {n.status === "added" ? "+" : n.status === "modified" ? "~" : "-"}
               </span>
             )}
-            <span className={n.type === "dir" ? "text-zinc-300" : "text-zinc-400"}>{n.name}</span>
+            <span className={n.type === "dir" ? "text-foreground" : "text-muted-foreground"}>
+              {n.name}
+            </span>
           </div>
           {n.children && <FileTree nodes={n.children} depth={depth + 1} />}
         </div>
@@ -1042,7 +1052,7 @@ function statusDot(s: TaskStatus): string {
     case "awaiting_approval":
       return "bg-warning";
     default:
-      return "bg-zinc-700";
+      return "bg-muted-foreground";
   }
 }
 
@@ -1057,6 +1067,6 @@ function verifPill(s: VerificationStatus): string {
     case "running":
       return "bg-accent/10 text-accent";
     default:
-      return "bg-white/5 text-muted-foreground";
+      return "bg-muted text-muted-foreground";
   }
 }

@@ -5,6 +5,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import { useAuth } from "@/lib/auth";
 import { useUsageOverviewQuery } from "@/features/governance/governanceQueries";
 import { UsageMeters } from "@/features/governance/UsageMeters";
+import { ThemeSelector } from "@/features/theme/ThemeSelector";
 
 export const Route = createFileRoute("/app/settings")({
   component: SettingsRoute,
@@ -17,7 +18,7 @@ function SettingsRoute() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-5xl px-8 py-10">
+      <div className="mx-auto w-full max-w-5xl px-3 py-6 sm:px-8 sm:py-10">
         <div className="mb-10">
           <div className="mb-3 font-mono text-[11px] uppercase tracking-widest text-accent">
             {t("settings")}
@@ -31,7 +32,7 @@ function SettingsRoute() {
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
           <div className="space-y-4">
             <SettingsCard icon={UserRound} title={t("profile")}>
-              <div className="text-sm text-zinc-200" dir="ltr">
+              <div className="text-sm text-foreground" dir="ltr">
                 {user?.email ?? t("signedInUser")}
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -52,6 +53,11 @@ function SettingsRoute() {
               </div>
             </SettingsCard>
 
+            <SettingsCard icon={Globe2} title={t("theme")}>
+              <p className="mb-4 text-xs leading-relaxed text-muted-foreground">{t("themeBody")}</p>
+              <ThemeSelector />
+            </SettingsCard>
+
             <SettingsCard icon={KeyRound} title={t("apiAccess")}>
               <p className="text-xs leading-relaxed text-muted-foreground">{t("apiAccessBody")}</p>
             </SettingsCard>
@@ -63,7 +69,7 @@ function SettingsRoute() {
 
           <div className="space-y-4">
             <SettingsCard icon={CreditCard} title={t("currentPlan")}>
-              <div className="font-mono text-2xl font-semibold uppercase text-zinc-100" dir="ltr">
+              <div className="font-mono text-2xl font-semibold uppercase text-foreground" dir="ltr">
                 {usage?.planId ?? "starter"}
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">

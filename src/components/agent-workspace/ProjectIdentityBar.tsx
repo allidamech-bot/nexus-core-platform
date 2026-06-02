@@ -104,7 +104,7 @@ export function ProjectIdentityBar() {
             type="button"
             onClick={handleArchiveProject}
             disabled={archiveProject.isPending}
-            className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-white/5 disabled:opacity-60"
+            className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
             title={t("archiveProject")}
           >
             <Archive className="size-3" />

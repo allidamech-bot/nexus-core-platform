@@ -10,6 +10,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
+import { ThemeProvider, useTheme } from "@/features/theme/themeContext";
 import { createCorrelationId, safeErrorLog, withLogContext } from "@/lib/safeLogging";
 import "@/lib/console-noise-filter";
 
@@ -148,7 +149,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-theme="matte-black">
       <head>
         <HeadContent />
       </head>
@@ -165,11 +166,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LocaleProvider>
-        <AuthProvider>
-          <Outlet />
-          <Toaster theme="dark" />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Outlet />
+            <ThemeAwareToaster />
+          </AuthProvider>
+        </ThemeProvider>
       </LocaleProvider>
     </QueryClientProvider>
   );
+}
+
+function ThemeAwareToaster() {
+  const { theme } = useTheme();
+  return <Toaster theme={theme === "light-beige" ? "light" : "dark"} />;
 }

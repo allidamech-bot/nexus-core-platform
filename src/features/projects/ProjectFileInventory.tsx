@@ -34,9 +34,9 @@ export function ProjectFileInventory({
   return (
     <div className="space-y-0.5 font-mono text-[11px]">
       {files.slice(0, 80).map((file) => (
-        <div key={file.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-white/5">
+        <div key={file.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted">
           <FileText className="size-3 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate text-zinc-300">{file.path}</span>
+          <span className="min-w-0 flex-1 truncate text-foreground">{file.path}</span>
           <span className="shrink-0 text-[10px] text-muted-foreground">
             {formatSize(file.size_bytes)}
           </span>

@@ -12,6 +12,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import { ProjectSidebar } from "@/components/agent-workspace/ProjectSidebar";
 import { ProjectInspector } from "@/components/agent-workspace/ProjectInspector";
 import { ProjectIdentityBar } from "@/components/agent-workspace/ProjectIdentityBar";
+import { ThemeSelector } from "@/features/theme/ThemeSelector";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/app")({
@@ -109,6 +110,9 @@ function AppWorkspace({
               Nexus
             </span>
           </Link>
+          <div className="hidden min-w-0 sm:block md:hidden">
+            <ThemeSelector compact />
+          </div>
           <div className="min-w-0 flex-1 truncate">
             <ProjectIdentityBar />
           </div>
@@ -116,18 +120,19 @@ function AppWorkspace({
 
         <div className="flex items-center gap-1 md:gap-2 shrink-0">
           <div className="hidden md:flex items-center gap-2">
+            <ThemeSelector compact />
             <LanguageSwitcher />
             {isAdmin && (
               <Link
                 to="/app/admin"
-                className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+                className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
               >
                 <Boxes className="size-3.5" /> {t("adminControl")}
               </Link>
             )}
             <Link
               to="/app/settings"
-              className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+              className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
             >
               <Settings className="size-3.5" /> {t("settings")}
             </Link>
@@ -154,7 +159,7 @@ function AppWorkspace({
               qc.clear();
               navigate({ to: "/" });
             }}
-            className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-white/5 md:ml-2 md:min-h-8 md:min-w-8"
+            className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-muted md:ml-2 md:min-h-8 md:min-w-8"
             title={t("signOut")}
             aria-label={t("signOut")}
           >

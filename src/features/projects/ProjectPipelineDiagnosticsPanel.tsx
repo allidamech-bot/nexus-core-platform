@@ -16,7 +16,7 @@ function statusTone(status: PipelineStageStatus) {
   if (status === "blocked" || status === "failed") {
     return "border-destructive/25 bg-destructive/10 text-destructive";
   }
-  return "border-white/10 bg-black/10 text-muted-foreground";
+  return "border-border bg-muted/50 text-muted-foreground";
 }
 
 function StatusIcon({ status }: { status: PipelineStageStatus }) {
@@ -61,7 +61,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
     <section className="rounded-md border border-border bg-background/40 p-3">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
             <ShieldCheck className="size-3 text-accent" />
             {t("pipelineDiagnostics")} / {t("productionReadiness")}
           </div>
@@ -93,7 +93,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         ))}
       </div>
 
-      <div className="mt-3 rounded border border-white/5 bg-black/10 p-2">
+      <div className="mt-3 rounded border border-border bg-muted/50 p-2">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("releaseGate")}
         </div>
@@ -119,7 +119,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         </div>
       </div>
 
-      <div className="mt-3 rounded border border-white/5 bg-black/10 p-2">
+      <div className="mt-3 rounded border border-border bg-muted/50 p-2">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("safetyInvariants")}
         </div>
@@ -137,10 +137,10 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
 function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
   const { t } = useLocale();
   return (
-    <div className="rounded border border-white/5 bg-black/10 p-2">
+    <div className="rounded border border-border bg-muted/50 p-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-200">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
             <StatusIcon status={stage.status} />
             <span className="truncate">{stage.label}</span>
           </div>
@@ -155,7 +155,7 @@ function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
         </span>
       </div>
       <div className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-        <span className="font-semibold text-zinc-300">{t("nextSafeAction")}:</span>{" "}
+        <span className="font-semibold text-foreground">{t("nextSafeAction")}:</span>{" "}
         {stage.requiredNextAction}
       </div>
       {stage.blockers.length > 0 && (

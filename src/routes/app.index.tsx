@@ -283,7 +283,7 @@ function AppIndex() {
               <button
                 key={i}
                 onClick={() => setInput(prompt)}
-                className="min-h-[72px] rounded-xl border border-border bg-surface/50 p-4 text-start text-sm leading-relaxed text-zinc-400 transition-colors hover:bg-surface hover:text-zinc-200"
+                className="min-h-[72px] rounded-xl border border-border bg-surface/50 p-4 text-start text-sm leading-relaxed text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
               >
                 {prompt}
               </button>

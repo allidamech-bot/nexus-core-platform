@@ -479,6 +479,10 @@ export const translations = {
     organizationBody:
       "Organization membership, roles, workspace permissions, and domain controls are planned but not active yet.",
     languageBody: "Language preference is saved locally and updates layout direction for Arabic.",
+    appearance: "Appearance",
+    theme: "Theme",
+    themeBody:
+      "Theme preference is saved locally and updates the workspace instantly on this device.",
     apiAccess: "API and access",
     apiAccessBody:
       "API keys, SCIM, SSO, and service accounts are intentionally disabled until the enterprise security layer is ready.",
@@ -1130,6 +1134,10 @@ export const translations = {
     organizationBody:
       "عضوية المؤسسة والأدوار وصلاحيات مساحة العمل وضوابط النطاق مخطّط لها ولم تُفعَّل بعد.",
     languageBody: "يُحفظ تفضيل اللغة محليًا، ويُحدِّث اتجاه التخطيط تلقائيًا عند اختيار العربية.",
+    appearance: "\u0627\u0644\u0645\u0638\u0647\u0631",
+    theme: "\u0627\u0644\u0633\u0645\u0629",
+    themeBody:
+      "\u064a\u062a\u0645 \u062d\u0641\u0638 \u062a\u0641\u0636\u064a\u0644 \u0627\u0644\u0633\u0645\u0629 \u0645\u062d\u0644\u064a\u0627\u064b \u0648\u064a\u062d\u062f\u062b \u0645\u0633\u0627\u062d\u0629 \u0627\u0644\u0639\u0645\u0644 \u0641\u0648\u0631\u0627\u064b \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632.",
     apiAccess: "واجهات API والوصول",
     apiAccessBody:
       "مفاتيح API و SCIM و SSO وحسابات الخدمة معطّلة قصدًا إلى أن تجهز طبقة أمان المؤسسة.",

@@ -51,7 +51,7 @@ export function ProjectSidebar() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors ${
-              filter === f ? "bg-accent/20 text-accent" : "text-muted-foreground hover:bg-white/5"
+              filter === f ? "bg-accent/20 text-accent" : "text-muted-foreground hover:bg-muted"
             }`}
           >
             {f}

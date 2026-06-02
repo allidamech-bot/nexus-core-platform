@@ -39,3 +39,4 @@ This checklist documents the invariants and viewport testing requirements for th
 3. Set width to `390px` (e.g., iPhone 12 Pro).
 4. Verify the top header, drawers (left and right), and composer match the invariants above.
 5. Tap Pipeline action buttons to ensure they are full width and easily clickable.
+6. Switch Matte Black, Deep Black, and Light Beige at `390px` and verify no horizontal scroll, readable text, visible borders, and tappable composer/pipeline actions.
