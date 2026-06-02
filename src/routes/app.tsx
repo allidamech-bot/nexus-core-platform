@@ -1,6 +1,16 @@
 import { Link, Navigate, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Archive, LogOut, Boxes, Loader2, Settings, Menu, Activity } from "lucide-react";
+import {
+  Archive,
+  LogOut,
+  Boxes,
+  Loader2,
+  Settings,
+  Menu,
+  Activity,
+  FolderKanban,
+  MessageSquare,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
@@ -88,7 +98,7 @@ function AppWorkspace({
   return (
     <div className="h-[100dvh] w-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* Top Navigation */}
-      <header className="min-h-14 shrink-0 px-2 md:px-6 border-b border-border flex items-center justify-between bg-surface/30 gap-2">
+      <header className="min-h-14 shrink-0 px-2 md:px-6 border-b border-border flex items-center justify-between bg-surface/80 backdrop-blur gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden md:gap-4">
           <Sheet>
             <SheetTrigger asChild>
@@ -96,7 +106,7 @@ function AppWorkspace({
                 <Menu className="size-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 flex flex-col">
+            <SheetContent side="left" className="w-[95vw] max-w-md p-0 flex flex-col md:w-[350px]">
               <SheetTitle className="sr-only">Projects</SheetTitle>
               <ProjectSidebar />
             </SheetContent>
@@ -110,9 +120,6 @@ function AppWorkspace({
               Nexus
             </span>
           </Link>
-          <div className="hidden min-w-0 sm:block md:hidden">
-            <ThemeSelector compact />
-          </div>
           <div className="min-w-0 flex-1 truncate">
             <ProjectIdentityBar />
           </div>
@@ -146,7 +153,7 @@ function AppWorkspace({
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[90vw] sm:w-[400px] p-0 flex flex-col overflow-y-auto"
+              className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto xl:w-[400px]"
             >
               <SheetTitle className="sr-only">Project Inspector</SheetTitle>
               <ProjectInspector />
@@ -159,7 +166,7 @@ function AppWorkspace({
               qc.clear();
               navigate({ to: "/" });
             }}
-            className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-muted md:ml-2 md:min-h-8 md:min-w-8"
+            className="hidden min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-muted md:ml-2 md:grid md:min-h-8 md:min-w-8"
             title={t("signOut")}
             aria-label={t("signOut")}
           >
@@ -175,7 +182,7 @@ function AppWorkspace({
         </aside>
 
         {/* Center */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background pb-[calc(72px+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </main>
 
@@ -184,6 +191,47 @@ function AppWorkspace({
           <ProjectInspector />
         </aside>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-2xl backdrop-blur md:hidden">
+        <div className="mx-auto grid min-h-14 max-w-md grid-cols-3 gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <FolderKanban className="mb-1 size-5" />
+                Projects
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[95vw] max-w-md p-0 flex flex-col">
+              <SheetTitle className="sr-only">Projects</SheetTitle>
+              <ProjectSidebar />
+            </SheetContent>
+          </Sheet>
+
+          <Link
+            to="/app"
+            className="flex min-h-[44px] flex-col items-center justify-center rounded-xl bg-accent/10 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/15"
+          >
+            <MessageSquare className="mb-1 size-5" />
+            Workspace
+          </Link>
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <Activity className="mb-1 size-5" />
+                Inspector
+              </button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto"
+            >
+              <SheetTitle className="sr-only">Project Inspector</SheetTitle>
+              <ProjectInspector />
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
     </div>
   );
 }

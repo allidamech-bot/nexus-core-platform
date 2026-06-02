@@ -153,13 +153,13 @@ function AppIndex() {
   }
 
   return (
-    <div className="flex-1 flex min-w-0 flex-col items-stretch justify-center overflow-x-hidden overflow-y-auto bg-background px-3 py-4 md:items-center md:px-6">
-      <div className="my-auto w-full max-w-none min-w-0 space-y-6 sm:space-y-10 md:max-w-3xl">
-        <div className="w-full min-w-0 text-center">
-          <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-border bg-surface text-foreground shadow-sm sm:mb-6">
+    <div className="flex-1 flex min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-background px-3 pb-6 pt-4 md:items-center md:px-6">
+      <div className="w-full max-w-none min-w-0 space-y-5 md:my-auto md:max-w-3xl md:space-y-8">
+        <div className="w-full min-w-0 pt-2 text-left md:text-center">
+          <div className="mb-4 grid size-12 place-items-center rounded-2xl border border-accent/20 bg-accent/10 text-accent shadow-sm md:mx-auto md:mb-6">
             <Terminal className="size-6" />
           </div>
-          <h1 className="w-full text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl lg:text-3xl">
+          <h1 className="w-full text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             {!activeProject
               ? "ابدأ بربط مشروعك مع Nexus"
               : activeProject.status === "failed" ||
@@ -171,6 +171,9 @@ function AppIndex() {
                   ? "ماذا تريد أن يفعل Nexus في مشروعك؟"
                   : "المشروع موجود لكن السياق غير جاهز بالكامل"}
           </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base">
+            {t("nexusHelperText")}
+          </p>
         </div>
 
         {activeProject &&
@@ -190,31 +193,36 @@ function AppIndex() {
             activeProject.latest_job?.status === "failed" ||
             activeProject.latest_job?.status === "rejected")
         ) && (
-          <div className="relative min-w-0">
-            <textarea
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                if (status !== "creating") setComposerStatus("idle", "");
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={t("tellNexusToChange")}
-              className="min-h-[132px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-base shadow-sm focus:outline-none focus:ring-1 focus:ring-accent md:min-h-[120px] md:pb-4 md:pr-32 md:text-sm"
-              dir="auto"
-            />
-            <button
-              onClick={handleSend}
-              disabled={busy || !input.trim()}
-              className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-md bg-foreground px-4 py-2 text-[13px] font-bold text-background transition-colors disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:w-auto"
-            >
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-              {t("createAiSession") || "Send"}
-            </button>
+          <div className="rounded-2xl border border-border bg-surface-elevated/80 p-3 shadow-xl md:p-4">
+            <div className="relative min-w-0">
+              <textarea
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  if (status !== "creating") setComposerStatus("idle", "");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder={t("tellNexusToChange")}
+                className="min-h-[120px] w-full resize-none rounded-xl border border-border bg-background/70 p-4 text-base leading-relaxed shadow-sm placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-accent md:pb-4 md:pr-32 md:text-sm"
+                dir="auto"
+              />
+              <button
+                onClick={handleSend}
+                disabled={busy || !input.trim()}
+                className="mt-3 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-bold text-accent-foreground shadow-lg transition-colors hover:bg-accent/90 disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:min-h-[44px] md:w-auto md:rounded-lg"
+              >
+                {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                {t("createAiSession") || "Send"}
+              </button>
+            </div>
+            <div className="mt-3 text-center text-[12px] font-medium text-muted-foreground">
+              Cmd/Ctrl + Enter to send / {t("nexusHelperText")}
+            </div>
           </div>
         )}
 
@@ -247,23 +255,23 @@ function AppIndex() {
           </div>
         )}
 
-        <div className="text-center text-xs text-muted-foreground font-medium">
-          {t("nexusHelperText")}
-        </div>
-
         {recentThreads.length > 0 && (
-          <div className="-mt-2 flex min-w-0 flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
-            <span className="min-h-[32px] content-center">{t("openRecentSession")}</span>
-            {recentThreads.map((thread) => (
-              <Link
-                key={thread.id}
-                to="/app/$threadId"
-                params={{ threadId: thread.id }}
-                className="min-h-[36px] max-w-full truncate rounded-md border border-border bg-surface/50 px-3 py-2 text-foreground hover:bg-surface sm:max-w-48 sm:py-1"
-              >
-                {thread.title || t("untitled")}
-              </Link>
-            ))}
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("openRecentSession")}
+            </div>
+            <div className="flex min-w-0 flex-wrap gap-2">
+              {recentThreads.map((thread) => (
+                <Link
+                  key={thread.id}
+                  to="/app/$threadId"
+                  params={{ threadId: thread.id }}
+                  className="min-h-[44px] max-w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-surface-elevated sm:max-w-56"
+                >
+                  <span className="block truncate">{thread.title || t("untitled")}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
@@ -273,7 +281,7 @@ function AppIndex() {
             activeProject.latest_job?.status === "failed" ||
             activeProject.latest_job?.status === "rejected")
         ) && (
-          <div className="mt-6 grid min-w-0 grid-cols-1 gap-3 sm:mt-8 md:grid-cols-2">
+          <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
             {[
               t("examplePrompt1"),
               t("examplePrompt2"),
@@ -283,9 +291,12 @@ function AppIndex() {
               <button
                 key={i}
                 onClick={() => setInput(prompt)}
-                className="min-h-[72px] rounded-xl border border-border bg-surface/50 p-4 text-start text-sm leading-relaxed text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
+                className="group min-h-[88px] rounded-2xl border border-border bg-surface p-4 text-start text-sm leading-relaxed text-foreground shadow-sm transition-colors hover:bg-surface-elevated"
               >
-                {prompt}
+                <span className="mb-2 inline-grid size-7 place-items-center rounded-lg bg-accent/10 text-accent">
+                  <Send className="size-3.5" />
+                </span>
+                <span className="block font-medium">{prompt}</span>
               </button>
             ))}
           </div>

@@ -40,18 +40,23 @@ export function ProjectIdentityBar() {
     <div className="flex min-w-0 items-center gap-2 border-l border-border/50 pl-2 sm:gap-3 sm:pl-4">
       {activeProject ? (
         <>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="max-w-[42vw] truncate text-sm font-medium sm:max-w-[200px]">
+          <div className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span className="min-w-0 truncate text-sm font-semibold text-foreground">
               {activeProject.name}
             </span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-              {activeProject.source_type}
+            <span className="mt-0.5 min-w-0 truncate text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+              {activeProject.source_type} /{" "}
+              {(activeProject.latest_job?.status ?? activeProject.status).replace(/_/g, " ")}
             </span>
           </div>
-          <ProjectStatusBadge status={activeProject.latest_job?.status ?? activeProject.status} />
+          <div className="hidden shrink-0 lg:block">
+            <ProjectStatusBadge status={activeProject.latest_job?.status ?? activeProject.status} />
+          </div>
         </>
       ) : (
-        <span className="truncate text-sm italic text-muted-foreground">No Project Selected</span>
+        <span className="min-w-0 truncate text-sm font-medium text-muted-foreground">
+          No Project Selected
+        </span>
       )}
 
       <div className="ml-4 hidden items-center gap-2 md:flex">

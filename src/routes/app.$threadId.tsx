@@ -405,7 +405,7 @@ function ThreadView() {
                 trigger={
                   <button
                     type="button"
-                    className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted"
+                    className="hidden min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:flex"
                   >
                     <Upload className="size-4 md:size-3" />
                     <span className="hidden md:inline">Upload ZIP</span>
@@ -418,7 +418,7 @@ function ThreadView() {
                 <TooltipTrigger asChild>
                   <span className="inline-block">
                     <button
-                      className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                      className="hidden min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 md:flex"
                       disabled
                     >
                       <GitBranch className="size-4 md:size-3" />
@@ -435,7 +435,7 @@ function ThreadView() {
               <button
                 type="button"
                 onClick={handleArchiveThread}
-                className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted"
+                className="hidden min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:flex"
               >
                 <Archive className="size-4 md:size-3" />
                 <span className="hidden md:inline">{t("archiveSession")}</span>
@@ -456,7 +456,7 @@ function ThreadView() {
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-none min-w-0 space-y-4 px-3 py-4 md:max-w-3xl md:px-6 md:py-8 md:space-y-6">
+          <div className="mx-auto w-full max-w-none min-w-0 space-y-4 px-3 pb-6 pt-4 md:max-w-3xl md:px-6 md:py-8 md:space-y-6">
             {isArchived && (
               <div className="rounded-md border border-border bg-surface/70 px-3 py-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{t("thisSessionIsArchived")}</span>{" "}
@@ -524,7 +524,7 @@ function ThreadView() {
               <button
                 onClick={handleSend}
                 disabled={busy || !input.trim() || isArchived}
-                className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-[12px] font-bold text-background disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:w-auto"
+                className="mt-3 flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[13px] font-bold text-accent-foreground shadow-lg disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:min-h-[44px] md:w-auto md:rounded-md"
               >
                 {busy ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
                 Send
@@ -538,7 +538,7 @@ function ThreadView() {
       </section>
 
       {isInspectorOpen && (
-        <aside className="fixed inset-y-0 right-0 z-40 flex w-[90vw] max-w-sm shrink-0 flex-col overflow-y-auto border-l border-border bg-surface shadow-xl md:static md:w-72 md:bg-surface/40 md:shadow-none">
+        <aside className="fixed inset-y-0 right-0 z-40 flex w-[95vw] max-w-md shrink-0 flex-col overflow-y-auto border-l border-border bg-surface shadow-xl md:static md:w-72 md:bg-surface/40 md:shadow-none">
           <DrawerSection title="Active Project">
             {projectContextProject ? (
               <div className="rounded-md border border-accent/20 bg-accent/5 p-3">

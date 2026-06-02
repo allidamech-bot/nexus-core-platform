@@ -58,14 +58,14 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
   ] as const;
 
   return (
-    <section className="rounded-md border border-border bg-background/40 p-3">
+    <section className="rounded-2xl border border-border bg-background/40 p-3">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-            <ShieldCheck className="size-3 text-accent" />
+          <div className="flex items-center gap-2 text-sm font-bold text-foreground md:text-xs">
+            <ShieldCheck className="size-4 text-accent md:size-3" />
             {t("pipelineDiagnostics")} / {t("productionReadiness")}
           </div>
-          <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+          <div className="mt-1 text-xs leading-relaxed text-muted-foreground md:text-[11px]">
             {t("deploymentReadiness")} / {t("productionSmokeChecklist")} /{" "}
             {diagnostics.health.hasBlockers
               ? t("notReadyForProductionSmoke")
@@ -77,7 +77,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
           </div>
         </div>
         <span
-          className={`rounded border px-1.5 py-0.5 text-[9px] uppercase ${
+          className={`rounded-lg border px-2 py-1 text-[10px] font-semibold uppercase ${
             diagnostics.health.hasBlockers
               ? "border-destructive/25 bg-destructive/10 text-destructive"
               : "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
@@ -93,7 +93,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         ))}
       </div>
 
-      <div className="mt-3 rounded border border-border bg-muted/50 p-2">
+      <div className="mt-3 rounded-xl border border-border bg-muted/50 p-3">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("releaseGate")}
         </div>
@@ -101,9 +101,12 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
           {t("credentialedSmokeRequired")} {t("environmentConfigurationRequired")}{" "}
           {t("aiProviderConfigurationRequired")}
         </div>
-        <div className="grid gap-1 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           {releaseRows.map(([label, ready]) => (
-            <div key={label} className="flex items-center justify-between gap-2 text-[10px]">
+            <div
+              key={label}
+              className="flex min-h-[32px] items-center justify-between gap-2 text-xs md:text-[10px]"
+            >
               <span className="min-w-0 truncate text-muted-foreground">{label}</span>
               <span
                 className={`shrink-0 rounded border px-1.5 py-0.5 uppercase ${
@@ -119,7 +122,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         </div>
       </div>
 
-      <div className="mt-3 rounded border border-border bg-muted/50 p-2">
+      <div className="mt-3 rounded-xl border border-border bg-muted/50 p-3">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("safetyInvariants")}
         </div>
@@ -137,24 +140,24 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
 function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
   const { t } = useLocale();
   return (
-    <div className="rounded border border-border bg-muted/50 p-2">
+    <div className="rounded-xl border border-border bg-muted/50 p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground md:text-[11px]">
             <StatusIcon status={stage.status} />
             <span className="truncate">{stage.label}</span>
           </div>
-          <div className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+          <div className="mt-1 text-xs leading-relaxed text-muted-foreground md:text-[10px]">
             {stage.description}
           </div>
         </div>
         <span
-          className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] ${statusTone(stage.status)}`}
+          className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-semibold ${statusTone(stage.status)}`}
         >
           {statusLabel(stage.status, t)}
         </span>
       </div>
-      <div className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+      <div className="mt-2 text-xs leading-relaxed text-muted-foreground md:text-[10px]">
         <span className="font-semibold text-foreground">{t("nextSafeAction")}:</span>{" "}
         {stage.requiredNextAction}
       </div>

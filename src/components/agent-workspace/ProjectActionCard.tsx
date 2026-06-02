@@ -36,15 +36,15 @@ export function ProjectActionCard() {
   }
 
   return (
-    <div className="mx-auto mt-6 grid w-full max-w-none min-w-0 grid-cols-1 gap-3 sm:mt-8 md:max-w-3xl md:grid-cols-3">
+    <div className="mx-auto mt-5 grid w-full max-w-none min-w-0 grid-cols-1 gap-3 md:max-w-3xl md:grid-cols-3">
       <ProjectUploadDialog
         userId={session.user.id}
         defaultMode="zip"
         onSuccess={setSelectedProjectId}
         trigger={
-          <button className="group flex min-h-[72px] min-w-0 items-center gap-3 rounded-xl border border-border bg-surface/50 p-4 text-left text-sm font-medium transition-colors hover:bg-surface">
-            <div className="grid place-items-center size-8 rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
-              <FileArchive className="size-4" />
+          <button className="group flex min-h-[88px] min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left text-sm font-medium shadow-sm transition-colors hover:bg-surface-elevated">
+            <div className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent transition-colors group-hover:bg-accent/20">
+              <FileArchive className="size-5" />
             </div>
             <div className="flex min-w-0 flex-col">
               <span className="text-foreground">رفع مشروع ZIP</span>
@@ -61,9 +61,9 @@ export function ProjectActionCard() {
         defaultMode="folder"
         onSuccess={setSelectedProjectId}
         trigger={
-          <button className="group flex min-h-[72px] min-w-0 items-center gap-3 rounded-xl border border-border bg-surface/50 p-4 text-left text-sm font-medium transition-colors hover:bg-surface">
-            <div className="grid place-items-center size-8 rounded-lg bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
-              <FolderOpen className="size-4" />
+          <button className="group flex min-h-[88px] min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left text-sm font-medium shadow-sm transition-colors hover:bg-surface-elevated">
+            <div className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent transition-colors group-hover:bg-accent/20">
+              <FolderOpen className="size-5" />
             </div>
             <div className="flex min-w-0 flex-col">
               <span className="text-foreground">استيراد مجلد</span>
@@ -82,10 +82,10 @@ export function ProjectActionCard() {
             sidebar.scrollIntoView({ behavior: "smooth" });
           }
         }}
-        className="group flex min-h-[72px] min-w-0 items-center gap-3 rounded-xl border border-border bg-surface/50 p-4 text-left text-sm font-medium transition-colors hover:bg-surface"
+        className="group flex min-h-[88px] min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left text-sm font-medium shadow-sm transition-colors hover:bg-surface-elevated"
       >
-        <div className="grid place-items-center size-8 rounded-lg bg-foreground/10 text-foreground group-hover:bg-foreground/20 transition-colors">
-          <FolderSync className="size-4" />
+        <div className="grid size-11 place-items-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-surface-elevated">
+          <FolderSync className="size-5" />
         </div>
         <div className="flex min-w-0 flex-col">
           <span className="text-foreground">اختيار مشروع موجود</span>

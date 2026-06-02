@@ -345,6 +345,8 @@ export function ProjectInspector() {
     }
   };
 
+  const hasReadyPatchPreview = patchPreviews.some((p) => p.status === "ready");
+
   let readinessState = "empty";
   let readinessColor = "text-muted-foreground bg-surface";
   let readinessLabel = "Empty Context";
@@ -370,36 +372,89 @@ export function ProjectInspector() {
     readinessLabel = "Context Staged / Processing";
   }
 
+  const nextSafeAction = hasPreviews
+    ? canSubmitWriteback
+      ? {
+          label: isSubmittingWriteback ? "Submitting review..." : "Submit writeback request",
+          disabled: isSubmittingWriteback,
+          onClick: handleSubmitWriteback,
+        }
+      : canApproveRejectWriteback
+        ? {
+            label: isApprovingWriteback ? "Approving request..." : "Approve writeback request",
+            disabled: isApprovingWriteback || isRejectingWriteback,
+            onClick: handleApproveWriteback,
+          }
+        : canCreateWorkingCopy
+          ? {
+              label: isCreatingWorkingCopy ? "Creating working copy..." : "Create working copy",
+              disabled: isCreatingWorkingCopy,
+              onClick: handleCreateWorkingCopy,
+            }
+          : canExportWorkingCopy
+            ? {
+                label: isExportingWorkingCopy ? "Exporting..." : "Download working copy export",
+                disabled: isExportingWorkingCopy,
+                onClick: handleExportWorkingCopy,
+              }
+            : canRequestWriteback
+              ? {
+                  label: isRequestingWriteback
+                    ? "Requesting review..."
+                    : "Request source writeback review",
+                  disabled: isRequestingWriteback,
+                  onClick: handleRequestWriteback,
+                }
+              : hasReadyPatchPreview
+                ? {
+                    label: isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification",
+                    disabled: isVerifyingSandbox,
+                    onClick: handleRunSandbox,
+                  }
+                : {
+                    label: isGeneratingPatch
+                      ? "Generating preview..."
+                      : "Generate grounded patch preview",
+                    disabled: isGeneratingPatch,
+                    onClick: handleGeneratePatch,
+                  }
+    : null;
+
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-surface/10 border-l border-border">
-      <div className="p-4 border-b border-border/50 bg-surface/30">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background md:border-l md:border-border md:bg-surface/10">
+      <div className="sticky top-0 z-10 border-b border-border bg-surface/95 p-4 backdrop-blur">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-sm truncate">{activeProject.name}</h3>
-            <p className="text-[11px] text-muted-foreground mt-1 truncate uppercase tracking-wider">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-accent">
+              Inspector
+            </div>
+            <h3 className="truncate text-xl font-bold leading-tight text-foreground md:text-sm">
+              {activeProject.name}
+            </h3>
+            <p className="mt-1 truncate text-xs uppercase tracking-wider text-muted-foreground md:text-[11px]">
               {activeProject.source_type} â€¢ {activeProject.id.slice(0, 8)}
             </p>
           </div>
           <div
-            className={`px-2 py-1 rounded border text-[10px] font-medium whitespace-nowrap ${readinessColor}`}
+            className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold whitespace-nowrap ${readinessColor}`}
           >
             {readinessLabel}
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30 text-xs text-muted-foreground">
+        <div className="mt-4 flex items-center gap-3 border-t border-border/30 pt-3 text-sm text-muted-foreground md:text-xs">
           <div className="flex items-center gap-1.5" title="Total Files">
-            <FileText className="size-3.5" />
+            <FileText className="size-4 md:size-3.5" />
             <span>{files.length}</span>
           </div>
           <div className="flex items-center gap-1.5" title="Indexed Text Previews">
-            <Code2 className="size-3.5" />
+            <Code2 className="size-4 md:size-3.5" />
             <span>{activeProjectPreviews.length}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 space-y-5 overflow-y-auto p-4">
         {isFailed ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
             <div className="flex items-center gap-2 text-destructive mb-2">
@@ -414,11 +469,11 @@ export function ProjectInspector() {
         ) : null}
 
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-widest px-1">
+          <div className="flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-widest text-foreground md:text-xs">
             <Activity className="size-3.5 text-accent" />
             Diagnostics
           </div>
-          <div className="rounded-md border border-border/50 bg-background/50 overflow-hidden">
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
             <ProjectPipelineDiagnosticsPanel
               projectId={activeProject.id}
               safePreviews={activeProjectPreviews}
@@ -432,15 +487,31 @@ export function ProjectInspector() {
 
         {hasPreviews && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-widest px-1">
+            <div className="flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-widest text-foreground md:text-xs">
               <Activity className="size-3.5 text-accent" />
               Pipeline actions
             </div>
-            <div className="flex flex-wrap gap-2 w-full">
+            {nextSafeAction && (
+              <div className="rounded-2xl border border-accent/25 bg-accent/10 p-3">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-accent">
+                  {t("nextSafeAction")}
+                </div>
+                <Button
+                  size="lg"
+                  className="min-h-[52px] w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                  disabled={nextSafeAction.disabled}
+                  onClick={nextSafeAction.onClick}
+                >
+                  {nextSafeAction.disabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {nextSafeAction.label}
+                </Button>
+              </div>
+            )}
+            <div className="flex w-full flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                 disabled={isGeneratingPatch}
                 onClick={handleGeneratePatch}
               >
@@ -451,7 +522,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                  className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                   disabled={isVerifyingSandbox}
                   onClick={handleRunSandbox}
                 >
@@ -463,7 +534,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                  className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                   disabled={isCreatingSnapshot}
                   onClick={handleCreateSnapshot}
                 >
@@ -475,7 +546,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                  className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                   disabled={isRequestingWriteback}
                   onClick={handleRequestWriteback}
                 >
@@ -489,7 +560,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                  className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                   disabled={isSubmittingWriteback}
                   onClick={handleSubmitWriteback}
                 >
@@ -504,7 +575,7 @@ export function ProjectInspector() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                    className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                     disabled={isApprovingWriteback || isRejectingWriteback}
                     onClick={handleApproveWriteback}
                   >
@@ -514,7 +585,7 @@ export function ProjectInspector() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px] text-destructive hover:text-destructive border-destructive/30"
+                    className="min-h-[48px] w-full border-destructive/30 text-xs text-destructive hover:text-destructive sm:flex-1 sm:min-w-[200px]"
                     disabled={isApprovingWriteback || isRejectingWriteback}
                     onClick={handleRejectWriteback}
                   >
@@ -527,7 +598,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                  className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                   disabled={isCreatingWorkingCopy}
                   onClick={handleCreateWorkingCopy}
                 >
@@ -541,7 +612,7 @@ export function ProjectInspector() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs w-full sm:flex-1 sm:min-w-[200px] min-h-[44px]"
+                  className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
                   disabled={isExportingWorkingCopy}
                   onClick={handleExportWorkingCopy}
                 >
@@ -557,11 +628,11 @@ export function ProjectInspector() {
         )}
 
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-widest px-1">
+          <div className="flex items-center gap-2 px-1 text-sm font-bold uppercase tracking-widest text-foreground md:text-xs">
             <Code2 className="size-3.5 text-accent" />
             Project Files
           </div>
-          <div className="rounded-md border border-border/50 bg-background/50 overflow-hidden p-2">
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface p-2">
             <ProjectFileInventory files={files} loading={loadingFiles} />
           </div>
         </div>
