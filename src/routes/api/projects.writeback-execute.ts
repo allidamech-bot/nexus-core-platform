@@ -100,7 +100,7 @@ function toWritebackRequest(
     patchPreviewId: row.patch_preview_id,
     snapshotId: row.snapshot_id,
     requestedBy: row.requested_by,
-    reviewerId: row.reviewer_id,
+    reviewerId: row.reviewed_by,
     status: row.status as WritebackRequestStatus,
     title: row.title,
     requesterNote: row.requester_note,

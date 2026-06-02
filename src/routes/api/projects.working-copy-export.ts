@@ -158,7 +158,7 @@ async function loadWorkingCopyExportData(input: {
 
   const { data: requestRow, error: requestError } = await input.supabase
     .from("project_writeback_requests")
-    .select("id,status,reviewed_at,reviewer_id,requester_note,reviewer_note")
+    .select("id,status,reviewed_at,reviewed_by,requester_note,reviewer_note")
     .eq("id", workingCopy.writebackRequestId)
     .maybeSingle();
   if (requestError) throw requestError;
@@ -172,7 +172,7 @@ async function loadWorkingCopyExportData(input: {
           id: requestRow.id,
           status: requestRow.status,
           reviewedAt: requestRow.reviewed_at,
-          reviewerId: requestRow.reviewer_id,
+          reviewerId: requestRow.reviewed_by,
           requesterNote: requestRow.requester_note,
           reviewerNote: requestRow.reviewer_note,
         }

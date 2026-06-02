@@ -699,7 +699,7 @@ export type Database = {
           review_decision: string | null;
           review_metadata: Json;
           reviewed_at: string | null;
-          reviewer_id: string | null;
+          reviewed_by: string | null;
           reviewer_note: string | null;
           risk_level: string;
           snapshot_id: string;
@@ -723,7 +723,7 @@ export type Database = {
           review_decision?: string | null;
           review_metadata?: Json;
           reviewed_at?: string | null;
-          reviewer_id?: string | null;
+          reviewed_by?: string | null;
           reviewer_note?: string | null;
           risk_level?: string;
           snapshot_id: string;
@@ -747,7 +747,7 @@ export type Database = {
           review_decision?: string | null;
           review_metadata?: Json;
           reviewed_at?: string | null;
-          reviewer_id?: string | null;
+          reviewed_by?: string | null;
           reviewer_note?: string | null;
           risk_level?: string;
           snapshot_id?: string;

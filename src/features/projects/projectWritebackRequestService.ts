@@ -106,7 +106,7 @@ function toWritebackRequest(row: {
   patch_preview_id: string;
   snapshot_id: string;
   requested_by: string;
-  reviewer_id: string | null;
+  reviewed_by: string | null;
   status: string;
   title: string | null;
   requester_note: string | null;
@@ -130,7 +130,7 @@ function toWritebackRequest(row: {
     patchPreviewId: row.patch_preview_id,
     snapshotId: row.snapshot_id,
     requestedBy: row.requested_by,
-    reviewerId: row.reviewer_id,
+    reviewerId: row.reviewed_by,
     status: row.status as WritebackRequestStatus,
     title: row.title,
     requesterNote: row.requester_note,
