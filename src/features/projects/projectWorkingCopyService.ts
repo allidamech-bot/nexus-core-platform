@@ -346,8 +346,31 @@ export async function downloadWorkingCopyExport(workingCopyId: string): Promise<
   );
 
   if (!response.ok) {
-    const message = await response.text().catch(() => "Working copy export failed.");
-    throw new Error(message || "Working copy export failed.");
+    const responseText = await response.text().catch(() => "");
+    const payload = (
+      responseText
+        ? (() => {
+            try {
+              return JSON.parse(responseText) as unknown;
+            } catch {
+              return { error: responseText };
+            }
+          })()
+        : {}
+    ) as {
+      error?: string;
+      code?: string;
+      details?: string;
+      hint?: string;
+    };
+    const detailText = [payload.details, payload.hint].filter(Boolean).join(" ");
+    const error = new Error(payload.error || detailText || "Working copy export failed.");
+    Object.assign(error, {
+      code: payload.code,
+      details: payload.details,
+      hint: payload.hint,
+    });
+    throw error;
   }
 
   const blob = await response.blob();

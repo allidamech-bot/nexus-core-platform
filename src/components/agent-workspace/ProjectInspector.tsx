@@ -8,6 +8,7 @@ import {
   usePatchSnapshotsQuery,
   useWritebackRequestsQuery,
   useWorkingCopiesQuery,
+  useWorkingCopyFilesQuery,
   useCreatePatchPreviewMutation,
   usePatchPreviewSandboxMutation,
   useCreatePatchSnapshotMutation,
@@ -53,6 +54,8 @@ export function ProjectInspector() {
   const { data: patchSnapshots = [] } = usePatchSnapshotsQuery(activeProject?.id ?? null);
   const { data: writebackRequests = [] } = useWritebackRequestsQuery(activeProject?.id ?? null);
   const { data: workingCopies = [] } = useWorkingCopiesQuery(activeProject?.id ?? null);
+  const latestWorkingCopy = workingCopies[0] ?? null;
+  const { data: workingCopyFiles = [] } = useWorkingCopyFilesQuery(latestWorkingCopy?.id ?? null);
 
   if (!activeProject) {
     return (
@@ -84,7 +87,6 @@ export function ProjectInspector() {
   );
   const canCreateWorkingCopy =
     latestWritebackRequest?.status === "approved" && !hasWorkingCopyForLatestRequest;
-  const latestWorkingCopy = workingCopies[0];
   const canExportWorkingCopy = !!latestWorkingCopy;
   const hasFiles = files.length > 0;
 
@@ -431,6 +433,7 @@ export function ProjectInspector() {
                     onClick: handleGeneratePatch,
                   }
     : null;
+  const isPrimaryAction = (actionKey: string) => nextSafeAction?.key === actionKey;
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background md:border-l md:border-border md:bg-surface/10">
@@ -493,6 +496,7 @@ export function ProjectInspector() {
               patchSnapshots={patchSnapshots}
               writebackRequests={writebackRequests}
               workingCopies={workingCopies}
+              workingCopyFiles={workingCopyFiles}
             />
           </div>
         </div>
@@ -520,28 +524,31 @@ export function ProjectInspector() {
               </div>
             )}
             <div className="flex w-full flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
-                disabled={isGeneratingPatch}
-                onClick={handleGeneratePatch}
-              >
-                {isGeneratingPatch && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                {isGeneratingPatch ? "Generating preview..." : "Generate grounded patch preview"}
-              </Button>
-              {patchPreviews.some((p) => p.status === "ready") && (
+              {!isPrimaryAction("generatePatch") && (
                 <Button
                   variant="outline"
                   size="sm"
                   className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
-                  disabled={isVerifyingSandbox}
-                  onClick={handleRunSandbox}
+                  disabled={isGeneratingPatch}
+                  onClick={handleGeneratePatch}
                 >
-                  {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  {isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification"}
+                  {isGeneratingPatch && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  {isGeneratingPatch ? "Generating preview..." : "Generate grounded patch preview"}
                 </Button>
               )}
+              {patchPreviews.some((p) => p.status === "ready") &&
+                !isPrimaryAction("runSandbox") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[48px] w-full text-xs sm:flex-1 sm:min-w-[200px]"
+                    disabled={isVerifyingSandbox}
+                    onClick={handleRunSandbox}
+                  >
+                    {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    {isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification"}
+                  </Button>
+                )}
               {patchPreviews.some((p) => p.status === "ready") && (
                 <Button
                   variant="outline"
@@ -554,7 +561,7 @@ export function ProjectInspector() {
                   {isCreatingSnapshot ? "Creating snapshot..." : "Create patch snapshot"}
                 </Button>
               )}
-              {canRequestWriteback && nextSafeAction?.key !== "requestWriteback" && (
+              {canRequestWriteback && !isPrimaryAction("requestWriteback") && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -568,7 +575,7 @@ export function ProjectInspector() {
                     : "Request source writeback review"}
                 </Button>
               )}
-              {canSubmitWriteback && nextSafeAction?.key !== "submitWriteback" && (
+              {canSubmitWriteback && !isPrimaryAction("submitWriteback") && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -584,7 +591,7 @@ export function ProjectInspector() {
               )}
               {canApproveRejectWriteback && (
                 <>
-                  {nextSafeAction?.key !== "approveWriteback" && (
+                  {!isPrimaryAction("approveWriteback") && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -608,7 +615,7 @@ export function ProjectInspector() {
                   </Button>
                 </>
               )}
-              {canCreateWorkingCopy && nextSafeAction?.key !== "createWorkingCopy" && (
+              {canCreateWorkingCopy && !isPrimaryAction("createWorkingCopy") && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -620,7 +627,7 @@ export function ProjectInspector() {
                   {isCreatingWorkingCopy ? "Creating working copy..." : "Create working copy"}
                 </Button>
               )}
-              {canExportWorkingCopy && (
+              {canExportWorkingCopy && !isPrimaryAction("exportWorkingCopy") && (
                 <Button
                   variant="outline"
                   size="sm"

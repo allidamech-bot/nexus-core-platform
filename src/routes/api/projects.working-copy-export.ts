@@ -22,6 +22,20 @@ function textResponse(message: string, status: number, correlationId?: string) {
   });
 }
 
+function jsonErrorResponse(
+  payload: { error: string; code?: string; details?: string; hint?: string },
+  status: number,
+  correlationId: string,
+) {
+  return Response.json(payload, {
+    status,
+    headers: {
+      "Cache-Control": "no-store",
+      "x-correlation-id": correlationId,
+    },
+  });
+}
+
 function getSupabaseEnv() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -198,17 +212,58 @@ export const Route = createFileRoute("/api/projects/working-copy-export")({
           if (access.response) return access.response;
 
           const workingCopyId = new URL(request.url).searchParams.get("workingCopyId");
-          if (!workingCopyId) return textResponse("Working copy id required", 400, correlationId);
+          if (!workingCopyId) {
+            return jsonErrorResponse(
+              {
+                error: "Working copy id required.",
+                code: "400",
+                details: "Provide a workingCopyId query parameter.",
+              },
+              400,
+              correlationId,
+            );
+          }
 
           const data = await loadWorkingCopyExportData({
             supabase: access.supabase,
             workingCopyId,
           });
-          if (!data) return textResponse("Working copy not found", 404, correlationId);
+          if (!data) {
+            return jsonErrorResponse(
+              {
+                error: "Working copy not found.",
+                code: "404",
+                details: `Working copy ${workingCopyId} was not found.`,
+              },
+              404,
+              correlationId,
+            );
+          }
 
           const admin = await isAdmin(access.supabase);
           if (!admin && data.project.user_id !== access.userId) {
-            return textResponse("Forbidden", 403, correlationId);
+            return jsonErrorResponse(
+              {
+                error: "Forbidden.",
+                code: "403",
+                details: "You do not have access to export this working copy.",
+              },
+              403,
+              correlationId,
+            );
+          }
+
+          if (data.files.length < 1) {
+            return jsonErrorResponse(
+              {
+                error: "Working copy export files are missing.",
+                code: "409",
+                details: `No project_working_copy_files rows were found for working_copy_id ${workingCopyId}.`,
+                hint: "Refresh the workspace and retry. If this persists, recreate the working copy from the approved request.",
+              },
+              409,
+              correlationId,
+            );
           }
 
           const bundle: WorkingCopyExportBundle = createWorkingCopyExportBundle({
@@ -245,8 +300,13 @@ export const Route = createFileRoute("/api/projects/working-copy-export")({
               withLogContext({ correlationId }, safeErrorLog(error)),
             );
           }
-          return textResponse(
-            status === 500 ? "Working copy export failed" : message,
+          return jsonErrorResponse(
+            {
+              error: status === 500 ? "Working copy export failed." : message,
+              code: String(status),
+              details:
+                status === 500 ? "The export endpoint failed while building the bundle." : message,
+            },
             status,
             correlationId,
           );

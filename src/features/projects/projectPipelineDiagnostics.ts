@@ -243,7 +243,6 @@ export function buildProjectPipelineDiagnostics(
   const patchSnapshots = input.patchSnapshots ?? [];
   const writebackRequests = input.writebackRequests ?? [];
   const workingCopies = input.workingCopies ?? [];
-  const workingCopyFiles = input.workingCopyFiles ?? [];
   const readyPatchPreview = hasReadyPatchPreview(patchPreviews);
   const snapshot = latestSnapshot(patchSnapshots);
   const request = latestRequest(writebackRequests);
@@ -410,18 +409,14 @@ export function buildProjectPipelineDiagnostics(
     }),
     stage({
       key: "workingCopyExport",
-      status:
-        workingCopy && workingCopyFiles.length > 0 ? "complete" : workingCopy ? "ready" : "blocked",
+      status: workingCopy ? "complete" : "blocked",
       label: "Working copy export",
       description: "Downloads the versioned working copy as a safe JSON review bundle.",
       requiredNextAction: workingCopy
         ? "Download the working copy export bundle."
         : "Create a versioned working copy first.",
       blockers: workingCopy ? [] : ["A working copy is required before export."],
-      warnings:
-        workingCopy && workingCopyFiles.length === 0
-          ? ["Working copy files have not loaded yet."]
-          : [],
+      warnings: [],
       sourceIds: { workingCopyId: workingCopy?.id ?? null },
     }),
   ];
