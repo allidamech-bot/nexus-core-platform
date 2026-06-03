@@ -38,9 +38,11 @@ Credentialed smoke tests are skipped locally when those values are not present.
 
 ## Production-like manual smoke
 
+- Latest governed working-copy export smoke: **PASS**. Confirmed flow: writeback review Complete, versioned working copy Complete, working copy export Complete, downloaded `nexus-core-working-copy-034df544.json`.
 - Use a small ZIP containing allowlisted text files.
 - Confirm blocked, warning, and complete states appear in pipeline diagnostics.
-- Confirm release gate still says production/source writeback is unavailable.
+- Confirm release gate still says direct source writeback is intentionally disabled and working copy export is the safe review handoff.
+- Confirm AI provider configuration and credentialed smoke requirements remain visible where applicable.
 - Confirm exported JSON contains README, manifest, metadata, bounded text, and sanitized paths.
 
 ## Must remain unavailable

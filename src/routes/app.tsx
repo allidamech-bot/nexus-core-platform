@@ -27,7 +27,13 @@ import { ProjectInspector } from "@/components/agent-workspace/ProjectInspector"
 import { ProjectIdentityBar } from "@/components/agent-workspace/ProjectIdentityBar";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ThemeSelector } from "@/features/theme/ThemeSelector";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -114,6 +120,9 @@ function AppWorkspace({
                 className="w-[95vw] max-w-md p-0 flex flex-col md:w-[350px]"
               >
                 <SheetTitle className="sr-only">Projects</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Open the mobile Projects panel to select, upload, or import project context.
+                </SheetDescription>
                 <ProjectSidebar />
               </SheetContent>
             </Sheet>
@@ -162,6 +171,9 @@ function AppWorkspace({
                 className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto xl:w-[400px]"
               >
                 <SheetTitle className="sr-only">Project Inspector</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Open project diagnostics, governed pipeline actions, and file inventory.
+                </SheetDescription>
                 <ProjectInspector />
               </SheetContent>
             </Sheet>
@@ -210,6 +222,9 @@ function AppWorkspace({
             </SheetTrigger>
             <SheetContent side="left" className="w-[95vw] max-w-md p-0 flex flex-col">
               <SheetTitle className="sr-only">{t("projects")}</SheetTitle>
+              <SheetDescription className="sr-only">
+                Open the mobile Projects panel to select, upload, or import project context.
+              </SheetDescription>
               <ProjectSidebar />
             </SheetContent>
           </Sheet>
@@ -234,6 +249,9 @@ function AppWorkspace({
               className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto"
             >
               <SheetTitle className="sr-only">{t("inspector")}</SheetTitle>
+              <SheetDescription className="sr-only">
+                Open project diagnostics, governed pipeline actions, and file inventory.
+              </SheetDescription>
               <ProjectInspector />
             </SheetContent>
           </Sheet>
@@ -250,6 +268,9 @@ function AppWorkspace({
               className="max-h-[88dvh] rounded-t-2xl border-border bg-background p-0"
             >
               <SheetTitle className="sr-only">{t("more")}</SheetTitle>
+              <SheetDescription className="sr-only">
+                Open mobile navigation, preferences, project tools, and account controls.
+              </SheetDescription>
               <div className="flex max-h-[88dvh] min-w-0 flex-col overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 <div className="sticky top-0 z-10 border-b border-border bg-surface/95 px-4 py-4 backdrop-blur">
                   <div className="font-mono text-[11px] font-semibold uppercase tracking-widest text-accent">

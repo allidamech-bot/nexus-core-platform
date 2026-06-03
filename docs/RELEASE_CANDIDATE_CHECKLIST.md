@@ -108,7 +108,10 @@ pnpm test:e2e
 
 - [ ] Confirm snapshot export downloads a bounded JSON bundle with README, manifest, metadata, sanitized paths, and preview-limited text.
 - [ ] Confirm working copy export downloads a bounded JSON bundle with README, manifest, metadata, files, and sanitized paths.
+- [x] Governed working-copy export smoke passed: writeback review Complete, versioned working copy Complete, working copy export Complete, downloaded `nexus-core-working-copy-034df544.json`.
 - [ ] Confirm no UI implies ZIP export when the implementation returns JSON.
 - [ ] Confirm source ZIP overwrite remains unavailable.
 - [ ] Confirm object storage writeback remains unavailable.
+- [ ] Confirm direct source writeback remains intentionally disabled and points users to working copy export as the safe review handoff.
+- [ ] Confirm AI provider configuration and credentialed smoke requirements remain clearly stated in release gates/checklists.
 - [ ] Confirm deployment/apply automation remains unavailable.

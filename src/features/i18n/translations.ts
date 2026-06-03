@@ -164,7 +164,8 @@ export const translations = {
     noChangedFiles: "No changed files",
     cannotCreateSnapshotFromBlockedSandbox: "Cannot create snapshot from blocked sandbox",
     snapshotLimitedToIndexedText: "Snapshot is limited to indexed preview text",
-    sourceWritebackUnavailableYet: "Source writeback is not available yet",
+    sourceWritebackUnavailableYet:
+      "Direct source writeback is intentionally disabled. Use working copy export as the safe review handoff.",
     versionedWorkingCopy: "Versioned working copy",
     createVersionedWorkingCopy: "Create versioned working copy",
     workingCopyCreated: "Working copy created",
@@ -202,7 +203,8 @@ export const translations = {
     originalProjectFilesRemainUnchanged: "Original project files remain unchanged",
     objectStorageRemainsUnchanged: "Object storage remains unchanged",
     sourceZipRemainsUnchanged: "Source ZIP remains unchanged",
-    sourceWritebackIsNotAvailableYet: "Source writeback is not available yet",
+    sourceWritebackIsNotAvailableYet:
+      "Direct source writeback is intentionally disabled. Use working copy export as the safe review handoff.",
     fullPipelineSmokeChecklist: "Full pipeline smoke checklist",
     credentialedSmokeTestsSkippedLocally: "Credentialed smoke tests are skipped locally",
     noBlockersDetected: "No blockers detected",
@@ -746,7 +748,7 @@ export const translations = {
     snapshotLimitedToIndexedText:
       "\u0627\u0644\u0644\u0642\u0637\u0629 \u0645\u062d\u062f\u0648\u062f\u0629 \u0628\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0641\u0647\u0631\u0633",
     sourceWritebackUnavailableYet:
-      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u0645\u0639\u0637\u0644\u0629 \u0639\u0645\u062f\u064b\u0627. \u0627\u0633\u062a\u062e\u062f\u0645 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644 \u0643\u062a\u0633\u0644\u064a\u0645 \u0622\u0645\u0646 \u0644\u0644\u0645\u0631\u0627\u062c\u0639\u0629.",
     versionedWorkingCopy:
       "\u0646\u0633\u062e\u0629 \u0639\u0645\u0644 \u0628\u0625\u0635\u062f\u0627\u0631 \u0645\u0633\u062a\u0642\u0644",
     createVersionedWorkingCopy:
@@ -810,7 +812,7 @@ export const translations = {
     sourceZipRemainsUnchanged:
       "\u0645\u0644\u0641 ZIP \u0627\u0644\u0623\u0635\u0644\u064a \u0628\u0642\u064a \u062f\u0648\u0646 \u062a\u063a\u064a\u064a\u0631",
     sourceWritebackIsNotAvailableYet:
-      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629 \u0628\u0639\u062f",
+      "\u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u0635\u062f\u0631 \u0645\u0639\u0637\u0644\u0629 \u0639\u0645\u062f\u064b\u0627. \u0627\u0633\u062a\u062e\u062f\u0645 \u062a\u0635\u062f\u064a\u0631 \u0646\u0633\u062e\u0629 \u0627\u0644\u0639\u0645\u0644 \u0643\u062a\u0633\u0644\u064a\u0645 \u0622\u0645\u0646 \u0644\u0644\u0645\u0631\u0627\u062c\u0639\u0629.",
     fullPipelineSmokeChecklist:
       "\u0642\u0627\u0626\u0645\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0633\u0627\u0631 \u0627\u0644\u0643\u0627\u0645\u0644",
     credentialedSmokeTestsSkippedLocally:

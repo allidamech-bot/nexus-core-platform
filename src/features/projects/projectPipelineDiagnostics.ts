@@ -183,6 +183,12 @@ export function buildPipelineSafetyInvariants(): PipelineSafetyInvariant[] {
       confirmed: true,
     },
     {
+      key: "direct_source_writeback_disabled",
+      label:
+        "Direct source writeback is intentionally disabled. Use working copy export as the safe review handoff.",
+      confirmed: true,
+    },
+    {
       key: "exports_bounded_sanitized",
       label: "Snapshot and working-copy exports are bounded and path-sanitized.",
       confirmed: true,
