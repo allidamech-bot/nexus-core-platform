@@ -42,6 +42,14 @@ function statusLabel(status: PipelineStageStatus, t: ReturnType<typeof useLocale
 export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnosticsInput) {
   const { t } = useLocale();
   const diagnostics = useMemo(() => buildProjectPipelineDiagnostics(input), [input]);
+  const aiPatchPreviewStage = diagnostics.stages.find((stage) => stage.key === "aiPatchPreview");
+  const governedPipelineReadiness = diagnostics.health.hasBlockers
+    ? t("notReadyForProductionSmoke")
+    : t("governedPipelineSmokePass");
+  const aiProviderReadiness =
+    aiPatchPreviewStage?.status === "complete" || aiPatchPreviewStage?.status === "ready"
+      ? t("aiProviderConfigurationPass")
+      : t("aiProviderConfigurationBlocked");
   const releaseRows = [
     [t("uploadZip"), diagnostics.releaseGate.canUploadProcessZip],
     [t("safePreview"), diagnostics.releaseGate.safePreviewReady],
@@ -66,10 +74,8 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
             {t("pipelineDiagnostics")} / {t("productionReadiness")}
           </div>
           <div className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[11px]">
-            {t("deploymentReadiness")} / {t("productionSmokeChecklist")} /{" "}
-            {diagnostics.health.hasBlockers
-              ? t("notReadyForProductionSmoke")
-              : t("readyForProductionSmoke")}
+            {t("deploymentReadiness")} / {governedPipelineReadiness} /{" "}
+            {t("credentialedProductionSmokeBlocked")} / {aiProviderReadiness}
           </div>
           <div className="mt-2 break-words font-mono text-[11px] uppercase leading-relaxed tracking-wide text-muted-foreground [overflow-wrap:anywhere] md:mt-1 md:text-[10px] md:tracking-widest">
             {releaseInfo.releaseName} / {releaseInfo.releaseStatus} /{" "}

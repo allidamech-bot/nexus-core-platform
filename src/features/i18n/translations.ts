@@ -190,6 +190,11 @@ export const translations = {
     productionSmokeChecklist: "Production smoke checklist",
     readyForProductionSmoke: "Ready for production smoke",
     notReadyForProductionSmoke: "Not ready for production smoke",
+    governedPipelineSmokePass: "Governed pipeline smoke: PASS",
+    credentialedProductionSmokeBlocked:
+      "Credentialed production smoke: BLOCKED_CREDENTIALS_REQUIRED",
+    aiProviderConfigurationPass: "AI provider configuration: PASS",
+    aiProviderConfigurationBlocked: "AI provider configuration: required until verified",
     pipelineDiagnostics: "Pipeline diagnostics",
     releaseGate: "Release gate",
     pipelineStage: "Pipeline stage",
@@ -793,6 +798,14 @@ export const translations = {
       "\u062c\u0627\u0647\u0632 \u0644\u0641\u062d\u0635 \u0627\u0644\u0625\u0646\u062a\u0627\u062c",
     notReadyForProductionSmoke:
       "\u063a\u064a\u0631 \u062c\u0627\u0647\u0632 \u0644\u0641\u062d\u0635 \u0627\u0644\u0625\u0646\u062a\u0627\u062c",
+    governedPipelineSmokePass:
+      "\u0641\u062d\u0635 \u0627\u0644\u0645\u0633\u0627\u0631 \u0627\u0644\u0645\u062d\u0648\u0643\u0645: PASS",
+    credentialedProductionSmokeBlocked:
+      "\u0641\u062d\u0635 \u0627\u0644\u0625\u0646\u062a\u0627\u062c \u0628\u0627\u0639\u062a\u0645\u0627\u062f\u0627\u062a: BLOCKED_CREDENTIALS_REQUIRED",
+    aiProviderConfigurationPass:
+      "\u0625\u0639\u062f\u0627\u062f \u0645\u0632\u0648\u062f \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a: PASS",
+    aiProviderConfigurationBlocked:
+      "\u0625\u0639\u062f\u0627\u062f \u0645\u0632\u0648\u062f \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064a: \u0645\u0637\u0644\u0648\u0628 \u062d\u062a\u0649 \u064a\u062a\u0645 \u0627\u0644\u062a\u062d\u0642\u0642",
     pipelineDiagnostics:
       "\u062a\u0634\u062e\u064a\u0635 \u0645\u0633\u0627\u0631 \u0627\u0644\u0639\u0645\u0644",
     releaseGate: "\u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062c\u0627\u0647\u0632\u064a\u0629",

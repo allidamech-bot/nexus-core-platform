@@ -21,6 +21,22 @@ Credentialed upload and AI smoke checks require Supabase and AI gateway environm
 
 Credentialed smoke tests are skipped locally when those values are not present.
 
+Production credentialed smoke uses a separate gate:
+
+```powershell
+pnpm smoke:production:credentialed
+```
+
+Required private env vars:
+
+- `NEXUS_SMOKE_BASE_URL`
+- `NEXUS_SMOKE_ADMIN_EMAIL`
+- `NEXUS_SMOKE_ADMIN_PASSWORD`
+- `NEXUS_SMOKE_USER_EMAIL`
+- `NEXUS_SMOKE_USER_PASSWORD`
+
+If these are absent, report **BLOCKED_CREDENTIALS_REQUIRED**.
+
 ## Expected full pipeline
 
 1. Upload a ZIP and confirm quota/auth blocks are respected.

@@ -21,6 +21,14 @@ pnpm build
 pnpm test:e2e
 ```
 
+Production credentialed smoke is a separate gate and must be run only with trusted production credentials:
+
+```bash
+pnpm smoke:production:credentialed
+```
+
+If credentials are absent, this gate is **BLOCKED_CREDENTIALS_REQUIRED**, not PASS.
+
 ---
 
 ## 2. Public Boundary & Localization Smoke
@@ -89,6 +97,12 @@ pnpm test:e2e
 ---
 
 ## 5. Admin Governance & Writebacks
+
+### Production Credentialed Gate
+
+- [ ] Run `pnpm smoke:production:credentialed` with `NEXUS_SMOKE_*` credentials in a private environment.
+- [ ] Confirm public app, admin login, non-admin login, admin control visibility, and non-admin admin denial pass.
+- [ ] If credentials are unavailable, mark production credentialed smoke as **BLOCKED_CREDENTIALS_REQUIRED**.
 
 ### A. Writeback Request Review Description
 

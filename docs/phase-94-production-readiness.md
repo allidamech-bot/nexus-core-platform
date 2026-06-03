@@ -19,6 +19,9 @@ Do not commit or print secrets, tokens, cookies, JWTs, service-role keys, auth h
 - `E2E_BROWSER_CHANNEL` when a specific browser channel is required
 - `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` for trusted admin smoke
 - `E2E_NON_ADMIN_EMAIL` and `E2E_NON_ADMIN_PASSWORD` for trusted non-admin smoke
+- `NEXUS_SMOKE_BASE_URL` for production credentialed smoke
+- `NEXUS_SMOKE_ADMIN_EMAIL` and `NEXUS_SMOKE_ADMIN_PASSWORD` for production admin smoke
+- `NEXUS_SMOKE_USER_EMAIL` and `NEXUS_SMOKE_USER_PASSWORD` for production non-admin smoke
 
 ## Supabase Migration Checklist
 
@@ -82,6 +85,16 @@ Do not commit or print secrets, tokens, cookies, JWTs, service-role keys, auth h
 ## Credentialed Tests
 
 Local e2e runs skip credentialed tests unless trusted E2E credentials are configured. For production smoke, run the credentialed suite only from a private trusted environment with protected secrets and no public logs.
+
+Run:
+
+```bash
+pnpm smoke:production:credentialed
+```
+
+If `NEXUS_SMOKE_*` credentials are absent, report **BLOCKED_CREDENTIALS_REQUIRED**. Do not report missing credentials as PASS.
+
+The production credentialed gate must confirm public app load, admin login, non-admin login, Admin Control visibility for admin only, non-admin denial from `/app/admin`, project-owner access, cross-user access blocking, safe working-copy export download, unchanged source project files, unchanged object storage, and intentionally disabled direct source writeback.
 
 ## Intentionally Unavailable
 
