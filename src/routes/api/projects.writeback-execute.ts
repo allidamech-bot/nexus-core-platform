@@ -517,8 +517,14 @@ async function execute(input: {
       .from("project_working_copy_files")
       .insert(
         rows.files.map((file) => ({
-          ...file,
+          project_id: file.project_id,
           working_copy_id: workingCopy.id,
+          original_preview_text: file.original_preview_text,
+          working_copy_text: file.working_copy_text,
+          file_path: file.file_path,
+          changed: file.changed,
+          warnings: file.warnings,
+          blockers: file.blockers,
         })),
       );
     if (filesInsertError) throw filesInsertError;

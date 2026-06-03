@@ -2,7 +2,11 @@ import { recordAuditEvent } from "@/features/governance/governanceService";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { PatchSandboxIssue } from "./patchApplySandbox";
-import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
+import {
+  hashPatchedText,
+  type ProjectPatchSnapshot,
+  type ProjectPatchSnapshotFile,
+} from "./patchSnapshot";
 import { getPatchSnapshot, getPatchSnapshotFiles } from "./projectPatchPreviewService";
 import type { ProjectWritebackRequest } from "./projectWritebackRequestService";
 import { getWritebackRequest } from "./projectWritebackRequestService";
@@ -72,6 +76,8 @@ type WorkingCopyFileInsert = {
   project_id: string;
   original_preview_text: string | null;
   working_copy_text: string;
+  content_sha256: string;
+  content_text: string;
   file_path: string;
   changed: boolean;
   warnings: Json;
@@ -306,6 +312,8 @@ export async function buildWorkingCopyRows(input: {
           file_path: file.filePath,
           original_preview_text: file.originalPreviewText,
           working_copy_text: content,
+          content_sha256: file.patchedContentSha256 ?? (await hashPatchedText(content)),
+          content_text: content,
           changed: file.changed,
           warnings: file.warnings as unknown as Json,
           blockers: file.blockers as unknown as Json,
