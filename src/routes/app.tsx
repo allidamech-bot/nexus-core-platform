@@ -100,80 +100,85 @@ function AppWorkspace({
   return (
     <div className="h-[100dvh] w-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* Top Navigation */}
-      <header className="min-h-14 shrink-0 px-2 md:px-6 border-b border-border flex items-center justify-between bg-surface/80 backdrop-blur gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden md:gap-4">
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="-ml-2 grid min-h-[44px] min-w-[44px] place-items-center text-muted-foreground hover:text-foreground md:hidden">
-                <Menu className="size-5" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[95vw] max-w-md p-0 flex flex-col md:w-[350px]">
-              <SheetTitle className="sr-only">Projects</SheetTitle>
-              <ProjectSidebar />
-            </SheetContent>
-          </Sheet>
+      <header className="min-h-[calc(56px+env(safe-area-inset-top))] shrink-0 border-b border-border bg-surface/80 px-3 pt-[env(safe-area-inset-top)] backdrop-blur md:min-h-14 md:px-6 md:pt-0">
+        <div className="flex min-h-14 items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden md:gap-4">
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="-ml-1 grid min-h-[48px] min-w-[48px] place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden">
+                  <Menu className="size-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-[95vw] max-w-md p-0 flex flex-col md:w-[350px]"
+              >
+                <SheetTitle className="sr-only">Projects</SheetTitle>
+                <ProjectSidebar />
+              </SheetContent>
+            </Sheet>
 
-          <Link to="/app" className="flex min-h-[44px] shrink-0 items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
-              <span className="font-mono text-[11px] font-bold">NX</span>
+            <Link to="/app" className="flex min-h-[44px] shrink-0 items-center gap-2">
+              <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
+                <span className="font-mono text-[11px] font-bold">NX</span>
+              </div>
+              <span className="hidden text-sm font-bold tracking-tighter uppercase md:inline">
+                Nexus
+              </span>
+            </Link>
+            <div className="min-w-0 flex-1 truncate">
+              <ProjectIdentityBar />
             </div>
-            <span className="hidden text-sm font-bold tracking-tighter uppercase md:inline">
-              Nexus
-            </span>
-          </Link>
-          <div className="min-w-0 flex-1 truncate">
-            <ProjectIdentityBar />
           </div>
-        </div>
 
-        <div className="flex items-center gap-1 md:gap-2 shrink-0">
-          <div className="hidden md:flex items-center gap-2">
-            <ThemeSelector compact />
-            <LanguageSwitcher />
-            {isAdmin && (
+          <div className="flex shrink-0 items-center gap-1 md:gap-2">
+            <div className="hidden md:flex items-center gap-2">
+              <ThemeSelector compact />
+              <LanguageSwitcher />
+              {isAdmin && (
+                <Link
+                  to="/app/admin"
+                  className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
+                >
+                  <Boxes className="size-3.5" /> {t("adminControl")}
+                </Link>
+              )}
               <Link
-                to="/app/admin"
+                to="/app/settings"
                 className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
               >
-                <Boxes className="size-3.5" /> {t("adminControl")}
+                <Settings className="size-3.5" /> {t("settings")}
               </Link>
-            )}
-            <Link
-              to="/app/settings"
-              className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
+            </div>
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="grid min-h-[48px] min-w-[48px] place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:min-h-[44px] md:min-w-[44px] xl:hidden">
+                  <Activity className="size-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto xl:w-[400px]"
+              >
+                <SheetTitle className="sr-only">Project Inspector</SheetTitle>
+                <ProjectInspector />
+              </SheetContent>
+            </Sheet>
+
+            <button
+              onClick={async () => {
+                await signOut();
+                qc.clear();
+                navigate({ to: "/" });
+              }}
+              className="hidden min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-muted md:ml-2 md:grid md:min-h-8 md:min-w-8"
+              title={t("signOut")}
+              aria-label={t("signOut")}
             >
-              <Settings className="size-3.5" /> {t("settings")}
-            </Link>
+              <LogOut className="size-3.5" />
+            </button>
           </div>
-
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="grid min-h-[44px] min-w-[44px] place-items-center text-muted-foreground hover:text-foreground xl:hidden">
-                <Activity className="size-5" />
-              </button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto xl:w-[400px]"
-            >
-              <SheetTitle className="sr-only">Project Inspector</SheetTitle>
-              <ProjectInspector />
-            </SheetContent>
-          </Sheet>
-
-          <button
-            onClick={async () => {
-              await signOut();
-              qc.clear();
-              navigate({ to: "/" });
-            }}
-            className="hidden min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md border border-border transition-colors hover:bg-muted md:ml-2 md:grid md:min-h-8 md:min-w-8"
-            title={t("signOut")}
-            aria-label={t("signOut")}
-          >
-            <LogOut className="size-3.5" />
-          </button>
         </div>
       </header>
 
@@ -184,7 +189,7 @@ function AppWorkspace({
         </aside>
 
         {/* Center */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background pb-[calc(72px+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </main>
 

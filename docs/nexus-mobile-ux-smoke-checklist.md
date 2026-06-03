@@ -11,7 +11,10 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 
 ## Header
 
+- [ ] Header respects `env(safe-area-inset-top)` on mobile.
+- [ ] Header has comfortable mobile top spacing and is at least `56px` tall below the safe area.
 - [ ] Menu button is at least `44px`.
+- [ ] Menu button has a forgiving tap zone and does not require tapping a tiny icon.
 - [ ] Inspector button is at least `44px`.
 - [ ] NX mark and project identity remain readable.
 - [ ] Project title truncates cleanly.
@@ -22,6 +25,7 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 ## Home Command Screen
 
 - [ ] `/app` feels like a premium mobile AI command screen.
+- [ ] Workspace hero starts with visible breathing room below the app header.
 - [ ] Hero title is readable, roughly `text-2xl` or larger on mobile.
 - [ ] Subtitle/helper copy appears below the title.
 - [ ] Composer is full width and visually framed.
@@ -29,6 +33,7 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 - [ ] Create AI session CTA is accent-colored, full width, and at least `52px` tall.
 - [ ] Helper line appears below the CTA.
 - [ ] Recent sessions are readable, wrapping, and at least `44px` tappable.
+- [ ] Recent sessions and prompt cards are not covered by the bottom nav.
 - [ ] Suggested prompts are one-column premium cards below `768px`.
 
 ## Projects Drawer
@@ -60,6 +65,7 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 - [ ] Buttons are at least `44px` tappable.
 - [ ] Uses safe-area bottom padding.
 - [ ] Does not cover the composer or important content.
+- [ ] Workspace tab routes to `/app` and has a full `44px` tap target.
 - [ ] Surface and border are theme-aware.
 
 ## Mobile Navigation Completeness
