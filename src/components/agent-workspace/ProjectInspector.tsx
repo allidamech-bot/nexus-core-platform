@@ -434,16 +434,16 @@ export function ProjectInspector() {
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background md:border-l md:border-border md:bg-surface/10">
-      <div className="sticky top-0 z-10 border-b border-border bg-surface/95 p-4 backdrop-blur">
+      <div className="sticky top-0 z-10 border-b border-border bg-surface/95 px-4 pb-4 pt-6 backdrop-blur md:p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-accent">
               Inspector
             </div>
-            <h3 className="truncate text-xl font-bold leading-tight text-foreground md:text-sm">
+            <h3 className="break-words text-lg font-bold leading-snug text-foreground md:truncate md:text-sm md:leading-tight">
               {activeProject.name}
             </h3>
-            <p className="mt-1 truncate text-xs uppercase tracking-wider text-muted-foreground md:text-[11px]">
+            <p className="mt-2 break-words text-xs uppercase leading-relaxed tracking-wider text-muted-foreground md:mt-1 md:truncate md:text-[11px] md:leading-normal">
               {activeProject.source_type} â€¢ {activeProject.id.slice(0, 8)}
             </p>
           </div>
@@ -466,7 +466,7 @@ export function ProjectInspector() {
         </div>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-4">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-[calc(88px+env(safe-area-inset-bottom))] pt-5 md:p-4">
         {isFailed ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
             <div className="flex items-center gap-2 text-destructive mb-2">

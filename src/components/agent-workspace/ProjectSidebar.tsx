@@ -32,10 +32,12 @@ export function ProjectSidebar() {
 
   return (
     <div data-project-sidebar="true" className="flex h-full min-w-0 flex-col bg-background">
-      <div className="sticky top-0 z-10 border-b border-border bg-surface/95 p-4 backdrop-blur">
+      <div className="sticky top-0 z-10 border-b border-border bg-surface/95 px-4 pb-4 pt-6 backdrop-blur md:p-4">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("projects")}</h2>
+            <h2 className="text-[1.65rem] font-bold leading-tight tracking-tight text-foreground md:text-2xl">
+              {t("projects")}
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {projects.length} total / {filteredProjects.length} shown
             </p>
@@ -107,7 +109,7 @@ export function ProjectSidebar() {
           ))}
         </div>
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-[calc(88px+env(safe-area-inset-bottom))] pt-3 md:p-3">
         {isLoading ? (
           <div className="grid place-items-center py-10">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />

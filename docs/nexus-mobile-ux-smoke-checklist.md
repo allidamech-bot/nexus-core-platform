@@ -27,6 +27,7 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 - [ ] `/app` feels like a premium mobile AI command screen.
 - [ ] Workspace hero starts with visible breathing room below the app header.
 - [ ] Hero title is readable, roughly `text-2xl` or larger on mobile.
+- [ ] Hero title with mixed Arabic/English text wraps cleanly without clipping or cramped line-height.
 - [ ] Subtitle/helper copy appears below the title.
 - [ ] Composer is full width and visually framed.
 - [ ] Textarea is at least `120px` tall.
@@ -39,6 +40,7 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 ## Projects Drawer
 
 - [ ] Drawer reads as a mobile Projects screen with a clear title.
+- [ ] Projects title starts with the same comfortable top spacing rhythm as Workspace.
 - [ ] Active project summary is visible when available.
 - [ ] Upload/import button is full width, accent-colored, and at least `48px` tall.
 - [ ] Filters are segmented controls, not tiny tabs.
@@ -52,6 +54,8 @@ Nexus treats every viewport under `768px` as a native-feeling mobile workspace, 
 - [ ] Inspector sheet is near full-screen (`95vw`) on mobile.
 - [ ] Header is sticky and readable.
 - [ ] Diagnostics are readable without tiny badges.
+- [ ] Diagnostics release labels and long meta text wrap readably without clipped or ultra-condensed text.
+- [ ] Inspector title and Diagnostics card have visible breathing room below the header.
 - [ ] A primary Next safe action CTA appears above advanced actions when possible.
 - [ ] Advanced pipeline actions stack full width and remain tappable.
 - [ ] Project files list is readable.

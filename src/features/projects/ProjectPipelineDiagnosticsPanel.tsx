@@ -59,19 +59,19 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
 
   return (
     <section className="rounded-2xl border border-border bg-background/40 p-3">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 md:mb-3 md:gap-2">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-bold text-foreground md:text-xs">
             <ShieldCheck className="size-4 text-accent md:size-3" />
             {t("pipelineDiagnostics")} / {t("productionReadiness")}
           </div>
-          <div className="mt-1 text-xs leading-relaxed text-muted-foreground md:text-[11px]">
+          <div className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[11px]">
             {t("deploymentReadiness")} / {t("productionSmokeChecklist")} /{" "}
             {diagnostics.health.hasBlockers
               ? t("notReadyForProductionSmoke")
               : t("readyForProductionSmoke")}
           </div>
-          <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="mt-2 break-words font-mono text-[11px] uppercase leading-relaxed tracking-wide text-muted-foreground [overflow-wrap:anywhere] md:mt-1 md:text-[10px] md:tracking-widest">
             {releaseInfo.releaseName} / {releaseInfo.releaseStatus} /{" "}
             {releaseInfo.latestStabilization} / {releaseInfo.expectedCommitLabel}
           </div>
@@ -87,7 +87,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         </span>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-3 md:gap-2">
         {diagnostics.stages.map((stage) => (
           <PipelineStageRow key={stage.key} stage={stage} />
         ))}
@@ -97,7 +97,7 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("releaseGate")}
         </div>
-        <div className="mb-2 text-[10px] leading-relaxed text-muted-foreground">
+        <div className="mb-3 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:mb-2 md:text-[10px]">
           {t("credentialedSmokeRequired")} {t("environmentConfigurationRequired")}{" "}
           {t("aiProviderConfigurationRequired")}
         </div>
@@ -105,9 +105,11 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
           {releaseRows.map(([label, ready]) => (
             <div
               key={label}
-              className="flex min-h-[32px] items-center justify-between gap-2 text-xs md:text-[10px]"
+              className="flex min-h-[36px] items-center justify-between gap-2 text-xs leading-snug md:min-h-[32px] md:text-[10px]"
             >
-              <span className="min-w-0 truncate text-muted-foreground">{label}</span>
+              <span className="min-w-0 break-words text-muted-foreground [overflow-wrap:anywhere] md:truncate">
+                {label}
+              </span>
               <span
                 className={`shrink-0 rounded border px-1.5 py-0.5 uppercase ${
                   ready
@@ -122,11 +124,11 @@ export function ProjectPipelineDiagnosticsPanel(input: ProjectPipelineDiagnostic
         </div>
       </div>
 
-      <div className="mt-3 rounded-xl border border-border bg-muted/50 p-3">
+      <div className="mt-4 rounded-xl border border-border bg-muted/50 p-3 md:mt-3">
         <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("safetyInvariants")}
         </div>
-        <div className="grid gap-1">
+        <div className="grid gap-2 md:gap-1">
           <Invariant text={t("originalProjectFilesRemainUnchanged")} />
           <Invariant text={t("objectStorageRemainsUnchanged")} />
           <Invariant text={t("sourceZipRemainsUnchanged")} />
@@ -145,9 +147,11 @@ function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground md:text-[11px]">
             <StatusIcon status={stage.status} />
-            <span className="truncate">{stage.label}</span>
+            <span className="min-w-0 break-words [overflow-wrap:anywhere] md:truncate">
+              {stage.label}
+            </span>
           </div>
-          <div className="mt-1 text-xs leading-relaxed text-muted-foreground md:text-[10px]">
+          <div className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[10px]">
             {stage.description}
           </div>
         </div>
@@ -157,7 +161,7 @@ function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
           {statusLabel(stage.status, t)}
         </span>
       </div>
-      <div className="mt-2 text-xs leading-relaxed text-muted-foreground md:text-[10px]">
+      <div className="mt-3 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:mt-2 md:text-[10px]">
         <span className="font-semibold text-foreground">{t("nextSafeAction")}:</span>{" "}
         {stage.requiredNextAction}
       </div>
@@ -182,12 +186,15 @@ function StageIssues({
 }) {
   const toneClass = tone === "blocker" ? "text-destructive" : "text-warning";
   return (
-    <div className="mt-2 space-y-1">
+    <div className="mt-3 space-y-1.5 md:mt-2 md:space-y-1">
       <div className={`text-[10px] font-semibold uppercase tracking-widest ${toneClass}`}>
         {title}
       </div>
       {issues.map((issue) => (
-        <div key={issue} className={`text-[10px] ${toneClass}`}>
+        <div
+          key={issue}
+          className={`break-words text-xs leading-relaxed [overflow-wrap:anywhere] md:text-[10px] ${toneClass}`}
+        >
           {issue}
         </div>
       ))}
@@ -197,9 +204,9 @@ function StageIssues({
 
 function Invariant({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+    <div className="flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground md:items-center md:text-[10px]">
       <CheckCircle2 className="size-3 shrink-0 text-emerald-300" />
-      <span>{text}</span>
+      <span className="min-w-0 break-words [overflow-wrap:anywhere]">{text}</span>
     </div>
   );
 }

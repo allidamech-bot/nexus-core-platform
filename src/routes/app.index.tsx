@@ -155,11 +155,14 @@ function AppIndex() {
   return (
     <div className="flex-1 flex min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-background px-3 pb-[calc(80px+env(safe-area-inset-bottom))] pt-6 md:items-center md:px-6 md:pb-6 md:pt-4">
       <div className="w-full max-w-none min-w-0 space-y-5 md:my-auto md:max-w-3xl md:space-y-8">
-        <div className="w-full min-w-0 pt-2 text-left md:text-center">
+        <div className="w-full min-w-0 pt-0 text-left md:pt-2 md:text-center">
           <div className="mb-4 grid size-12 place-items-center rounded-2xl border border-accent/20 bg-accent/10 text-accent shadow-sm md:mx-auto md:mb-6">
             <Terminal className="size-6" />
           </div>
-          <h1 className="w-full text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+          <h1
+            dir="auto"
+            className="w-full max-w-full break-words text-[1.45rem] font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl md:leading-tight lg:text-4xl"
+          >
             {!activeProject
               ? "ابدأ بربط مشروعك مع Nexus"
               : activeProject.status === "failed" ||
