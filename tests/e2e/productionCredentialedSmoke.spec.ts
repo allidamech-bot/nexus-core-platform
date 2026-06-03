@@ -52,7 +52,7 @@ if (!hasProductionSmokeCredentials) {
 
       await page.goto(`${smokeBaseURL}/app/admin`, { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/app\/admin$/);
-      await expect(page.getByText(/is_admin|Writeback Review|Migration checklist/i)).toBeVisible();
+      await expect(page.getByRole("heading", { name: /Writeback review workflow/i })).toBeVisible();
     });
 
     test("non-admin session loads and cannot access Admin Control", async ({ page }) => {
