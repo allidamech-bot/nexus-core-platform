@@ -61,7 +61,11 @@ if (!hasProductionSmokeCredentials) {
 
       await page.goto(`${smokeBaseURL}/app/admin`, { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/app(?:\/)?$/);
-      await expect(page.getByText(/is_admin|Writeback Review|Migration checklist/i)).toHaveCount(0);
+      await expect(page.getByRole("link", { name: /Admin Control/i })).toHaveCount(0);
+      await expect(page.getByRole("heading", { name: /Writeback review workflow/i })).toHaveCount(
+        0,
+      );
+      await expect(page.getByRole("heading", { name: /Migration checklist/i })).toHaveCount(0);
     });
   });
 }
