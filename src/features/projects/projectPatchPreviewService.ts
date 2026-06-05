@@ -38,6 +38,16 @@ export interface CreateAiPatchPreviewInput {
   instruction: string;
 }
 
+export interface AiPatchPreviewReadiness {
+  configured: boolean;
+  provider: "lovable";
+  model: string;
+  status: "ready" | "blocked";
+  code: "BLOCKED_AI_PROVIDER_REQUIRED" | null;
+  message: string;
+  requiredEnv: string[];
+}
+
 export interface CreatePatchSnapshotResult {
   snapshot: ProjectPatchSnapshot;
   files: ProjectPatchSnapshotFile[];
@@ -580,4 +590,27 @@ export async function createAiPatchPreview(
   const preview = await getPatchPreview(payload.previewId);
   if (!preview) throw new Error("AI patch preview could not be loaded.");
   return preview;
+}
+
+export async function getAiPatchPreviewReadiness(): Promise<AiPatchPreviewReadiness> {
+  const response = await fetch("/api/projects/ai-provider-readiness");
+  const payload = (await response.json().catch(() => ({}))) as Partial<AiPatchPreviewReadiness>;
+
+  if (!response.ok) {
+    throw new Error(payload.message || "AI provider readiness could not be checked.");
+  }
+
+  return {
+    configured: Boolean(payload.configured),
+    provider: "lovable",
+    model: payload.model || "google/gemini-3-flash-preview",
+    status: payload.configured ? "ready" : "blocked",
+    code: payload.configured ? null : "BLOCKED_AI_PROVIDER_REQUIRED",
+    message:
+      payload.message ||
+      (payload.configured
+        ? "AI provider is configured for governed patch preview generation."
+        : "AI provider configuration is required before AI patch preview can run."),
+    requiredEnv: Array.isArray(payload.requiredEnv) ? payload.requiredEnv : ["LOVABLE_API_KEY"],
+  };
 }

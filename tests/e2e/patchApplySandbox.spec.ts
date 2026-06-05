@@ -1063,6 +1063,57 @@ test.describe("pipeline diagnostics release gate", () => {
     expect(exportStage?.status).toBe("complete");
   });
 
+  test("distinguishes AI provider readiness states without faking a pass", () => {
+    const blockedDiagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [],
+      aiPatchPreviewConfigured: false,
+    });
+    const blockedStage = blockedDiagnostics.stages.find((stage) => stage.key === "aiPatchPreview");
+
+    expect(blockedStage?.status).toBe("blocked");
+    expect(blockedStage?.blockers.join(" ")).toContain("BLOCKED_AI_PROVIDER_REQUIRED");
+    expect(blockedDiagnostics.releaseGate.aiPatchPreviewConfigured).toBe(false);
+
+    const readyDiagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [],
+      aiPatchPreviewConfigured: true,
+    });
+    const readyStage = readyDiagnostics.stages.find((stage) => stage.key === "aiPatchPreview");
+
+    expect(readyStage?.status).toBe("ready");
+    expect(readyDiagnostics.releaseGate.aiPatchPreviewConfigured).toBe(true);
+
+    const failedDiagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [],
+      aiPatchPreviewConfigured: true,
+      aiPatchPreviewGatewayError: "Check provider credentials and logs.",
+    });
+    const failedStage = failedDiagnostics.stages.find((stage) => stage.key === "aiPatchPreview");
+
+    expect(failedStage?.status).toBe("failed");
+    expect(failedStage?.warnings.join(" ")).toContain("AI_GATEWAY_ERROR");
+    expect(failedDiagnostics.releaseGate.aiPatchPreviewConfigured).toBe(false);
+
+    const completeDiagnostics = buildProjectPipelineDiagnostics({
+      projectId: "project-1",
+      safePreviews: [textPreview()],
+      patchPreviews: [readyPreview],
+      aiPatchPreviewConfigured: false,
+    });
+    const completeStage = completeDiagnostics.stages.find(
+      (stage) => stage.key === "aiPatchPreview",
+    );
+
+    expect(completeStage?.status).toBe("complete");
+    expect(completeDiagnostics.releaseGate.aiPatchPreviewConfigured).toBe(true);
+  });
+
   test("includes safety invariant messages and does not mutate inputs", () => {
     const input = {
       projectId: "project-1",

@@ -10,6 +10,7 @@ import {
   useWorkingCopiesQuery,
   useWorkingCopyFilesQuery,
   useCreatePatchPreviewMutation,
+  useAiPatchPreviewReadinessQuery,
   usePatchPreviewSandboxMutation,
   useCreatePatchSnapshotMutation,
   useCreateWritebackRequestMutation,
@@ -47,6 +48,8 @@ export function ProjectInspector() {
   const rejectWritebackRequest = useRejectWritebackRequestMutation();
   const executeWritebackRequest = useExecuteWritebackRequestMutation(activeProject?.id ?? "");
   const downloadWorkingCopyExport = useDownloadWorkingCopyExportMutation();
+  const { data: aiPatchPreviewReadiness = null, error: aiPatchPreviewReadinessError = null } =
+    useAiPatchPreviewReadinessQuery(Boolean(activeProject));
   const { data: files = [], isLoading: loadingFiles } = useProjectFilesQuery(
     activeProject?.id ?? null,
   );
@@ -497,6 +500,12 @@ export function ProjectInspector() {
               writebackRequests={writebackRequests}
               workingCopies={workingCopies}
               workingCopyFiles={workingCopyFiles}
+              aiPatchPreviewConfigured={aiPatchPreviewReadiness?.configured ?? false}
+              aiPatchPreviewGatewayError={
+                aiPatchPreviewReadinessError instanceof Error
+                  ? aiPatchPreviewReadinessError.message
+                  : null
+              }
             />
           </div>
         </div>

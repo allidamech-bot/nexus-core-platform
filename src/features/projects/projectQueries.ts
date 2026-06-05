@@ -18,6 +18,7 @@ import {
   createManualPatchPreview,
   createPatchSnapshot,
   downloadPatchSnapshotExport,
+  getAiPatchPreviewReadiness,
   getPatchPreviews,
   getPatchSnapshotFiles,
   getPatchSnapshots,
@@ -26,6 +27,7 @@ import {
   type CreatePatchSnapshotResult,
   type CreateAiPatchPreviewInput,
   type CreateManualPatchPreviewInput,
+  type AiPatchPreviewReadiness,
 } from "./projectPatchPreviewService";
 import { governanceKeys } from "@/features/governance/governanceQueries";
 import type {
@@ -67,6 +69,7 @@ export const projectKeys = {
   files: (projectId: string) => ["projects", projectId, "files"] as const,
   previews: (projectId: string) => ["projects", projectId, "text-previews"] as const,
   patchPreviews: (projectId: string) => ["projects", projectId, "patch-previews"] as const,
+  aiPatchPreviewReadiness: () => ["projects", "ai-patch-preview-readiness"] as const,
   patchTargets: (projectId: string) => ["projects", projectId, "patch-targets"] as const,
   patchSnapshots: (projectId: string) => ["projects", projectId, "patch-snapshots"] as const,
   patchSnapshotFiles: (snapshotId: string) =>
@@ -196,6 +199,15 @@ export function usePatchPreviewsQuery(projectId: string | null) {
       if (!projectId) return [];
       return getPatchPreviews(projectId);
     },
+  });
+}
+
+export function useAiPatchPreviewReadinessQuery(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: projectKeys.aiPatchPreviewReadiness(),
+    queryFn: (): Promise<AiPatchPreviewReadiness> => getAiPatchPreviewReadiness(),
+    retry: false,
   });
 }
 

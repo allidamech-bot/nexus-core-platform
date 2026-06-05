@@ -309,7 +309,10 @@ function safeFailureWarning(error: unknown): PatchPreviewWarning {
   if (error instanceof PatchPreviewValidationError) {
     return { code: error.code, message: error.message };
   }
-  return { code: "ai_patch_preview_failed", message: "AI patch preview failed." };
+  return {
+    code: "AI_GATEWAY_ERROR",
+    message: "AI gateway request failed. Check provider credentials and logs.",
+  };
 }
 
 async function latestIngestionJobId(supabase: SupabaseAuthedClient, projectId: string) {
@@ -459,8 +462,9 @@ export const Route = createFileRoute("/api/projects/ai-patch-preview")({
           if (!key) {
             return jsonResponse(
               {
-                error: "ai_gateway_env_missing",
-                message: "LOVABLE_API_KEY is required before AI patch preview generation can run.",
+                error: "BLOCKED_AI_PROVIDER_REQUIRED",
+                message: "AI provider configuration is required before AI patch preview can run.",
+                requiredEnv: ["LOVABLE_API_KEY"],
               },
               503,
               context,
@@ -553,8 +557,8 @@ export const Route = createFileRoute("/api/projects/ai-patch-preview")({
             );
             return jsonResponse(
               {
-                error: "ai_patch_preview_failed",
-                message: "AI patch preview failed.",
+                error: "AI_GATEWAY_ERROR",
+                message: "AI gateway request failed. Check provider credentials and logs.",
               },
               502,
               context,

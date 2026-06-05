@@ -78,6 +78,7 @@ export interface ProjectPipelineDiagnosticsInput {
   workingCopyFiles?: ProjectWorkingCopyFile[];
   uploadQuotaAvailable?: boolean | null;
   aiPatchPreviewConfigured?: boolean | null;
+  aiPatchPreviewGatewayError?: string | null;
 }
 
 export const PIPELINE_STAGE_ORDER: PipelineStageKey[] = [
@@ -107,9 +108,11 @@ function hasReadyPatchPreview(previews: GroundedPatchPreview[]) {
   return previews.some((preview) => preview.status === "ready");
 }
 
-function hasAiPatchPreview(previews: GroundedPatchPreview[]) {
-  return previews.some((preview) =>
-    preview.warnings.some((warning) => warning.code.startsWith("ai_")),
+function hasReadyAiPatchPreview(previews: GroundedPatchPreview[]) {
+  return previews.some(
+    (preview) =>
+      preview.status === "ready" &&
+      preview.warnings.some((warning) => warning.code.toLowerCase().startsWith("ai_")),
   );
 }
 
@@ -209,7 +212,9 @@ export function buildPipelineReleaseGateSummary(
     canUploadProcessZip: isReady("uploadQuota"),
     safePreviewReady: isReady("safePreview"),
     patchPreviewReady: isReady("patchPreview"),
-    aiPatchPreviewConfigured: isReady("aiPatchPreview"),
+    aiPatchPreviewConfigured:
+      byKey.get("aiPatchPreview")?.status === "ready" ||
+      byKey.get("aiPatchPreview")?.status === "complete",
     canSandboxVerificationRun: isReady("sandboxVerification"),
     canSnapshotBeCreated: isReady("patchSnapshot"),
     canSnapshotBeExported: isReady("snapshotExport"),
@@ -250,6 +255,9 @@ export function buildProjectPipelineDiagnostics(
   const writebackRequests = input.writebackRequests ?? [];
   const workingCopies = input.workingCopies ?? [];
   const readyPatchPreview = hasReadyPatchPreview(patchPreviews);
+  const readyAiPatchPreview = hasReadyAiPatchPreview(patchPreviews);
+  const aiGatewayError = input.aiPatchPreviewGatewayError?.trim();
+  const aiProviderConfigured = input.aiPatchPreviewConfigured === true;
   const snapshot = latestSnapshot(patchSnapshots);
   const request = latestRequest(writebackRequests);
   const approvedRequest = writebackRequests.find((item) => item.status === "approved") ?? null;
@@ -307,25 +315,33 @@ export function buildProjectPipelineDiagnostics(
     }),
     stage({
       key: "aiPatchPreview",
-      status:
-        hasAiPatchPreview(patchPreviews) || input.aiPatchPreviewConfigured
-          ? readyPatchPreview
-            ? "complete"
-            : "ready"
-          : safePreviews.length > 0
-            ? "warning"
+      status: readyAiPatchPreview
+        ? "complete"
+        : aiGatewayError
+          ? "failed"
+          : aiProviderConfigured && safePreviews.length > 0
+            ? "ready"
             : "blocked",
       label: "AI patch preview",
       description: "Generates AI-grounded patch previews from selected safe text snippets.",
-      requiredNextAction:
-        safePreviews.length > 0
-          ? "Generate an AI patch preview when AI gateway credentials are configured."
-          : "Create safe previews before AI patch preview generation.",
-      blockers: safePreviews.length > 0 ? [] : ["Safe previews are required first."],
-      warnings:
-        input.aiPatchPreviewConfigured || hasAiPatchPreview(patchPreviews)
-          ? []
-          : ["AI gateway configuration is environment-dependent."],
+      requiredNextAction: readyAiPatchPreview
+        ? "AI patch preview generated as a governed review artifact."
+        : aiGatewayError
+          ? "AI gateway request failed. Check provider credentials and logs."
+          : aiProviderConfigured
+            ? "Generate an AI patch preview as a governed review artifact."
+            : safePreviews.length > 0
+              ? "AI provider configuration is required before AI patch preview can run."
+              : "Create safe previews before AI patch preview generation.",
+      blockers:
+        safePreviews.length === 0
+          ? ["Safe previews are required first."]
+          : !aiProviderConfigured && !readyAiPatchPreview
+            ? [
+                "BLOCKED_AI_PROVIDER_REQUIRED: AI provider configuration is required before AI patch preview can run.",
+              ]
+            : [],
+      warnings: aiGatewayError ? [`AI_GATEWAY_ERROR: ${aiGatewayError}`] : [],
       sourceIds: { patchPreviewId: patchPreviews[0]?.id ?? null },
     }),
     stage({

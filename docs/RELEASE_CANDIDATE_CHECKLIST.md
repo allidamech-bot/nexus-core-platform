@@ -29,6 +29,15 @@ pnpm smoke:production:credentialed
 
 If credentials are absent, this gate is **BLOCKED_CREDENTIALS_REQUIRED**, not PASS.
 
+AI patch preview smoke is a separate provider gate and must be run only with trusted production
+credentials plus a known safe preview fixture:
+
+```bash
+pnpm smoke:ai
+```
+
+If AI or fixture credentials are absent, this gate is **BLOCKED_AI_PROVIDER_REQUIRED**, not PASS.
+
 ---
 
 ## 2. Public Boundary & Localization Smoke
@@ -94,6 +103,17 @@ If credentials are absent, this gate is **BLOCKED_CREDENTIALS_REQUIRED**, not PA
 - [ ] In the project inspector panel, check the Ingestion Status.
 - [ ] Confirm status values with multiple underscores replace all underscores cleanly (e.g., `processing_failed` displays as `processing failed` instead of `processing_failed` or `processing failed_failed`).
 
+### E. AI Gateway Readiness
+
+- [ ] Confirm `LOVABLE_API_KEY` is configured server-side before running AI patch preview smoke.
+- [ ] Run `pnpm smoke:ai` in a private environment with `NEXUS_AI_SMOKE_*` fixture variables.
+- [ ] If credentials are missing, record **BLOCKED_AI_PROVIDER_REQUIRED**.
+- [ ] If the gateway request fails, record **AI_GATEWAY_ERROR** and check provider credentials and safe server logs.
+- [ ] If the smoke passes, confirm AI patch preview is a governed review artifact only.
+- [ ] Confirm original project files remain unchanged.
+- [ ] Confirm object storage remains unchanged.
+- [ ] Confirm direct source writeback remains intentionally disabled.
+
 ---
 
 ## 5. Admin Governance & Writebacks
@@ -128,4 +148,5 @@ If credentials are absent, this gate is **BLOCKED_CREDENTIALS_REQUIRED**, not PA
 - [ ] Confirm object storage writeback remains unavailable.
 - [ ] Confirm direct source writeback remains intentionally disabled and points users to working copy export as the safe review handoff.
 - [ ] Confirm AI provider configuration and credentialed smoke requirements remain clearly stated in release gates/checklists.
+- [ ] Confirm `docs/ai-gateway-configuration.md` lists required AI env vars and PASS/BLOCKED states.
 - [ ] Confirm deployment/apply automation remains unavailable.

@@ -23,6 +23,7 @@ import { Route as ApiProjectsWritebackExecuteRouteImport } from './routes/api/pr
 import { Route as ApiProjectsWorkingCopyExportRouteImport } from './routes/api/projects.working-copy-export'
 import { Route as ApiProjectsSnapshotExportRouteImport } from './routes/api/projects.snapshot-export'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
+import { Route as ApiProjectsAiProviderReadinessRouteImport } from './routes/api/projects.ai-provider-readiness'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
 
 const SignupRoute = SignupRouteImport.update({
@@ -99,6 +100,12 @@ const ApiProjectsProcessZipRoute = ApiProjectsProcessZipRouteImport.update({
   path: '/api/projects/process-zip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProjectsAiProviderReadinessRoute =
+  ApiProjectsAiProviderReadinessRouteImport.update({
+    id: '/api/projects/ai-provider-readiness',
+    path: '/api/projects/ai-provider-readiness',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsAiPatchPreviewRoute =
   ApiProjectsAiPatchPreviewRouteImport.update({
     id: '/api/projects/ai-patch-preview',
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
+  '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
   '/api/projects/working-copy-export': typeof ApiProjectsWorkingCopyExportRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
+  '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
   '/api/projects/working-copy-export': typeof ApiProjectsWorkingCopyExportRoute
@@ -151,6 +160,7 @@ export interface FileRoutesById {
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
+  '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
   '/api/projects/working-copy-export': typeof ApiProjectsWorkingCopyExportRoute
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/'
     | '/api/projects/ai-patch-preview'
+    | '/api/projects/ai-provider-readiness'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
     | '/api/projects/working-copy-export'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app'
     | '/api/projects/ai-patch-preview'
+    | '/api/projects/ai-provider-readiness'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
     | '/api/projects/working-copy-export'
@@ -203,6 +215,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/'
     | '/api/projects/ai-patch-preview'
+    | '/api/projects/ai-provider-readiness'
     | '/api/projects/process-zip'
     | '/api/projects/snapshot-export'
     | '/api/projects/working-copy-export'
@@ -217,6 +230,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
+  ApiProjectsAiProviderReadinessRoute: typeof ApiProjectsAiProviderReadinessRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
   ApiProjectsSnapshotExportRoute: typeof ApiProjectsSnapshotExportRoute
   ApiProjectsWorkingCopyExportRoute: typeof ApiProjectsWorkingCopyExportRoute
@@ -324,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsProcessZipRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/ai-provider-readiness': {
+      id: '/api/projects/ai-provider-readiness'
+      path: '/api/projects/ai-provider-readiness'
+      fullPath: '/api/projects/ai-provider-readiness'
+      preLoaderRoute: typeof ApiProjectsAiProviderReadinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/ai-patch-preview': {
       id: '/api/projects/ai-patch-preview'
       path: '/api/projects/ai-patch-preview'
@@ -357,6 +378,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
+  ApiProjectsAiProviderReadinessRoute: ApiProjectsAiProviderReadinessRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
   ApiProjectsSnapshotExportRoute: ApiProjectsSnapshotExportRoute,
   ApiProjectsWorkingCopyExportRoute: ApiProjectsWorkingCopyExportRoute,

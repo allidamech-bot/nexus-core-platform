@@ -194,7 +194,8 @@ export const translations = {
     credentialedProductionSmokeBlocked:
       "Credentialed production smoke: BLOCKED_CREDENTIALS_REQUIRED",
     aiProviderConfigurationPass: "AI provider configuration: PASS",
-    aiProviderConfigurationBlocked: "AI provider configuration: required until verified",
+    aiProviderConfigurationBlocked:
+      "AI provider configuration: BLOCKED_AI_PROVIDER_REQUIRED until verified",
     pipelineDiagnostics: "Pipeline diagnostics",
     releaseGate: "Release gate",
     pipelineStage: "Pipeline stage",

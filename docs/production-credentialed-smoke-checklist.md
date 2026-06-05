@@ -17,6 +17,11 @@ Set these only in a private runner or trusted operator shell:
 Optional for AI boundary validation:
 
 - `LOVABLE_API_KEY`
+- `NEXUS_AI_SMOKE_BASE_URL` or `NEXUS_SMOKE_BASE_URL`
+- `NEXUS_AI_SMOKE_EMAIL` or `NEXUS_SMOKE_USER_EMAIL`
+- `NEXUS_AI_SMOKE_PASSWORD` or `NEXUS_SMOKE_USER_PASSWORD`
+- `NEXUS_AI_SMOKE_PROJECT_ID`
+- `NEXUS_AI_SMOKE_FILE_IDS`
 
 Never commit or print secrets, cookies, JWTs, service-role keys, auth headers, or private environment values.
 
@@ -35,6 +40,32 @@ BLOCKED_CREDENTIALS_REQUIRED
 ```
 
 Missing credentials must not be reported as PASS.
+
+## AI Patch Preview Smoke
+
+Run:
+
+```bash
+pnpm smoke:ai
+```
+
+The AI smoke validates that a configured Lovable AI Gateway can create a governed AI patch preview
+artifact for a known safe preview fixture. It does not modify source files, does not write object
+storage, does not push to GitHub, and does not enable direct source writeback.
+
+If any required AI provider or fixture variable is missing, the Playwright spec skips with:
+
+```text
+BLOCKED_AI_PROVIDER_REQUIRED
+```
+
+If provider credentials are present but the gateway request fails, record:
+
+```text
+AI_GATEWAY_ERROR
+```
+
+and inspect safe deployment logs without printing secrets.
 
 ## Credentialed Checklist
 
@@ -59,6 +90,7 @@ Missing credentials must not be reported as PASS.
 ## Release Gate Limitations
 
 - AI provider configuration required for successful AI/chat production smoke.
+- AI patch preview smoke requires `LOVABLE_API_KEY` plus `NEXUS_AI_SMOKE_*` fixture variables.
 - Credentialed smoke required for production readiness.
 - Direct source writeback intentionally disabled.
 

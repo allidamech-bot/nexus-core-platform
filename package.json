@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "smoke:production:credentialed": "playwright test tests/e2e/productionCredentialedSmoke.spec.ts --reporter=list",
+    "smoke:ai": "playwright test tests/e2e/aiPatchPreviewSmoke.spec.ts --reporter=list",
     "lint": "eslint .",
     "format": "prettier --write .",
     "verify": "npm run typecheck && npm run lint && npm run build"

@@ -77,10 +77,15 @@ The safe pipeline consists of the following sequential stages:
 
 ## 7. Known Limitations
 
-- AI provider configuration may still display a warning if credentials are not fully set.
+- AI provider configuration displays **BLOCKED_AI_PROVIDER_REQUIRED** until `LOVABLE_API_KEY`
+  and a credentialed AI smoke fixture are verified.
+- AI gateway request failures display **AI_GATEWAY_ERROR** with safe details only.
 - Production release gates remain blocked until `docs/production-credentialed-smoke-checklist.md` is run with trusted `NEXUS_SMOKE_*` credentials.
 - Direct source writeback is intentionally disabled. Use working copy export as the safe review handoff.
-- AI provider configuration is required for AI patch preview smoke.
+- AI provider configuration is required for AI patch preview smoke:
+  `pnpm smoke:ai -- --reporter=list`.
+- AI patch preview output is a governed review artifact only; original project files, source ZIP,
+  object storage, and direct source writeback remain unchanged.
 - Credentialed smoke is required for admin/reviewer and authenticated upload/export validation.
 
 ## 8. Rollback Notes

@@ -15,6 +15,7 @@ import {
   useCreateAiPatchPreviewMutation,
   useCreatePatchPreviewMutation,
   useCreatePatchSnapshotMutation,
+  useAiPatchPreviewReadinessQuery,
   useCreateWritebackRequestMutation,
   useDownloadPatchSnapshotExportMutation,
   useDownloadWorkingCopyExportMutation,
@@ -57,6 +58,8 @@ export function ProjectPatchPreviewPanel({
   const { data: targets = [], isLoading: targetsLoading } =
     usePreviewablePatchTargetsQuery(projectId);
   const { data: patchPreviews = [], isLoading: previewsLoading } = usePatchPreviewsQuery(projectId);
+  const { data: aiPatchPreviewReadiness = null, error: aiPatchPreviewReadinessError = null } =
+    useAiPatchPreviewReadinessQuery(Boolean(projectId));
   const { data: patchSnapshots = [] } = usePatchSnapshotsQuery(projectId);
   const { data: writebackRequests = [] } = useWritebackRequestsQuery(projectId);
   const { data: workingCopies = [] } = useWorkingCopiesQuery(projectId);
@@ -332,7 +335,12 @@ export function ProjectPatchPreviewPanel({
         workingCopies={workingCopies}
         workingCopyFiles={latestWorkingCopyFiles}
         uploadQuotaAvailable={null}
-        aiPatchPreviewConfigured={null}
+        aiPatchPreviewConfigured={aiPatchPreviewReadiness?.configured ?? false}
+        aiPatchPreviewGatewayError={
+          aiPatchPreviewReadinessError instanceof Error
+            ? aiPatchPreviewReadinessError.message
+            : null
+        }
       />
 
       <div className="space-y-2">

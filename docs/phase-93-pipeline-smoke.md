@@ -37,6 +37,23 @@ Required private env vars:
 
 If these are absent, report **BLOCKED_CREDENTIALS_REQUIRED**.
 
+AI patch preview smoke uses a separate provider gate:
+
+```powershell
+pnpm smoke:ai
+```
+
+Required private env vars:
+
+- `LOVABLE_API_KEY`
+- `NEXUS_AI_SMOKE_BASE_URL` or `NEXUS_SMOKE_BASE_URL`
+- `NEXUS_AI_SMOKE_EMAIL` or `NEXUS_SMOKE_USER_EMAIL`
+- `NEXUS_AI_SMOKE_PASSWORD` or `NEXUS_SMOKE_USER_PASSWORD`
+- `NEXUS_AI_SMOKE_PROJECT_ID`
+- `NEXUS_AI_SMOKE_FILE_IDS`
+
+If these are absent, report **BLOCKED_AI_PROVIDER_REQUIRED**.
+
 ## Expected full pipeline
 
 1. Upload a ZIP and confirm quota/auth blocks are respected.
@@ -58,7 +75,8 @@ If these are absent, report **BLOCKED_CREDENTIALS_REQUIRED**.
 - Use a small ZIP containing allowlisted text files.
 - Confirm blocked, warning, and complete states appear in pipeline diagnostics.
 - Confirm release gate still says direct source writeback is intentionally disabled and working copy export is the safe review handoff.
-- Confirm AI provider configuration and credentialed smoke requirements remain visible where applicable.
+- Confirm AI provider configuration, `BLOCKED_AI_PROVIDER_REQUIRED`, `AI_GATEWAY_ERROR`, and
+  credentialed smoke requirements remain visible where applicable.
 - Confirm exported JSON contains README, manifest, metadata, bounded text, and sanitized paths.
 
 ## Must remain unavailable
