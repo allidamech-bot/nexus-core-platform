@@ -7,17 +7,21 @@ export interface PolicyEvaluationResult {
   warnings: string[];
 }
 
+import type { WritebackApproval } from "./tenantTypes";
+
 /**
  * Validates that the request has the required minimum number of approvals.
  * @param request The writeback request to evaluate.
+ * @param approvals The list of approvals for the request.
  * @param requiredCount The minimum number of approvals needed.
  */
 export function validateApprovalCount(
   request: ProjectWritebackRequest,
+  approvals: WritebackApproval[],
   requiredCount: number = 1
 ): PolicyEvaluationResult {
-  const hasEnoughApprovals = request.status === "approved" && request.reviewedBy != null;
-  const approvalsFound = hasEnoughApprovals ? 1 : 0;
+  const validApprovals = approvals.filter(a => a.status === "approved");
+  const approvalsFound = validApprovals.length;
   
   if (approvalsFound < requiredCount) {
     return {
@@ -93,13 +97,14 @@ export function validateRestrictedFiles(
  */
 export function evaluateWorkingCopyForApply(
   request: ProjectWritebackRequest,
+  approvals: WritebackApproval[],
   files: ProjectWorkingCopyFile[],
   workingCopyCreatorId: string,
   targetEnv: "production" | "staging" | "development" = "production"
 ): PolicyEvaluationResult {
   const requiredApprovals = targetEnv === "production" ? 2 : 1;
   
-  const approvalEval = validateApprovalCount(request, requiredApprovals);
+  const approvalEval = validateApprovalCount(request, approvals, requiredApprovals);
   const directAiEval = blockDirectAIDeployment(request, workingCopyCreatorId);
   const filesEval = validateRestrictedFiles(files);
 
