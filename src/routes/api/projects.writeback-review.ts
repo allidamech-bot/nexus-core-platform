@@ -254,14 +254,14 @@ async function auditReview(input: {
     .maybeSingle();
 
   const { error } = await input.supabase.from("audit_events").insert({
-    user_id: input.request.requestedBy,
-    actor_user_id: input.actorId,
+    user_id: input.request.requestedBy || null,
+    actor_user_id: input.actorId || null,
     event_type: input.eventType,
-    severity: input.severity ?? "info",
-    project_id: input.request.projectId,
-    tenant_id: projectData?.tenant_id ?? null,
+    severity: input.severity || "info",
+    project_id: input.request.projectId || null,
+    tenant_id: projectData?.tenant_id || null,
     payload: summary as unknown as Json,
-  });
+  } as any);
   if (error) console.warn("[writeback-review] audit write failed", safeErrorLog(error));
 }
 
