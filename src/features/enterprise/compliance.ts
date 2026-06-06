@@ -20,13 +20,13 @@ export async function exportTenantAuditLogs(
     .from("audit_events")
     .select("*")
     .eq("tenant_id", tenantId)
-    .order("timestamp", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (startDate) {
-    query = query.gte("timestamp", startDate.toISOString());
+    query = query.gte("created_at", startDate.toISOString());
   }
   if (endDate) {
-    query = query.lte("timestamp", endDate.toISOString());
+    query = query.lte("created_at", endDate.toISOString());
   }
 
   const { data, error } = await query;
@@ -43,10 +43,10 @@ export async function exportTenantAuditLogs(
   }
 
   if (format === "csv") {
-    if (events.length === 0) return "id,timestamp,actor_id,event_type,payload,previous_hash\n";
+    if (events.length === 0) return "id,created_at,user_id,actor_user_id,event_type,severity,payload\n";
     
     // Simple CSV conversion stub
-    const headers = ["id", "timestamp", "actor_id", "event_type", "payload", "previous_hash"];
+    const headers = ["id", "created_at", "user_id", "actor_user_id", "event_type", "severity", "payload"];
     const rows = events.map(event => {
       return headers.map(h => {
         const value = event[h];

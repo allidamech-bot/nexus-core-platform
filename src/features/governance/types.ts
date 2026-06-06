@@ -61,6 +61,7 @@ export interface UsageEventInput {
 export interface AuditEventInput {
   userId?: string | null;
   actorUserId?: string | null;
+  tenantId?: string | null;
   eventType: string;
   correlationId?: string;
   severity?: "info" | "warning" | "critical";

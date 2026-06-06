@@ -66,6 +66,7 @@ export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
   const { error } = await supabase.from("audit_events").insert({
     user_id: input.userId ?? null,
     actor_user_id: input.actorUserId ?? input.userId ?? null,
+    tenant_id: input.tenantId ?? null,
     event_type: input.eventType,
     severity: input.severity ?? "info",
     project_id: input.projectId ?? null,

@@ -25,6 +25,7 @@ import { Route as ApiProjectsSnapshotExportRouteImport } from './routes/api/proj
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
 import { Route as ApiProjectsAiProviderReadinessRouteImport } from './routes/api/projects.ai-provider-readiness'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
+import { Route as ApiEnterpriseAuditExportRouteImport } from './routes/api/enterprise.audit-export'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -112,6 +113,12 @@ const ApiProjectsAiPatchPreviewRoute =
     path: '/api/projects/ai-patch-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiEnterpriseAuditExportRoute =
+  ApiEnterpriseAuditExportRouteImport.update({
+    id: '/api/enterprise/audit-export',
+    path: '/api/enterprise/audit-export',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
@@ -140,6 +148,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
+  '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
@@ -159,6 +168,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app/'
+    | '/api/enterprise/audit-export'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/process-zip'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app'
+    | '/api/enterprise/audit-export'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/process-zip'
@@ -214,6 +226,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app/'
+    | '/api/enterprise/audit-export'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/process-zip'
@@ -229,6 +242,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiEnterpriseAuditExportRoute: typeof ApiEnterpriseAuditExportRoute
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsAiProviderReadinessRoute: typeof ApiProjectsAiProviderReadinessRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
@@ -352,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsAiPatchPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/enterprise/audit-export': {
+      id: '/api/enterprise/audit-export'
+      path: '/api/enterprise/audit-export'
+      fullPath: '/api/enterprise/audit-export'
+      preLoaderRoute: typeof ApiEnterpriseAuditExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -377,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiEnterpriseAuditExportRoute: ApiEnterpriseAuditExportRoute,
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsAiProviderReadinessRoute: ApiProjectsAiProviderReadinessRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,

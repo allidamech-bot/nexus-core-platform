@@ -195,10 +195,17 @@ async function auditWritebackRequest(input: {
   blockerCount?: number;
 }) {
   try {
+    const { data: projectData } = await supabase
+      .from("projects")
+      .select("tenant_id")
+      .eq("id", input.projectId)
+      .maybeSingle();
+
     await recordAuditEvent({
       userId: input.userId,
       actorUserId: input.userId,
       projectId: input.projectId,
+      tenantId: projectData?.tenant_id ?? null,
       eventType: input.eventType,
       severity: input.riskLevel === "blocked" ? "warning" : "info",
       payload: {

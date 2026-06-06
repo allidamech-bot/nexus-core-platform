@@ -12,6 +12,10 @@ import {
 } from "@/features/projects/projectWritebackRequestService";
 import type { WritebackRiskLevel } from "@/features/projects/writebackRisk";
 import { getRequestCorrelationId, safeErrorLog, withLogContext } from "@/lib/safeLogging";
+import { validateApprovalCount, validateRestrictedFiles } from "@/features/enterprise/policyEngine";
+import { getPatchSnapshotFiles } from "@/features/projects/projectPatchPreviewService";
+import type { WritebackApproval } from "@/features/enterprise/tenantTypes";
+import type { ProjectWorkingCopyFile } from "@/features/projects/projectWorkingCopyService";
 
 type SupabaseAuthedClient = ReturnType<typeof createClient<Database>>;
 type TransitionResult =
@@ -241,12 +245,21 @@ async function auditReview(input: {
     action: input.action,
     newStatus: input.newStatus,
   });
+
+  // Fetch tenant_id from project
+  const { data: projectData } = await input.supabase
+    .from("projects")
+    .select("tenant_id")
+    .eq("id", input.request.projectId)
+    .maybeSingle();
+
   const { error } = await input.supabase.from("audit_events").insert({
     user_id: input.request.requestedBy,
     actor_user_id: input.actorId,
     event_type: input.eventType,
     severity: input.severity ?? "info",
     project_id: input.request.projectId,
+    tenant_id: projectData?.tenant_id ?? null,
     payload: summary as unknown as Json,
   });
   if (error) console.warn("[writeback-review] audit write failed", safeErrorLog(error));
@@ -332,7 +345,7 @@ async function applyTransition(input: {
     });
   }
 
-  const newStatus = validateWritebackStatusTransition({
+  let newStatus = validateWritebackStatusTransition({
     action: input.action,
     actorRole: reviewerAction ? "reviewer" : "requester",
     fromStatus: input.request.status,
@@ -340,6 +353,67 @@ async function applyTransition(input: {
     blockerCount: input.request.blockers.length,
     reviewerNote: input.note,
   });
+
+  if (reviewerAction) {
+    // Phase 6: Upsert approval record
+    const { error: approvalError } = await input.supabase
+      .from("writeback_request_approvals")
+      .upsert({
+        request_id: input.request.id,
+        reviewer_id: input.userId,
+        status: input.action === "approve" ? "approved" : "rejected",
+        reviewer_note: input.note?.trim() || null,
+      }, { onConflict: "request_id, reviewer_id" });
+
+    if (approvalError) throw approvalError;
+
+    // Phase 5 & 6 Policy Enforcement
+    if (input.action === "approve") {
+      const { data: approvalsData, error: approvalsError } = await input.supabase
+        .from("writeback_request_approvals")
+        .select("*")
+        .eq("request_id", input.request.id);
+
+      if (approvalsError) throw approvalsError;
+
+      const approvals: WritebackApproval[] = approvalsData.map(row => ({
+        id: row.id,
+        requestId: row.request_id,
+        reviewerId: row.reviewer_id,
+        status: row.status as "approved" | "rejected",
+        reviewerNote: row.reviewer_note,
+        createdAt: row.created_at,
+      }));
+
+      const files = await getPatchSnapshotFiles(input.request.snapshotId);
+      const restrictedCheck = validateRestrictedFiles(files as unknown as ProjectWorkingCopyFile[]);
+
+      if (!restrictedCheck.allowed) {
+        return {
+          response: jsonResponse(
+            {
+              message: "Blocked by policy engine.",
+              error: "Policy Engine Block",
+              code: "422",
+              details: restrictedCheck.blockers.join(" "),
+            },
+            422,
+            input.correlationId,
+          ),
+        };
+      }
+
+      // We default to "production" target logic requiring 2 approvals
+      const quorumCheck = validateApprovalCount(input.request, approvals, 2);
+
+      if (!quorumCheck.allowed) {
+        // Quorum not met, keep status as "submitted"
+        newStatus = "submitted";
+      } else {
+        newStatus = "approved";
+      }
+    }
+  }
 
   const now = new Date().toISOString();
   const update =
