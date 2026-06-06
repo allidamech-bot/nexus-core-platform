@@ -196,7 +196,7 @@ function AppIndex() {
             activeProject.latest_job?.status === "failed" ||
             activeProject.latest_job?.status === "rejected")
         ) && (
-          <div className="rounded-2xl border border-border bg-surface-elevated/80 p-3 shadow-xl md:p-4">
+          <div className="hidden md:block rounded-2xl border border-border bg-surface-elevated/80 p-3 shadow-xl md:p-4">
             <div className="relative min-w-0">
               <textarea
                 value={input}
@@ -259,20 +259,32 @@ function AppIndex() {
         )}
 
         {recentThreads.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {t("openRecentSession")}
             </div>
-            <div className="flex min-w-0 flex-wrap gap-2">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
               {recentThreads.map((thread) => (
-                <Link
+                <div
                   key={thread.id}
-                  to="/app/$threadId"
-                  params={{ threadId: thread.id }}
-                  className="min-h-[44px] max-w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-surface-elevated sm:max-w-56"
+                  className="flex flex-col gap-3 min-h-[88px] max-w-full rounded-2xl border border-border bg-surface p-4 shadow-sm"
                 >
-                  <span className="block truncate">{thread.title || t("untitled")}</span>
-                </Link>
+                  <div className="flex flex-1 flex-col min-w-0">
+                    <span className="block truncate text-sm font-bold text-foreground">
+                      {thread.title || t("untitled")}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {t("activeSession") || "Active"} • {new Date(thread.updated_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <Link
+                    to="/app/$threadId"
+                    params={{ threadId: thread.id }}
+                    className="flex min-h-[44px] items-center justify-center rounded-xl bg-accent/10 px-4 text-[13px] font-semibold text-accent active:bg-accent/20 transition-colors"
+                  >
+                    {t("viewPatch") || "View Patch"}
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
@@ -284,7 +296,7 @@ function AppIndex() {
             activeProject.latest_job?.status === "failed" ||
             activeProject.latest_job?.status === "rejected")
         ) && (
-          <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="hidden md:grid mt-5 min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
             {[
               t("examplePrompt1"),
               t("examplePrompt2"),

@@ -10,6 +10,8 @@ import {
   Settings,
   Menu,
   Activity,
+  Home,
+  Inbox,
   FolderKanban,
   MessageSquare,
   MoreHorizontal,
@@ -212,10 +214,30 @@ function AppWorkspace({
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-2xl backdrop-blur md:hidden">
-        <div className="mx-auto grid min-h-14 max-w-md grid-cols-4 gap-1.5">
+        <div className="mx-auto grid min-h-[64px] max-w-md grid-cols-4 gap-1.5">
+          <Link
+            to="/app"
+            className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-accent/10 active:text-accent [&.active]:text-accent [&.active]:bg-accent/10 [&.active]:font-semibold"
+            activeProps={{ className: "text-accent bg-accent/10 font-semibold" }}
+          >
+            <Home className="mb-1 size-5" />
+            {t("home") || "Home"}
+          </Link>
+
+          <Link
+            to="/app/inbox"
+            className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-accent/10 active:text-accent [&.active]:text-accent [&.active]:bg-accent/10 [&.active]:font-semibold"
+            activeProps={{ className: "text-accent bg-accent/10 font-semibold" }}
+          >
+            <div className="relative">
+              <Inbox className="mb-1 size-5" />
+            </div>
+            {t("inbox") || "Inbox"}
+          </Link>
+
           <Sheet>
             <SheetTrigger asChild>
-              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-accent/10 active:text-accent">
                 <FolderKanban className="mb-1 size-5" />
                 {t("projects")}
               </button>
@@ -229,36 +251,9 @@ function AppWorkspace({
             </SheetContent>
           </Sheet>
 
-          <Link
-            to="/app"
-            className="flex min-h-[44px] flex-col items-center justify-center rounded-xl bg-accent/10 text-[11px] font-semibold text-accent transition-colors hover:bg-accent/15"
-          >
-            <MessageSquare className="mb-1 size-5" />
-            {t("workspace")}
-          </Link>
-
           <Sheet>
             <SheetTrigger asChild>
-              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                <Activity className="mb-1 size-5" />
-                {t("inspector")}
-              </button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-[95vw] max-w-md p-0 flex flex-col overflow-y-auto"
-            >
-              <SheetTitle className="sr-only">{t("inspector")}</SheetTitle>
-              <SheetDescription className="sr-only">
-                Open project diagnostics, governed pipeline actions, and file inventory.
-              </SheetDescription>
-              <ProjectInspector />
-            </SheetContent>
-          </Sheet>
-
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+              <button className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-accent/10 active:text-accent">
                 <MoreHorizontal className="mb-1 size-5" />
                 {t("more")}
               </button>
