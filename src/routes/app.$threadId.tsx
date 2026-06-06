@@ -3,7 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Archive, Send, Upload, GitBranch, Loader2, Terminal, PanelRight } from "lucide-react";
+import { Archive, Send, Upload, GitBranch, Loader2, Terminal, PanelRight, MessageSquare } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { agentModes, mockExecutionSteps, mockFileTree, mockVerification } from "@/lib/mock-data";
@@ -264,6 +266,22 @@ function ThreadView() {
     navigate({ to: "/app" });
   }
 
+  async function handleNewSession() {
+    if (!session) return;
+    try {
+      const { data, error } = await supabase
+        .from("threads")
+        .insert({ user_id: session.user.id, title: "New Session", mode: "engineering" })
+        .select()
+        .single();
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["threads"] });
+      navigate({ to: "/app/$threadId", params: { threadId: data.id } });
+    } catch (err) {
+      toast.error("Failed to create new session");
+    }
+  }
+
   async function handleAttachProject() {
     if (!session || !activeProject || isArchived) return;
     try {
@@ -431,6 +449,14 @@ function ThreadView() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <button
+              type="button"
+              onClick={handleNewSession}
+              className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition-colors md:flex"
+            >
+              <MessageSquare className="size-4 md:size-3" />
+              <span className="hidden md:inline">New Session</span>
+            </button>
             {hasThreadLifecycle && !isArchived && (
               <button
                 type="button"
@@ -900,7 +926,39 @@ function StructuredAssistant({ text }: { text: string }) {
   }
   if (indices.length === 0) {
     return (
-      <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{text}</div>
+      <div className="text-sm text-foreground leading-relaxed">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            p: ({ node, ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
+            ul: ({ node, ...props }) => (
+              <ul className="mb-2 list-disc space-y-1 pl-5" {...props} />
+            ),
+            ol: ({ node, ...props }) => (
+              <ol className="mb-2 list-decimal space-y-1 pl-5" {...props} />
+            ),
+            h1: ({ node, ...props }) => <h1 className="mb-2 mt-4 text-lg font-bold" {...props} />,
+            h2: ({ node, ...props }) => <h2 className="mb-2 mt-4 text-base font-bold" {...props} />,
+            h3: ({ node, ...props }) => <h3 className="mb-2 mt-3 text-sm font-bold" {...props} />,
+            code: ({ node, inline, ...props }: any) =>
+              inline ? (
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-accent" {...props} />
+              ) : (
+                <pre className="mb-2 overflow-x-auto rounded-md border border-border bg-muted/50 p-3 font-mono text-[11px]">
+                  <code {...props} />
+                </pre>
+              ),
+            a: ({ node, ...props }) => (
+              <a className="text-accent underline underline-offset-2" {...props} />
+            ),
+            strong: ({ node, ...props }) => (
+              <strong className="font-semibold text-foreground" {...props} />
+            ),
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      </div>
     );
   }
   indices.forEach((it, i) => {
@@ -949,7 +1007,39 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
         ) : isVerif ? (
           <VerificationFromText text={body} />
         ) : (
-          <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{body}</div>
+          <div className="text-sm text-foreground leading-relaxed">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ node, ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
+                ul: ({ node, ...props }) => (
+                  <ul className="mb-2 list-disc space-y-1 pl-5" {...props} />
+                ),
+                ol: ({ node, ...props }) => (
+                  <ol className="mb-2 list-decimal space-y-1 pl-5" {...props} />
+                ),
+                h1: ({ node, ...props }) => <h1 className="mb-2 mt-4 text-lg font-bold" {...props} />,
+                h2: ({ node, ...props }) => <h2 className="mb-2 mt-4 text-base font-bold" {...props} />,
+                h3: ({ node, ...props }) => <h3 className="mb-2 mt-3 text-sm font-bold" {...props} />,
+                code: ({ node, inline, ...props }: any) =>
+                  inline ? (
+                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-accent" {...props} />
+                  ) : (
+                    <pre className="mb-2 overflow-x-auto rounded-md border border-border bg-muted/50 p-3 font-mono text-[11px]">
+                      <code {...props} />
+                    </pre>
+                  ),
+                a: ({ node, ...props }) => (
+                  <a className="text-accent underline underline-offset-2" {...props} />
+                ),
+                strong: ({ node, ...props }) => (
+                  <strong className="font-semibold text-foreground" {...props} />
+                ),
+              }}
+            >
+              {body}
+            </ReactMarkdown>
+          </div>
         )}
       </div>
     </section>

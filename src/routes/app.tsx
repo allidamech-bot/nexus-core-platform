@@ -15,6 +15,10 @@ import {
   FolderKanban,
   MessageSquare,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -81,6 +85,8 @@ function AppWorkspace({
   session: NonNullable<ReturnType<typeof useAuth>["session"]>;
   signOut: () => Promise<void>;
 }) {
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { activeProject, setSelectedProjectId } = useProjectWorkspace();
@@ -128,6 +134,18 @@ function AppWorkspace({
                 <ProjectSidebar />
               </SheetContent>
             </Sheet>
+
+            <button
+              onClick={() => setIsLeftSidebarOpen((o) => !o)}
+              className="hidden md:grid min-h-[44px] min-w-[44px] place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={isLeftSidebarOpen ? "Collapse Projects" : "Expand Projects"}
+            >
+              {isLeftSidebarOpen ? (
+                <PanelLeftClose className="size-5" />
+              ) : (
+                <PanelLeftOpen className="size-5" />
+              )}
+            </button>
 
             <Link to="/app" className="flex min-h-[44px] shrink-0 items-center gap-2">
               <div className="flex size-6 items-center justify-center rounded-md bg-foreground text-background">
@@ -181,6 +199,18 @@ function AppWorkspace({
             </Sheet>
 
             <button
+              onClick={() => setIsRightSidebarOpen((o) => !o)}
+              className="hidden xl:grid min-h-[44px] min-w-[44px] place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={isRightSidebarOpen ? "Collapse Inspector" : "Expand Inspector"}
+            >
+              {isRightSidebarOpen ? (
+                <PanelRightClose className="size-5" />
+              ) : (
+                <PanelRightOpen className="size-5" />
+              )}
+            </button>
+
+            <button
               onClick={async () => {
                 await signOut();
                 qc.clear();
@@ -198,9 +228,11 @@ function AppWorkspace({
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Left Sidebar */}
-        <aside className="w-72 shrink-0 border-r border-border hidden md:flex flex-col">
-          <ProjectSidebar />
-        </aside>
+        {isLeftSidebarOpen && (
+          <aside className="w-72 shrink-0 border-r border-border hidden md:flex flex-col">
+            <ProjectSidebar />
+          </aside>
+        )}
 
         {/* Center */}
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
@@ -208,9 +240,11 @@ function AppWorkspace({
         </main>
 
         {/* Right Inspector */}
-        <aside className="w-[22rem] shrink-0 border-l border-border hidden xl:flex flex-col bg-surface/10">
-          <ProjectInspector />
-        </aside>
+        {isRightSidebarOpen && (
+          <aside className="w-[22rem] shrink-0 border-l border-border hidden xl:flex flex-col bg-surface/10">
+            <ProjectInspector />
+          </aside>
+        )}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-2xl backdrop-blur md:hidden">
