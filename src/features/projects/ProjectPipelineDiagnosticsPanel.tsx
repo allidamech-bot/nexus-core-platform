@@ -153,11 +153,11 @@ function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground md:text-[11px]">
             <StatusIcon status={stage.status} />
-            <span className="min-w-0 break-words [overflow-wrap:anywhere] md:truncate">
+            <span className="min-w-0 break-words [overflow-wrap:anywhere] md:truncate" dir="auto">
               {stage.label}
             </span>
           </div>
-          <div className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[10px]">
+          <div className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[10px]" dir="auto">
             {stage.description}
           </div>
         </div>
@@ -169,7 +169,7 @@ function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
       </div>
       <div className="mt-3 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:mt-2 md:text-[10px]">
         <span className="font-semibold text-foreground">{t("nextSafeAction")}:</span>{" "}
-        {stage.requiredNextAction}
+        <span dir="auto">{stage.requiredNextAction}</span>
       </div>
       {stage.blockers.length > 0 && (
         <StageIssues title={t("blockers")} issues={stage.blockers} tone="blocker" />
@@ -200,6 +200,7 @@ function StageIssues({
         <div
           key={issue}
           className={`break-words text-xs leading-relaxed [overflow-wrap:anywhere] md:text-[10px] ${toneClass}`}
+          dir="auto"
         >
           {issue}
         </div>

@@ -545,7 +545,8 @@ function ThreadView() {
                 }}
                 placeholder="Ask Nexus Core to analyze, plan, scope, or review..."
                 disabled={isArchived}
-                className="min-h-[116px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-base focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:min-h-[100px] md:pb-4 md:pr-28 md:text-sm"
+                className="min-h-[116px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-base text-start focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:min-h-[100px] md:pb-4 md:pr-28 md:text-sm"
+                dir="auto"
               />
               <button
                 onClick={handleSend}

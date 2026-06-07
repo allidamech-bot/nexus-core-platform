@@ -450,7 +450,7 @@ export function ProjectInspector() {
               {activeProject.name}
             </h3>
             <p className="mt-2 break-words text-xs uppercase leading-relaxed tracking-wider text-muted-foreground md:mt-1 md:truncate md:text-[11px] md:leading-normal">
-              {activeProject.source_type} â€¢ {activeProject.id.slice(0, 8)}
+              {activeProject.source_type} | {activeProject.id.slice(0, 8)}
             </p>
           </div>
           <div

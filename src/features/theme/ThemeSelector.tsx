@@ -2,23 +2,27 @@ import { Check, Palette } from "lucide-react";
 import { useLocale } from "@/features/i18n/localeContext";
 import { NEXUS_THEMES, type NexusTheme, useTheme } from "./themeContext";
 
-const THEME_LABELS: Record<NexusTheme, { en: string; ar: string }> = {
+const THEME_LABELS: Record<NexusTheme, { en: string; ar: string; shortAr: string }> = {
   "matte-black": {
     en: "Matte Black",
-    ar: "\u0623\u0633\u0648\u062f \u0645\u0637\u0641\u064a",
+    ar: "أسود مطفي",
+    shortAr: "مطفي",
   },
   "deep-black": {
     en: "Deep Black",
-    ar: "\u0623\u0633\u0648\u062f \u062f\u0627\u0643\u0646",
+    ar: "أسود عميق",
+    shortAr: "عميق",
   },
   "light-beige": {
     en: "Light Beige",
-    ar: "\u0641\u0627\u062a\u062d \u0628\u064a\u062c",
+    ar: "فاتح بيج",
+    shortAr: "فاتح",
   },
 };
 
-export function themeLabel(theme: NexusTheme, locale: "en" | "ar") {
-  return THEME_LABELS[theme][locale];
+export function themeLabel(theme: NexusTheme, locale: "en" | "ar", short: boolean = false) {
+  if (locale === "ar" && short) return THEME_LABELS[theme].shortAr;
+  return short ? THEME_LABELS[theme].en.split(" ")[0] : THEME_LABELS[theme][locale];
 }
 
 export function ThemeSelector({ compact = false }: { compact?: boolean }) {
@@ -67,7 +71,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
               title={themeLabel(option, locale)}
             >
               <span className={compact ? "truncate" : "min-w-0 truncate"}>
-                {compact ? themeLabel(option, locale).split(" ")[0] : themeLabel(option, locale)}
+                {themeLabel(option, locale, compact)}
               </span>
               {!compact && selected && <Check className="size-4 shrink-0 text-accent" />}
             </button>

@@ -165,7 +165,7 @@ function AppIndex() {
           >
             Welcome to Nexus Core Secure Workspace
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base">
+          <p dir="ltr" className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base">
             Autonomous AI patching under strict corporate governance. Your source code remains 100% immutable.
           </p>
         </div>
@@ -202,7 +202,7 @@ function AppIndex() {
                   }
                 }}
                 placeholder={t("tellNexusToChange")}
-                className="min-h-[120px] w-full resize-none rounded-xl border border-border bg-background/70 p-4 text-base leading-relaxed shadow-sm placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-accent md:pb-4 md:pr-32 md:text-sm"
+                className="min-h-[120px] w-full resize-none rounded-xl border border-border bg-background/70 p-4 text-base leading-relaxed text-start shadow-sm placeholder:text-muted-foreground/80 focus:outline-none focus:ring-1 focus:ring-accent md:pb-4 md:pr-32 md:text-sm"
                 dir="auto"
               />
               <button
@@ -215,7 +215,7 @@ function AppIndex() {
               </button>
             </div>
             <div className="mt-3 text-center text-[12px] font-medium text-muted-foreground">
-              Cmd/Ctrl + Enter to send / {t("nexusHelperText")}
+              Cmd/Ctrl + Enter to send
             </div>
           </div>
         )}
