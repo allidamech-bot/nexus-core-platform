@@ -155,27 +155,18 @@ function AppIndex() {
   return (
     <div className="flex-1 flex min-w-0 flex-col overflow-x-hidden overflow-y-auto bg-background px-3 pb-[calc(80px+env(safe-area-inset-bottom))] pt-6 md:items-center md:px-6 md:pb-6 md:pt-4">
       <div className="w-full max-w-none min-w-0 space-y-5 md:my-auto md:max-w-3xl md:space-y-8">
-        <div className="w-full min-w-0 pt-0 text-left md:pt-2 md:text-center">
-          <div className="mb-4 grid size-12 place-items-center rounded-2xl border border-accent/20 bg-accent/10 text-accent shadow-sm md:mx-auto md:mb-6">
-            <Terminal className="size-6" />
+        <div className="flex w-full min-w-0 flex-col items-start pt-0 text-left md:items-center md:pt-2 md:text-center">
+          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-accent shadow-sm">
+            🔒 SECURE GOVERNED PIPELINE
           </div>
           <h1
             dir="auto"
             className="w-full max-w-full break-words text-[1.45rem] font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl md:leading-tight lg:text-4xl"
           >
-            {!activeProject
-              ? "ابدأ بربط مشروعك مع Nexus"
-              : activeProject.status === "failed" ||
-                  activeProject.latest_job?.status === "failed" ||
-                  activeProject.latest_job?.status === "rejected"
-                ? "المشروع الحالي فشل في المعالجة"
-                : activeProject.status === "indexed_manifest" ||
-                    activeProject.status === "completed"
-                  ? "ماذا تريد أن يفعل Nexus في مشروعك؟"
-                  : "المشروع موجود لكن السياق غير جاهز بالكامل"}
+            Welcome to Nexus Core Secure Workspace
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base">
-            {t("nexusHelperText")}
+            Autonomous AI patching under strict corporate governance. Your source code remains 100% immutable.
           </p>
         </div>
 
@@ -229,6 +220,47 @@ function AppIndex() {
           </div>
         )}
 
+        {/* Theme-Aware Visual Stepper */}
+        {!(
+          activeProject &&
+          (activeProject.status === "failed" ||
+            activeProject.latest_job?.status === "failed" ||
+            activeProject.latest_job?.status === "rejected")
+        ) && (
+          <div className="hidden md:flex mt-6 flex-col gap-4 rounded-2xl border border-border bg-surface-elevated/50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            {[
+              { num: 1, label: "AI Chat", active: true },
+              { num: 2, label: "Safe Preview", active: false },
+              { num: 3, label: "Patch Review", active: false },
+              { num: 4, label: "Secure Export", active: false },
+            ].map((step, idx, arr) => (
+              <div key={idx} className="flex flex-1 items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`grid size-6 place-items-center rounded-full text-xs font-bold transition-colors ${
+                      step.active
+                        ? "bg-accent text-accent-foreground glow-accent"
+                        : "bg-surface border border-border text-muted-foreground"
+                    }`}
+                  >
+                    {step.num}
+                  </span>
+                  <span
+                    className={`text-sm font-semibold tracking-tight transition-colors ${
+                      step.active ? "text-accent" : "text-muted-foreground"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {idx < arr.length - 1 && (
+                  <div className="hidden h-px flex-1 bg-border sm:block mx-3"></div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {status !== "idle" && (
           <div
             role={status === "creating" ? "status" : "alert"}
@@ -259,15 +291,15 @@ function AppIndex() {
         )}
 
         {recentThreads.length > 0 && (
-          <div className="space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <div className="rounded-3xl border border-border bg-surface-elevated p-5 md:p-6 shadow-sm">
+            <div className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {t("openRecentSession")}
             </div>
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
               {recentThreads.map((thread) => (
                 <div
                   key={thread.id}
-                  className="flex flex-col gap-3 min-h-[88px] max-w-full rounded-2xl border border-border bg-surface p-4 shadow-sm"
+                  className="flex flex-col gap-3 min-h-[88px] max-w-full rounded-2xl border border-border bg-background p-4 shadow-sm transition-colors hover:border-accent/50"
                 >
                   <div className="flex flex-1 flex-col min-w-0">
                     <span className="block truncate text-sm font-bold text-foreground">
@@ -280,7 +312,7 @@ function AppIndex() {
                   <Link
                     to="/app/$threadId"
                     params={{ threadId: thread.id }}
-                    className="flex min-h-[44px] items-center justify-center rounded-xl bg-accent/10 px-4 text-[13px] font-semibold text-accent active:bg-accent/20 transition-colors"
+                    className="flex min-h-[44px] items-center justify-center rounded-xl bg-accent/10 px-4 text-[13px] font-semibold text-accent transition-colors hover:bg-accent/20 active:bg-accent/30"
                   >
                     {t("viewPatch") || "View Patch"}
                   </Link>
