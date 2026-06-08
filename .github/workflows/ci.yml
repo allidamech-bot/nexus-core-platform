@@ -9,6 +9,13 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      STRIPE_SECRET_KEY: sk_test_mock
+      SUPABASE_URL: https://mock.supabase.co
+      SUPABASE_ANON_KEY: mock_anon_key
+      SUPABASE_SERVICE_ROLE_KEY: mock_service_key
+      VITE_SUPABASE_URL: https://mock.supabase.co
+      VITE_SUPABASE_ANON_KEY: mock_anon_key
 
     steps:
       - name: Checkout
@@ -28,14 +35,14 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Build and Generate Route Tree
+        run: pnpm build
+
       - name: Typecheck
         run: pnpm exec tsc -p tsconfig.json --noEmit
 
       - name: Lint
         run: pnpm run lint
-
-      - name: Build
-        run: pnpm build
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium

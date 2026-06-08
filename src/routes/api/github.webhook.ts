@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/github/webhook")({
                   Authorization: `token ${token}`,
                   "User-Agent": "NexusCore-Platform",
                 },
-              }
+              },
             );
 
             if (!zipResponse.ok) {
@@ -81,25 +81,27 @@ export const Route = createFileRoute("/api/github/webhook")({
                 continue;
               }
 
-              const { error: jobError } = await supabase
-                .from("project_ingestion_jobs")
-                .insert({
-                  id: jobId,
-                  project_id: project.id,
-                  user_id: project.user_id,
-                  status: "pending",
-                  metadata: {
-                    storage_path: storagePath,
-                    file_name: `${repoFullName.split("/").pop()}.zip`,
-                    source_type: "github",
-                  },
-                });
+              const { error: jobError } = await supabase.from("project_ingestion_jobs").insert({
+                id: jobId,
+                project_id: project.id,
+                user_id: project.user_id,
+                status: "pending",
+                metadata: {
+                  storage_path: storagePath,
+                  file_name: `${repoFullName.split("/").pop()}.zip`,
+                  source_type: "github",
+                },
+              });
 
               if (!jobError) {
                 fetch(`${new URL(request.url).origin}/api/projects/sandbox-jobs`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "process_ingestion", jobId, projectId: project.id }),
+                  body: JSON.stringify({
+                    action: "process_ingestion",
+                    jobId,
+                    projectId: project.id,
+                  }),
                 }).catch((e) => console.error("Failed to trigger ingestion job", e));
               }
             }
@@ -109,7 +111,7 @@ export const Route = createFileRoute("/api/github/webhook")({
         })();
 
         return response;
-      }
-    }
-  }
+      },
+    },
+  },
 });

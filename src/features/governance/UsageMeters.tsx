@@ -53,7 +53,13 @@ function Meter({
   );
 }
 
-export function UsageMeters({ overview, onUpgrade }: { overview: UsageOverview, onUpgrade?: () => void }) {
+export function UsageMeters({
+  overview,
+  onUpgrade,
+}: {
+  overview: UsageOverview;
+  onUpgrade?: () => void;
+}) {
   const { t } = useLocale();
   const warning = [
     ["max_projects", overview.projects, overview.limits?.max_projects],
@@ -115,7 +121,7 @@ export function UsageMeters({ overview, onUpgrade }: { overview: UsageOverview, 
             <div className="font-semibold">{t("nearLimit")}</div>
             <div className="mt-1 text-warning/80">{t("upgradePrompt")}</div>
             {onUpgrade && (
-              <button 
+              <button
                 onClick={onUpgrade}
                 className="mt-2 text-[10px] uppercase tracking-widest font-bold underline underline-offset-2 hover:text-warning/80 transition-colors"
               >

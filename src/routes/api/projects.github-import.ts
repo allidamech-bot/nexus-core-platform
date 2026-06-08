@@ -15,10 +15,13 @@ export const Route = createFileRoute("/api/projects/github-import")({
         const supabase = createClient<Database>(
           process.env.VITE_SUPABASE_URL || "",
           process.env.VITE_SUPABASE_ANON_KEY || "",
-          { global: { headers: { Authorization: authHeader } } }
+          { global: { headers: { Authorization: authHeader } } },
         );
 
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
         if (authError || !user) return new Response("Unauthorized", { status: 401 });
 
         const body = await request.json();
@@ -60,7 +63,7 @@ export const Route = createFileRoute("/api/projects/github-import")({
                   Authorization: `token ${token}`,
                   "User-Agent": "NexusCore-Platform",
                 },
-              }
+              },
             );
 
             if (!zipResponse.ok) throw new Error("Failed to download zip");
@@ -100,7 +103,7 @@ export const Route = createFileRoute("/api/projects/github-import")({
         })();
 
         return Response.json({ projectId: project.id });
-      }
-    }
-  }
+      },
+    },
+  },
 });

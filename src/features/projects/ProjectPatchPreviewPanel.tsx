@@ -230,7 +230,11 @@ export function ProjectPatchPreviewPanel({
       toast.success(t("sandboxVerified")); // or generic queued toast
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : t("sandboxFailed");
-      if (errorMsg.includes("sandbox_quota_exceeded") || errorMsg.includes("402") || errorMsg.includes("Upgrade required")) {
+      if (
+        errorMsg.includes("sandbox_quota_exceeded") ||
+        errorMsg.includes("402") ||
+        errorMsg.includes("Upgrade required")
+      ) {
         toast.error("Sandbox execution quota exceeded. Upgrade required.", {
           action: {
             label: "Upgrade Plan",
@@ -536,10 +540,16 @@ export function ProjectPatchPreviewPanel({
               <button
                 type="button"
                 onClick={handleVerifySandbox}
-                disabled={disabled || sandboxPreview.isPending || (sandboxJob.data && sandboxJob.data.status === "processing") || !selectedPatchPreview}
+                disabled={
+                  disabled ||
+                  sandboxPreview.isPending ||
+                  (sandboxJob.data && sandboxJob.data.status === "processing") ||
+                  !selectedPatchPreview
+                }
                 className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/15 px-4 py-2.5 text-[13px] font-bold text-emerald-600 hover:bg-emerald-500/25 active:bg-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400"
               >
-                {sandboxPreview.isPending || (sandboxJob.data && sandboxJob.data.status === "processing") ? (
+                {sandboxPreview.isPending ||
+                (sandboxJob.data && sandboxJob.data.status === "processing") ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <ShieldCheck className="size-4" />
@@ -549,9 +559,7 @@ export function ProjectPatchPreviewPanel({
 
               <PatchSnapshotAction
                 disabled={disabled}
-                sandbox={
-                  sandboxJob.data?.result || null
-                }
+                sandbox={sandboxJob.data?.result || null}
                 snapshot={latestSnapshotForSelected}
                 files={displayedSnapshotFiles}
                 loading={createSnapshot.isPending}
@@ -588,17 +596,19 @@ export function ProjectPatchPreviewPanel({
                 Executing Sandbox...
               </div>
               {sandboxJob.data.stdout && (
-                <pre className="whitespace-pre-wrap overflow-x-auto text-emerald-400/80">{sandboxJob.data.stdout}</pre>
+                <pre className="whitespace-pre-wrap overflow-x-auto text-emerald-400/80">
+                  {sandboxJob.data.stdout}
+                </pre>
               )}
               {sandboxJob.data.stderr && (
-                <pre className="whitespace-pre-wrap overflow-x-auto text-destructive/80 mt-2">{sandboxJob.data.stderr}</pre>
+                <pre className="whitespace-pre-wrap overflow-x-auto text-destructive/80 mt-2">
+                  {sandboxJob.data.stderr}
+                </pre>
               )}
             </div>
           )}
 
-          {sandboxJob.data?.result && (
-              <PatchSandboxResultView result={sandboxJob.data.result} />
-          )}
+          {sandboxJob.data?.result && <PatchSandboxResultView result={sandboxJob.data.result} />}
           {sandboxPreview.error && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
               {t("sandboxFailed")}
@@ -860,24 +870,26 @@ function WritebackRequestPanel({
                     <strong>Quorum Approval Required</strong>
                   </div>
                   <p className="text-warning/80">
-                    This writeback requires more approvals. Currently {request.currentApprovals ?? 0} out of {request.requiredApprovals ?? 1} required approvals obtained.
+                    This writeback requires more approvals. Currently{" "}
+                    {request.currentApprovals ?? 0} out of {request.requiredApprovals ?? 1} required
+                    approvals obtained.
                   </p>
                   <div className="space-y-2 mt-4 bg-background/50 p-3 rounded-lg border border-warning/20">
-                    <textarea 
+                    <textarea
                       placeholder="Reviewer Note (optional for approval, required for rejection)"
                       value={reviewerNote}
-                      onChange={e => setReviewerNote(e.target.value)}
+                      onChange={(e) => setReviewerNote(e.target.value)}
                       className="w-full rounded-md border border-border bg-background p-2 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-accent"
                     />
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => onApproveWriteback(request.id, reviewerNote)}
                         disabled={disabled || loading}
                         className="flex-1 py-1.5 rounded-md bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 font-semibold disabled:opacity-50 transition-colors"
                       >
                         Approve
                       </button>
-                      <button 
+                      <button
                         onClick={() => onRejectWriteback(request.id, reviewerNote)}
                         disabled={disabled || loading || !reviewerNote.trim()}
                         className="flex-1 py-1.5 rounded-md bg-destructive/20 text-destructive hover:bg-destructive/30 font-semibold disabled:opacity-50 transition-colors"

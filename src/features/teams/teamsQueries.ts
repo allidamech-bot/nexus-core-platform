@@ -21,7 +21,9 @@ export function useCreateOrganization() {
 
   return useMutation({
     mutationFn: async (name: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
@@ -31,11 +33,11 @@ export function useCreateOrganization() {
         .single();
 
       if (error) throw error;
-      
+
       // Auto-add owner as admin member
       await supabase
         .from("organization_members")
-        .insert({ organization_id: data.id, user_id: user.id, role: 'admin' });
+        .insert({ organization_id: data.id, user_id: user.id, role: "admin" });
 
       return data;
     },
@@ -49,9 +51,16 @@ export function useGenerateInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ organizationId, role }: { organizationId: string; role: 'admin' | 'reviewer' | 'developer' }) => {
-      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      
+    mutationFn: async ({
+      organizationId,
+      role,
+    }: {
+      organizationId: string;
+      role: "admin" | "reviewer" | "developer";
+    }) => {
+      const token =
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
       const { data, error } = await supabase
         .from("organization_invitations")
         .insert({
@@ -93,7 +102,9 @@ export function useAcceptInvitation() {
 
   return useMutation({
     mutationFn: async (token: string) => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const response = await fetch("/api/teams/accept-invitation", {

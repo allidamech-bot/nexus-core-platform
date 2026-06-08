@@ -15,7 +15,7 @@
     "smoke:ai": "playwright test tests/e2e/aiPatchPreviewSmoke.spec.ts --reporter=list",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "verify": "npm run typecheck && npm run lint && npm run build"
+    "verify": "npm run build && npm run typecheck && npm run lint"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.47",

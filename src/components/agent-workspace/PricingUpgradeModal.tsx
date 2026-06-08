@@ -1,5 +1,8 @@
 import { Loader2, X, Check, Sparkles } from "lucide-react";
-import { useBillingPlansQuery, useCheckoutSessionMutation } from "@/features/billing/billingQueries";
+import {
+  useBillingPlansQuery,
+  useCheckoutSessionMutation,
+} from "@/features/billing/billingQueries";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
@@ -35,7 +38,7 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
           >
             <X className="size-5" />
           </button>
-          
+
           <div className="mx-auto max-w-2xl text-center mb-10 mt-4">
             <div className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-1.5 text-sm font-bold uppercase tracking-widest text-yellow-500 mb-6">
               <Sparkles className="size-4" /> Limit Reached
@@ -44,7 +47,8 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
               Unlock the Full Power of Nexus Core
             </h2>
             <p className="text-base text-gray-400 sm:text-lg">
-              Upgrade your workspace to access unlimited sandboxes, advanced AI capabilities, and strict governance tools.
+              Upgrade your workspace to access unlimited sandboxes, advanced AI capabilities, and
+              strict governance tools.
             </p>
           </div>
 
@@ -67,9 +71,14 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
                       </span>
                       <span className="text-sm font-medium text-gray-400">/month</span>
                     </div>
-                    
+
                     <ul className="space-y-4 mb-8">
-                      {["Unlimited Sandbox Executions", "Advanced Patch Generation", "Priority GPU Access", "Quorum Approval Engine"].map((feature, i) => (
+                      {[
+                        "Unlimited Sandbox Executions",
+                        "Advanced Patch Generation",
+                        "Priority GPU Access",
+                        "Quorum Approval Engine",
+                      ].map((feature, i) => (
                         <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
                           <Check className="size-5 shrink-0 text-yellow-500" />
                           <span>{feature}</span>
@@ -77,13 +86,17 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
                       ))}
                     </ul>
                   </div>
-                  
+
                   <button
                     onClick={() => handleUpgrade(plan.id)}
                     disabled={checkoutMutation.isPending}
                     className="w-full rounded-xl bg-gradient-to-r from-yellow-500 to-yellow-600 px-4 py-3.5 text-sm font-bold text-black shadow-lg transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                   >
-                    {checkoutMutation.isPending ? <Loader2 className="mx-auto size-5 animate-spin" /> : "Upgrade Now"}
+                    {checkoutMutation.isPending ? (
+                      <Loader2 className="mx-auto size-5 animate-spin" />
+                    ) : (
+                      "Upgrade Now"
+                    )}
                   </button>
                 </div>
               ))}

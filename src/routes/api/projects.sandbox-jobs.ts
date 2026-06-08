@@ -106,11 +106,7 @@ export const Route = createFileRoute("/api/projects/sandbox-jobs")({
             .single();
 
           if (error || !data) {
-            return jsonErrorResponse(
-              { error: "Job not found", code: "404" },
-              404,
-              correlationId,
-            );
+            return jsonErrorResponse({ error: "Job not found", code: "404" }, 404, correlationId);
           }
 
           return Response.json(data, {

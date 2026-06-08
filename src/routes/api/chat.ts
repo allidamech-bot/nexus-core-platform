@@ -1043,7 +1043,7 @@ export const Route = createFileRoute("/api/chat")({
           );
         }
 
-        // @ts-ignore - dynamic provider query
+        // @ts-expect-error - dynamic provider query
         const { data: dbKeyData } = await (access.supabase as any)
           .from("ai_provider_keys")
           .select("api_key, base_url, provider_type")
@@ -1053,12 +1053,18 @@ export const Route = createFileRoute("/api/chat")({
         let model;
         if (dbKeyData?.api_key) {
           const { createDynamicProvider } = await import("@/lib/ai-gateway");
-          const dynamicGateway = createDynamicProvider(dbKeyData.api_key, dbKeyData.base_url || undefined);
+          const dynamicGateway = createDynamicProvider(
+            dbKeyData.api_key,
+            dbKeyData.base_url || undefined,
+          );
           model = dynamicGateway(dbKeyData.provider_type === "ollama" ? "llama3" : "gpt-4o");
         } else {
           const key = process.env.LOVABLE_API_KEY;
           if (!key) {
-            console.error("[chat] missing LOVABLE_API_KEY and no dynamic key found", withLogContext(context));
+            console.error(
+              "[chat] missing LOVABLE_API_KEY and no dynamic key found",
+              withLogContext(context),
+            );
             return jsonResponse(
               {
                 error: "ai_gateway_env_missing",

@@ -187,7 +187,10 @@ export function ProjectInspector() {
 
     try {
       setIsCreatingSnapshot(true);
-      const result = await createPatchSnapshot.mutateAsync({ previewId: readyPreview.id, sandboxResult: {} as any });
+      const result = await createPatchSnapshot.mutateAsync({
+        previewId: readyPreview.id,
+        sandboxResult: {} as any,
+      });
       if (result.alreadyExists) {
         toast.info("A patch snapshot already exists for this preview.");
       } else {

@@ -28,7 +28,11 @@ export function useGithubReposQuery() {
 export function useImportGithubMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { installationId: string; repoFullName: string; branchName?: string }) => {
+    mutationFn: async (data: {
+      installationId: string;
+      repoFullName: string;
+      branchName?: string;
+    }) => {
       const res = await fetch("/api/projects/github-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,7 +87,8 @@ export function GithubRepoSelector({
               <Github className="size-5" /> Connect GitHub Repository
             </DialogTitle>
             <DialogDescription>
-              Link a GitHub repository to automatically sync changes and export patches as Pull Requests.
+              Link a GitHub repository to automatically sync changes and export patches as Pull
+              Requests.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -117,7 +122,9 @@ export function GithubRepoSelector({
                 >
                   <div>
                     <div className="font-medium text-foreground">{repo.full_name}</div>
-                    <div className="text-xs text-muted-foreground">Branch: {repo.default_branch} {repo.private && "• Private"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Branch: {repo.default_branch} {repo.private && "• Private"}
+                    </div>
                   </div>
                   {importMutation.isPending ? (
                     <Loader2 className="size-4 animate-spin text-accent" />

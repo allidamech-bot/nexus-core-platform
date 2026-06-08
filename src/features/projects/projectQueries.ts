@@ -144,7 +144,9 @@ export function useSeedDemoProjectMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) throw new Error("Unauthorized");
       const res = await fetch("/api/projects/seed-demo", {
         method: "POST",
@@ -327,8 +329,10 @@ export function useSandboxJobQuery(jobId: string | null) {
 export function useCreatePatchSnapshotMutation(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { previewId: string; sandboxResult: PatchSandboxResult }): Promise<CreatePatchSnapshotResult> =>
-      createPatchSnapshot(input),
+    mutationFn: (input: {
+      previewId: string;
+      sandboxResult: PatchSandboxResult;
+    }): Promise<CreatePatchSnapshotResult> => createPatchSnapshot(input),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: projectKeys.patchSnapshots(projectId) });
       qc.invalidateQueries({ queryKey: projectKeys.patchSnapshotFiles(result.snapshot.id) });

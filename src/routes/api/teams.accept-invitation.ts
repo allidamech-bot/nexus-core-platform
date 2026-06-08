@@ -17,14 +17,17 @@ export const Route = createFileRoute("/api/teams/accept-invitation")({
         try {
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) return new Response("Unauthorized", { status: 401 });
-          
+
           const supabaseUserClient = createClient<Database>(
             process.env.VITE_SUPABASE_URL || "",
             process.env.VITE_SUPABASE_ANON_KEY || "",
-            { global: { headers: { Authorization: authHeader } } }
+            { global: { headers: { Authorization: authHeader } } },
           );
-          
-          const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
+
+          const {
+            data: { user },
+            error: authError,
+          } = await supabaseUserClient.auth.getUser();
           if (authError || !user) return new Response("Unauthorized", { status: 401 });
 
           const body = (await request.json()) as { token: string };
@@ -41,7 +44,9 @@ export const Route = createFileRoute("/api/teams/accept-invitation")({
             .single();
 
           if (inviteError || !invitation) {
-            return new Response(JSON.stringify({ error: "Invalid or expired invitation" }), { status: 400 });
+            return new Response(JSON.stringify({ error: "Invalid or expired invitation" }), {
+              status: 400,
+            });
           }
 
           // Check if already a member
@@ -62,12 +67,18 @@ export const Route = createFileRoute("/api/teams/accept-invitation")({
           }
 
           // Mark invitation as accepted
-          await supabaseAdmin.from("organization_invitations").update({ status: "accepted" }).eq("id", invitation.id);
+          await supabaseAdmin
+            .from("organization_invitations")
+            .update({ status: "accepted" })
+            .eq("id", invitation.id);
 
-          return new Response(JSON.stringify({ success: true, organization_id: invitation.organization_id }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ success: true, organization_id: invitation.organization_id }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         } catch (error) {
           console.error("[teams] Accept invitation failed", safeErrorLog(error));
           return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });

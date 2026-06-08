@@ -40,7 +40,8 @@ export function TeamsHub() {
     }
   };
 
-  if (isLoading) return <div className="p-4 text-sm text-muted-foreground animate-pulse">Loading Teams...</div>;
+  if (isLoading)
+    return <div className="p-4 text-sm text-muted-foreground animate-pulse">Loading Teams...</div>;
 
   return (
     <div className="space-y-8" dir="ltr">
@@ -78,7 +79,9 @@ export function TeamsHub() {
         </div>
 
         {orgs?.length === 0 ? (
-          <p className="text-xs text-muted-foreground">You are not a member of any organization yet.</p>
+          <p className="text-xs text-muted-foreground">
+            You are not a member of any organization yet.
+          </p>
         ) : (
           <div className="grid gap-4">
             {orgs?.map((org) => (
@@ -89,7 +92,9 @@ export function TeamsHub() {
 
         {/* Create New */}
         <div className="pt-4 border-t border-border mt-6">
-          <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest">Create New Organization</h4>
+          <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest">
+            Create New Organization
+          </h4>
           <div className="flex gap-2">
             <input
               type="text"
@@ -117,7 +122,7 @@ export function TeamsHub() {
 function OrganizationCard({ org }: { org: any }) {
   const { data: invitations } = useOrganizationInvitations(org.id);
   const generateInv = useGenerateInvitation();
-  const [roleToInvite, setRoleToInvite] = useState<'admin' | 'reviewer' | 'developer'>('reviewer');
+  const [roleToInvite, setRoleToInvite] = useState<"admin" | "reviewer" | "developer">("reviewer");
 
   const handleGenerate = async () => {
     try {
@@ -151,7 +156,7 @@ function OrganizationCard({ org }: { org: any }) {
           <UserPlus className="h-3.5 w-3.5" /> Invite Members
         </h5>
         <div className="flex gap-2 mb-3">
-          <select 
+          <select
             className="h-8 rounded-md border border-input bg-background px-2 text-xs"
             value={roleToInvite}
             onChange={(e) => setRoleToInvite(e.target.value as any)}
@@ -173,19 +178,31 @@ function OrganizationCard({ org }: { org: any }) {
 
         {invitations && invitations.length > 0 && (
           <div className="space-y-2 mt-3">
-            {invitations.filter((i: any) => i.status === 'pending').map((inv: any) => (
-              <div key={inv.id} className="flex items-center justify-between bg-background p-2 rounded-md border border-border text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="capitalize text-muted-foreground font-medium w-16">{inv.role}</span>
-                  <code className="bg-surface-elevated px-1.5 py-0.5 rounded text-[10px] tracking-wider truncate max-w-[120px]">
-                    {inv.token}
-                  </code>
+            {invitations
+              .filter((i: any) => i.status === "pending")
+              .map((inv: any) => (
+                <div
+                  key={inv.id}
+                  className="flex items-center justify-between bg-background p-2 rounded-md border border-border text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="capitalize text-muted-foreground font-medium w-16">
+                      {inv.role}
+                    </span>
+                    <code className="bg-surface-elevated px-1.5 py-0.5 rounded text-[10px] tracking-wider truncate max-w-[120px]">
+                      {inv.token}
+                    </code>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={() => copyToken(inv.token)}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 </div>
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToken(inv.token)}>
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>

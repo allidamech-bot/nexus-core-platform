@@ -8,7 +8,10 @@ import {
   getPatchPreviewCurrentContext,
   validatePatchPreviewSandboxAccess,
 } from "@/features/projects/projectPatchPreviewService";
-import { queueSandboxExecution, processSandboxJob } from "@/features/projects/patchApplySandbox.server";
+import {
+  queueSandboxExecution,
+  processSandboxJob,
+} from "@/features/projects/patchApplySandbox.server";
 
 function textResponse(message: string, status: number, correlationId?: string) {
   return new Response(message, {
@@ -129,12 +132,15 @@ export const Route = createFileRoute("/api/projects/sandbox-verify")({
             preview.projectId,
             preview.groundedFiles,
           );
-          
-          const { data: isWithinLimit, error: limitError } = await access.supabase.rpc("is_within_usage_limit", {
-            check_user_id: access.userId,
-            limit_key: "max_sandbox_executions_monthly",
-            increment: 1,
-          });
+
+          const { data: isWithinLimit, error: limitError } = await access.supabase.rpc(
+            "is_within_usage_limit",
+            {
+              check_user_id: access.userId,
+              limit_key: "max_sandbox_executions_monthly",
+              increment: 1,
+            },
+          );
 
           if (limitError) {
             console.warn("Could not check sandbox quota", limitError);
@@ -149,7 +155,7 @@ export const Route = createFileRoute("/api/projects/sandbox-verify")({
               correlationId,
             );
           }
-          
+
           const jobId = await queueSandboxExecution({
             supabase: access.supabase,
             userId: access.userId,
@@ -161,13 +167,16 @@ export const Route = createFileRoute("/api/projects/sandbox-verify")({
           // Kick off background job (in a real app, send to message queue like Inngest/BullMQ)
           processSandboxJob(access.supabase, jobId, { preview, ...context }).catch(console.error);
 
-          return Response.json({ jobId, status: "queued" }, {
-            status: 202,
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "x-correlation-id": correlationId,
+          return Response.json(
+            { jobId, status: "queued" },
+            {
+              status: 202,
+              headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "x-correlation-id": correlationId,
+              },
             },
-          });
+          );
         } catch (error) {
           const message = error instanceof Error ? error.message : "Sandbox verify failed";
           const status = message.includes("Unauthorized") ? 401 : 500;

@@ -21,7 +21,7 @@ export function AiProviderSettings() {
           .select("api_key, base_url, provider_type")
           .eq("user_id", session.user.id)
           .maybeSingle();
-        
+
         if (data) {
           setProviderType(data.provider_type);
           setApiKey(data.api_key);
@@ -39,17 +39,18 @@ export function AiProviderSettings() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!session) return;
-    
+
     setSaving(true);
     try {
-      const { error } = await (supabase as any)
-        .from("ai_provider_keys")
-        .upsert({
+      const { error } = await (supabase as any).from("ai_provider_keys").upsert(
+        {
           user_id: session.user.id,
           provider_type: providerType,
           api_key: apiKey,
           base_url: baseUrl || null,
-        }, { onConflict: "user_id" });
+        },
+        { onConflict: "user_id" },
+      );
 
       if (error) throw error;
       toast.success("AI Provider settings saved successfully");
@@ -60,13 +61,20 @@ export function AiProviderSettings() {
     }
   }
 
-  if (loading) return <div className="text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /></div>;
+  if (loading)
+    return (
+      <div className="text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" />
+      </div>
+    );
 
   return (
     <form onSubmit={handleSave} className="space-y-3 mt-4">
       <div className="space-y-1.5">
-        <label className="text-[11px] font-semibold text-foreground uppercase tracking-widest">Provider Type</label>
-        <select 
+        <label className="text-[11px] font-semibold text-foreground uppercase tracking-widest">
+          Provider Type
+        </label>
+        <select
           value={providerType}
           onChange={(e) => setProviderType(e.target.value)}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
@@ -78,8 +86,10 @@ export function AiProviderSettings() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-[11px] font-semibold text-foreground uppercase tracking-widest">API Key</label>
-        <input 
+        <label className="text-[11px] font-semibold text-foreground uppercase tracking-widest">
+          API Key
+        </label>
+        <input
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
@@ -89,8 +99,10 @@ export function AiProviderSettings() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-[11px] font-semibold text-foreground uppercase tracking-widest">Base URL (Optional)</label>
-        <input 
+        <label className="text-[11px] font-semibold text-foreground uppercase tracking-widest">
+          Base URL (Optional)
+        </label>
+        <input
           type="url"
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}

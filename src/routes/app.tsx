@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Link, Navigate, Outlet, createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  createFileRoute,
+  useNavigate,
+  useLocation,
+} from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -91,7 +98,11 @@ function AppWorkspace({
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const isIdeLayout = location.pathname.startsWith("/app/") && location.pathname !== "/app" && !location.pathname.startsWith("/app/settings") && !location.pathname.startsWith("/app/admin");
+  const isIdeLayout =
+    location.pathname.startsWith("/app/") &&
+    location.pathname !== "/app" &&
+    !location.pathname.startsWith("/app/settings") &&
+    !location.pathname.startsWith("/app/admin");
   const qc = useQueryClient();
   const { activeProject, setSelectedProjectId } = useProjectWorkspace();
   const archiveProject = useArchiveProjectMutation();

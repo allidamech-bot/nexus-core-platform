@@ -1,8 +1,7 @@
 import crypto from "node:crypto";
 import type { Database } from "@/integrations/supabase/types";
 
-export type GithubInstallation =
-  Database["public"]["Tables"]["user_github_installations"]["Row"];
+export type GithubInstallation = Database["public"]["Tables"]["user_github_installations"]["Row"];
 
 export interface GithubRepository {
   id: number;
@@ -23,7 +22,7 @@ export function generateAppJwt(appId: string, privateKey: string): string {
       iat: now - 60,
       exp: now + 10 * 60,
       iss: appId,
-    })
+    }),
   ).toString("base64url");
 
   const sign = crypto.createSign("RSA-SHA256");
@@ -49,7 +48,7 @@ export async function fetchInstallationToken(installationId: string): Promise<st
         Accept: "application/vnd.github.v3+json",
         "User-Agent": "NexusCore-Platform",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -61,7 +60,7 @@ export async function fetchInstallationToken(installationId: string): Promise<st
 }
 
 export async function listInstallationRepositories(
-  installationId: string
+  installationId: string,
 ): Promise<GithubRepository[]> {
   const token = await fetchInstallationToken(installationId);
   const response = await fetch(`https://api.github.com/installation/repositories`, {
@@ -87,11 +86,8 @@ export function verifyWebhookSignature(payload: string, signature: string): bool
   const hmac = crypto.createHmac("sha256", secret);
   hmac.update(payload);
   const expectedSignature = `sha256=${hmac.digest("hex")}`;
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
 }
 
 export async function createPullRequestWithChanges(
@@ -100,7 +96,7 @@ export async function createPullRequestWithChanges(
   branchName: string,
   title: string,
   body: string,
-  files: { path: string; content: string }[]
+  files: { path: string; content: string }[],
 ) {
   const token = await fetchInstallationToken(installationId);
   const headers = {
@@ -134,7 +130,7 @@ export async function createPullRequestWithChanges(
       const blobRes = await fetch(`${apiUrl}/git/blobs`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ content: f.content, encoding: "utf-8" })
+        body: JSON.stringify({ content: f.content, encoding: "utf-8" }),
       });
       if (!blobRes.ok) throw new Error(`Failed to create blob for ${f.path}`);
       const blobData = await blobRes.json();
@@ -142,16 +138,16 @@ export async function createPullRequestWithChanges(
         path: f.path,
         mode: "100644",
         type: "blob",
-        sha: blobData.sha
+        sha: blobData.sha,
       };
-    })
+    }),
   );
 
   // 5. Create new tree
   const treeRes = await fetch(`${apiUrl}/git/trees`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ base_tree: baseTreeSha, tree: treeEntries })
+    body: JSON.stringify({ base_tree: baseTreeSha, tree: treeEntries }),
   });
   if (!treeRes.ok) throw new Error("Failed to create tree");
   const treeData = await treeRes.json();
@@ -164,8 +160,8 @@ export async function createPullRequestWithChanges(
     body: JSON.stringify({
       message: title,
       tree: newTreeSha,
-      parents: [latestCommitSha]
-    })
+      parents: [latestCommitSha],
+    }),
   });
   if (!newCommitRes.ok) throw new Error("Failed to create commit");
   const newCommitData = await newCommitRes.json();
@@ -177,10 +173,11 @@ export async function createPullRequestWithChanges(
     headers,
     body: JSON.stringify({
       ref: `refs/heads/${branchName}`,
-      sha: newCommitSha
-    })
+      sha: newCommitSha,
+    }),
   });
-  if (!createRefRes.ok) throw new Error(`Failed to create branch ref: ${await createRefRes.text()}`);
+  if (!createRefRes.ok)
+    throw new Error(`Failed to create branch ref: ${await createRefRes.text()}`);
 
   // 8. Create PR
   const prRes = await fetch(`${apiUrl}/pulls`, {
@@ -190,8 +187,8 @@ export async function createPullRequestWithChanges(
       title,
       body,
       head: branchName,
-      base: baseBranch
-    })
+      base: baseBranch,
+    }),
   });
   if (!prRes.ok) throw new Error("Failed to create pull request");
   return prRes.json();

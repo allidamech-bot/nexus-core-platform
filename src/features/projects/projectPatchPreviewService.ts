@@ -262,7 +262,9 @@ export async function getPatchPreviewCurrentContext(
   return { files: fileRows, textPreviews };
 }
 
-export async function runPatchPreviewSandbox(previewId: string): Promise<{ jobId: string; status: string }> {
+export async function runPatchPreviewSandbox(
+  previewId: string,
+): Promise<{ jobId: string; status: string }> {
   const { data: session } = await supabase.auth.getSession();
   const token = session.session?.access_token;
 
@@ -358,7 +360,11 @@ export async function createPatchSnapshot(input: {
     return { snapshot: existing, files, alreadyExists: true };
   }
 
-  const built = await createPatchSnapshotFromSandbox({ preview, sandbox: input.sandboxResult, userId });
+  const built = await createPatchSnapshotFromSandbox({
+    preview,
+    sandbox: input.sandboxResult,
+    userId,
+  });
 
   const { data: snapshotRow, error: snapshotError } = await supabase
     .from("project_patch_snapshots")

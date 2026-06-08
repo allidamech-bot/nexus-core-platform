@@ -431,186 +431,194 @@ function ThreadView() {
     <>
       <div className="flex h-full min-w-0 flex-1 overflow-hidden bg-background">
         {/* LEFT SIDEBAR: FILE TREE */}
-      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-border bg-surface/20 overflow-y-auto shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
-        <DrawerSection title="Project Context">
-          <ProjectContextStatus
-            state={projectContextState}
-            projectName={projectContextName}
-            isArchived={isArchived}
-            onAttach={handleAttachProject}
-            t={t}
-          />
-        </DrawerSection>
-        {projectContextProjectId && activeProjectManifest && (
-          <DrawerSection title="Project Scope">
-            <ProjectManifestCard manifest={activeProjectManifest} />
-          </DrawerSection>
-        )}
-        <DrawerSection title={projectContextProjectId ? t("safePreview") : "File Explorer"}>
-          {projectContextProjectId ? (
-            <ProjectSafePreviewPanel
-              files={projectFiles}
-              previews={projectPreviews}
-              manifest={activeProjectManifest}
-              latestJob={projectContextProject?.latest_job ?? null}
-              loading={projectFilesLoading || projectPreviewsLoading || attachedProjectLoading}
-              emptyMessage={threadProjectId ? projectContextEmptyMessage : undefined}
+        <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-border bg-surface/20 overflow-y-auto shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
+          <DrawerSection title="Project Context">
+            <ProjectContextStatus
+              state={projectContextState}
+              projectName={projectContextName}
+              isArchived={isArchived}
+              onAttach={handleAttachProject}
+              t={t}
             />
-          ) : (
-            <div className="text-xs text-muted-foreground">Select a project to view file tree.</div>
+          </DrawerSection>
+          {projectContextProjectId && activeProjectManifest && (
+            <DrawerSection title="Project Scope">
+              <ProjectManifestCard manifest={activeProjectManifest} />
+            </DrawerSection>
           )}
-        </DrawerSection>
-      </aside>
-
-      {/* CENTER CORE: EDITOR & TERMINAL */}
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {projectContextProjectId ? (
-            <div className="mx-auto max-w-5xl space-y-6">
-              <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
-                <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                  <PanelRight className="size-3.5" /> Editor Tabs
-                </div>
-                <div className="p-4">
-                  <ProjectTextPreviewPanel
-                    previews={projectPreviews}
-                    loading={projectPreviewsLoading}
-                    selectedPreviewIds={selectedPreviewIds}
-                    onTogglePreview={handleTogglePreview}
-                  />
-                </div>
+          <DrawerSection title={projectContextProjectId ? t("safePreview") : "File Explorer"}>
+            {projectContextProjectId ? (
+              <ProjectSafePreviewPanel
+                files={projectFiles}
+                previews={projectPreviews}
+                manifest={activeProjectManifest}
+                latestJob={projectContextProject?.latest_job ?? null}
+                loading={projectFilesLoading || projectPreviewsLoading || attachedProjectLoading}
+                emptyMessage={threadProjectId ? projectContextEmptyMessage : undefined}
+              />
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                Select a project to view file tree.
               </div>
+            )}
+          </DrawerSection>
+        </aside>
 
-              {session && (
+        {/* CENTER CORE: EDITOR & TERMINAL */}
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            {projectContextProjectId ? (
+              <div className="mx-auto max-w-5xl space-y-6">
                 <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
                   <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    <GitBranch className="size-3.5" /> Patch Workstation
+                    <PanelRight className="size-3.5" /> Editor Tabs
                   </div>
                   <div className="p-4">
-                    <ProjectPatchPreviewPanel
-                      projectId={projectContextProjectId}
-                      userId={session.user.id}
+                    <ProjectTextPreviewPanel
                       previews={projectPreviews}
-                      disabled={isArchived || !projectContextProject || projectPreviewDataUnavailable}
+                      loading={projectPreviewsLoading}
+                      selectedPreviewIds={selectedPreviewIds}
+                      onTogglePreview={handleTogglePreview}
                     />
                   </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="grid h-full place-items-center text-center text-muted-foreground">
-              <div>
-                <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
-                  <FolderOpen className="size-6" />
-                </div>
-                <h3 className="mb-2 text-lg font-bold text-foreground">No active project context</h3>
-                <p className="text-sm">Seed a demo workspace or upload a project to begin.</p>
+
+                {session && (
+                  <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
+                    <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <GitBranch className="size-3.5" /> Patch Workstation
+                    </div>
+                    <div className="p-4">
+                      <ProjectPatchPreviewPanel
+                        projectId={projectContextProjectId}
+                        userId={session.user.id}
+                        previews={projectPreviews}
+                        disabled={
+                          isArchived || !projectContextProject || projectPreviewDataUnavailable
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* BOTTOM TERMINAL */}
-        <div className="h-[30vh] min-h-[200px] shrink-0 border-t border-border bg-[#050505] p-4 font-mono text-[11px] text-muted-foreground overflow-y-auto shadow-inner">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-            <Terminal className="size-3.5" /> Sandbox Execution Stdout
-          </div>
-          <div className="space-y-1">
-            <div>&gt; Nexus IDE Engine Initialized.</div>
-            <div>&gt; Listening for sandbox execution jobs...</div>
-          </div>
-        </div>
-      </main>
-
-      {/* RIGHT SIDEBAR: AI CHAT */}
-      <aside className="flex w-full shrink-0 flex-col border-l border-border bg-surface/30 md:w-[28rem] z-30 shadow-[-1px_0_10px_rgba(0,0,0,0.02)]">
-        <div className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-background/50 px-3 py-2 sm:px-4">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-semibold leading-tight md:text-sm">
-              {thread?.title ?? "Session"}
-            </div>
-            <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Agent #{threadId.slice(0, 6)} / {mode}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={handleNewSession}
-              className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 md:min-h-[32px]"
-            >
-              <MessageSquare className="size-3.5 md:size-3" />
-              <span className="hidden md:inline">New Chat</span>
-            </button>
-            {hasThreadLifecycle && !isArchived && (
-              <button
-                type="button"
-                onClick={handleArchiveThread}
-                className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:min-h-[32px]"
-              >
-                <Archive className="size-3.5 md:size-3" />
-              </button>
+            ) : (
+              <div className="grid h-full place-items-center text-center text-muted-foreground">
+                <div>
+                  <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
+                    <FolderOpen className="size-6" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-bold text-foreground">
+                    No active project context
+                  </h3>
+                  <p className="text-sm">Seed a demo workspace or upload a project to begin.</p>
+                </div>
+              </div>
             )}
           </div>
-        </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 pb-6 pt-4 md:px-5">
-          {loadingMsgs && <div className="font-mono text-xs text-muted-foreground">Loading session...</div>}
-          {!loadingMsgs && messages.length === 0 && <EmptyChat />}
-          {messages.map((m) => (
-            <MessageBlock key={m.id} message={m} />
-          ))}
-          {status === "submitted" && (
-            <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
-              <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
+          {/* BOTTOM TERMINAL */}
+          <div className="h-[30vh] min-h-[200px] shrink-0 border-t border-border bg-[#050505] p-4 font-mono text-[11px] text-muted-foreground overflow-y-auto shadow-inner">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+              <Terminal className="size-3.5" /> Sandbox Execution Stdout
             </div>
-          )}
-        </div>
+            <div className="space-y-1">
+              <div>&gt; Nexus IDE Engine Initialized.</div>
+              <div>&gt; Listening for sandbox execution jobs...</div>
+            </div>
+          </div>
+        </main>
 
-        <div className="border-t border-border bg-background p-3 md:p-4">
-          <div className="mb-3 flex min-w-0 gap-1.5 overflow-x-auto">
-            {agentModes.map((m) => {
-              const active = mode === m.id;
-              return (
+        {/* RIGHT SIDEBAR: AI CHAT */}
+        <aside className="flex w-full shrink-0 flex-col border-l border-border bg-surface/30 md:w-[28rem] z-30 shadow-[-1px_0_10px_rgba(0,0,0,0.02)]">
+          <div className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-background/50 px-3 py-2 sm:px-4">
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-base font-semibold leading-tight md:text-sm">
+                {thread?.title ?? "Session"}
+              </div>
+              <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Agent #{threadId.slice(0, 6)} / {mode}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={handleNewSession}
+                className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 md:min-h-[32px]"
+              >
+                <MessageSquare className="size-3.5 md:size-3" />
+                <span className="hidden md:inline">New Chat</span>
+              </button>
+              {hasThreadLifecycle && !isArchived && (
                 <button
-                  key={m.id}
-                  disabled={isArchived}
-                  onClick={() => setMode(m.id as AgentMode)}
-                  className={`whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                    active
-                      ? "border-accent/30 bg-accent/10 text-accent"
-                      : "border-border bg-muted/60 text-muted-foreground hover:text-foreground"
-                  } disabled:cursor-not-allowed disabled:opacity-60`}
+                  type="button"
+                  onClick={handleArchiveThread}
+                  className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:min-h-[32px]"
                 >
-                  {m.label}
+                  <Archive className="size-3.5 md:size-3" />
                 </button>
-              );
-            })}
+              )}
+            </div>
           </div>
-          <div className="relative min-w-0">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="Ask Nexus IDE..."
-              disabled={isArchived}
-              className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm text-start shadow-inner focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:pb-4 md:pr-14"
-              dir="auto"
-            />
-            <button
-              onClick={handleSend}
-              disabled={busy || !input.trim() || isArchived}
-              className="absolute bottom-3 right-3 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground shadow-md disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            </button>
+
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 pb-6 pt-4 md:px-5">
+            {loadingMsgs && (
+              <div className="font-mono text-xs text-muted-foreground">Loading session...</div>
+            )}
+            {!loadingMsgs && messages.length === 0 && <EmptyChat />}
+            {messages.map((m) => (
+              <MessageBlock key={m.id} message={m} />
+            ))}
+            {status === "submitted" && (
+              <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
+                <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
+              </div>
+            )}
           </div>
+
+          <div className="border-t border-border bg-background p-3 md:p-4">
+            <div className="mb-3 flex min-w-0 gap-1.5 overflow-x-auto">
+              {agentModes.map((m) => {
+                const active = mode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    disabled={isArchived}
+                    onClick={() => setMode(m.id as AgentMode)}
+                    className={`whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      active
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-border bg-muted/60 text-muted-foreground hover:text-foreground"
+                    } disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="relative min-w-0">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="Ask Nexus IDE..."
+                disabled={isArchived}
+                className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm text-start shadow-inner focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:pb-4 md:pr-14"
+                dir="auto"
+              />
+              <button
+                onClick={handleSend}
+                disabled={busy || !input.trim() || isArchived}
+                className="absolute bottom-3 right-3 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground shadow-md disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              </button>
+            </div>
             <div className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
               Cmd/Ctrl + Enter to send
             </div>
@@ -920,7 +928,13 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
 }
 
 export type VerificationStatus = "passed" | "failed" | "warning" | "not_run" | "running";
-export type TaskStatus = "pending" | "running" | "verifying" | "completed" | "failed" | "awaiting_approval";
+export type TaskStatus =
+  | "pending"
+  | "running"
+  | "verifying"
+  | "completed"
+  | "failed"
+  | "awaiting_approval";
 export type FileNode = {
   id: string;
   name: string;

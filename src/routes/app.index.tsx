@@ -362,7 +362,7 @@ function AppIndex() {
 
         {!activeProject && session && <ProjectActionCard />}
       </div>
-      
+
       <PricingUpgradeModal
         isOpen={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}

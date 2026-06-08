@@ -391,7 +391,7 @@ export async function queueSandboxExecution(input: {
       project_id: input.projectId,
       patch_preview_id: input.previewId,
       created_by: input.userId,
-      status: "queued"
+      status: "queued",
     })
     .select("id")
     .single();
@@ -403,13 +403,10 @@ export async function queueSandboxExecution(input: {
 export async function processSandboxJob(
   supabase: any,
   jobId: string,
-  context: PatchSandboxContext
+  context: PatchSandboxContext,
 ): Promise<PatchSandboxResult> {
   // Mark as processing
-  await supabase
-    .from("sandbox_execution_jobs")
-    .update({ status: "processing" })
-    .eq("id", jobId);
+  await supabase.from("sandbox_execution_jobs").update({ status: "processing" }).eq("id", jobId);
 
   const result = applyPatchPreviewToIndexedTextSandbox(context);
   if (result.status !== "verified" && result.status !== "partial") {
@@ -438,10 +435,10 @@ export async function processSandboxJob(
     // Write ALL known text files to create a full working copy
     for (const file of context.files) {
       if (file.is_text) {
-        const patchedResult = result.files.find(f => f.filePath === file.path);
+        const patchedResult = result.files.find((f) => f.filePath === file.path);
         let content = patchedResult?.sandboxPatchedText;
         if (!content) {
-          const previewRow = context.textPreviews.find(p => p.file_id === file.id);
+          const previewRow = context.textPreviews.find((p) => p.file_id === file.id);
           if (previewRow) {
             content = previewRow.preview_text;
           }
@@ -457,8 +454,12 @@ export async function processSandboxJob(
     // Run dependency installation and build pipeline
     stdoutLogs += "> npm install\n";
     await updateLogs();
-    
-    const installResult = await runCommand("npm", ["install", "--no-audit", "--no-fund"], workspaceDir);
+
+    const installResult = await runCommand(
+      "npm",
+      ["install", "--no-audit", "--no-fund"],
+      workspaceDir,
+    );
     stdoutLogs += installResult.stdout + "\n";
     stderrLogs += installResult.stderr + "\n";
     await updateLogs();
@@ -473,7 +474,7 @@ export async function processSandboxJob(
         }),
       );
       result.summary.blockers += 1;
-      
+
       await supabase
         .from("sandbox_execution_jobs")
         .update({ status: "failed", result, stdout: stdoutLogs, stderr: stderrLogs })
@@ -483,7 +484,7 @@ export async function processSandboxJob(
 
     stdoutLogs += "> npm run build\n";
     await updateLogs();
-    
+
     const buildResult = await runCommand("npm", ["run", "build"], workspaceDir);
     stdoutLogs += buildResult.stdout + "\n";
     stderrLogs += buildResult.stderr + "\n";
@@ -499,14 +500,13 @@ export async function processSandboxJob(
         }),
       );
       result.summary.blockers += 1;
-      
+
       await supabase
         .from("sandbox_execution_jobs")
         .update({ status: "failed", result, stdout: stdoutLogs, stderr: stderrLogs })
         .eq("id", jobId);
       return result;
     }
-
   } catch (err) {
     result.status = "failed";
     result.blockers.push(
@@ -518,7 +518,7 @@ export async function processSandboxJob(
     );
     result.summary.blockers += 1;
     stderrLogs += "\n" + (err instanceof Error ? err.stack : String(err));
-    
+
     await supabase
       .from("sandbox_execution_jobs")
       .update({ status: "failed", result, stdout: stdoutLogs, stderr: stderrLogs })

@@ -884,7 +884,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       thread_context_selections: {
@@ -1251,7 +1251,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       organization_invitations: {
@@ -1286,7 +1286,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       writeback_approvals: {
@@ -1318,7 +1318,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "project_writeback_requests";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
     };
