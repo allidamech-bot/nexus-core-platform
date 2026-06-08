@@ -1,7 +1,7 @@
 import { recordAuditEvent } from "@/features/governance/governanceService";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { PatchSandboxIssue } from "./patchApplySandbox";
+import type { PatchSandboxResult, PatchSandboxIssue } from "./patchSandboxTypes";
 import {
   hashPatchedText,
   type ProjectPatchSnapshot,

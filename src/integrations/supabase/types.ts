@@ -81,13 +81,15 @@ export type Database = {
           monthly_price_cents: number | null;
           name: string;
           status: string;
+          stripe_price_id: string | null;
         };
         Insert: {
           created_at?: string;
-          id: string;
+          id?: string;
           monthly_price_cents?: number | null;
           name: string;
           status?: string;
+          stripe_price_id?: string | null;
         };
         Update: {
           created_at?: string;
@@ -95,6 +97,7 @@ export type Database = {
           monthly_price_cents?: number | null;
           name?: string;
           status?: string;
+          stripe_price_id?: string | null;
         };
         Relationships: [];
       };
@@ -636,12 +639,14 @@ export type Database = {
           blockers: Json;
           changed_files_count: number;
           created_at: string;
+          current_approvals: number;
           id: string;
           metadata: Json;
           patch_preview_id: string;
           project_id: string;
           requested_by: string;
           requester_note: string | null;
+          required_approvals: number;
           review_decision: string | null;
           review_metadata: Json;
           reviewed_at: string | null;
@@ -660,12 +665,14 @@ export type Database = {
           blockers?: Json;
           changed_files_count?: number;
           created_at?: string;
+          current_approvals?: number;
           id?: string;
           metadata?: Json;
           patch_preview_id: string;
           project_id: string;
           requested_by: string;
           requester_note?: string | null;
+          required_approvals?: number;
           review_decision?: string | null;
           review_metadata?: Json;
           reviewed_at?: string | null;
@@ -684,12 +691,14 @@ export type Database = {
           blockers?: Json;
           changed_files_count?: number;
           created_at?: string;
+          current_approvals?: number;
           id?: string;
           metadata?: Json;
           patch_preview_id?: string;
           project_id?: string;
           requested_by?: string;
           requester_note?: string | null;
+          required_approvals?: number;
           review_decision?: string | null;
           review_metadata?: Json;
           reviewed_at?: string | null;
@@ -839,12 +848,17 @@ export type Database = {
           status: string;
           updated_at: string;
           user_id: string;
+          github_installation_id: string | null;
+          github_repo_full_name: string | null;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
+          github_installation_id?: string | null;
+          github_repo_full_name?: string | null;
           id?: string;
           name: string;
+          organization_id?: string | null;
           source_type?: string;
           status?: string;
           updated_at?: string;
@@ -853,46 +867,69 @@ export type Database = {
         Update: {
           created_at?: string;
           description?: string | null;
+          github_installation_id?: string | null;
+          github_repo_full_name?: string | null;
           id?: string;
           name?: string;
+          organization_id?: string | null;
           source_type?: string;
           status?: string;
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "projects_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       thread_context_selections: {
         Row: {
           action: string;
           created_at: string;
+          current_approvals: number;
           file_id: string | null;
           id: string;
           metadata: Json;
+          pipeline: string | null;
           preview_id: string | null;
           project_id: string;
+          required_approvals: number;
+          status: string;
           thread_id: string;
           user_id: string;
         };
         Insert: {
           action: string;
           created_at?: string;
+          current_approvals?: number;
           file_id?: string | null;
           id?: string;
           metadata?: Json;
+          pipeline?: string | null;
           preview_id?: string | null;
           project_id: string;
+          required_approvals?: number;
+          status?: string;
           thread_id: string;
           user_id: string;
         };
         Update: {
           action?: string;
           created_at?: string;
+          current_approvals?: number;
           file_id?: string | null;
           id?: string;
           metadata?: Json;
+          pipeline?: string | null;
           preview_id?: string | null;
           project_id?: string;
+          required_approvals?: number;
+          status?: string;
           thread_id?: string;
           user_id?: string;
         };
@@ -1099,6 +1136,8 @@ export type Database = {
           status: string;
           updated_at: string;
           user_id: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
         };
         Insert: {
           billing_status?: string;
@@ -1108,6 +1147,8 @@ export type Database = {
           status?: string;
           updated_at?: string;
           user_id: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
         };
         Update: {
           billing_status?: string;
@@ -1117,6 +1158,8 @@ export type Database = {
           status?: string;
           updated_at?: string;
           user_id?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
         };
         Relationships: [
           {
@@ -1126,6 +1169,156 @@ export type Database = {
             referencedRelation: "billing_plans";
             referencedColumns: ["id"];
           },
+        ];
+      };
+      user_github_installations: {
+        Row: {
+          id: string;
+          user_id: string;
+          installation_id: string;
+          account_login: string;
+          account_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          installation_id: string;
+          account_login: string;
+          account_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          installation_id?: string;
+          account_login?: string;
+          account_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      organizations: {
+        Row: {
+          id: string;
+          name: string;
+          owner_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          owner_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      organization_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          role: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          user_id?: string;
+          role?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      organization_invitations: {
+        Row: {
+          id: string;
+          organization_id: string;
+          role: string;
+          token: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          role: string;
+          token: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          role?: string;
+          token?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_invitations_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      writeback_approvals: {
+        Row: {
+          id: string;
+          request_id: string;
+          reviewer_id: string;
+          decision: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          request_id: string;
+          reviewer_id: string;
+          decision: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          request_id?: string;
+          reviewer_id?: string;
+          decision?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "writeback_approvals_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: false;
+            referencedRelation: "project_writeback_requests";
+            referencedColumns: ["id"];
+          }
         ];
       };
     };

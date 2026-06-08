@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { generateText } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { createLovableAiGatewayProvider, createDynamicProvider } from "@/lib/ai-gateway";
 import {
   getRequestCorrelationId,
   safeErrorLog,
@@ -458,21 +458,32 @@ export const Route = createFileRoute("/api/projects/ai-patch-preview")({
           });
           if (quotaError) return quotaError;
 
-          const key = process.env.LOVABLE_API_KEY;
-          if (!key) {
+          const lovableKey = process.env.LOVABLE_API_KEY;
+          const openAIKey = process.env.OPENAI_API_KEY;
+
+          if (!lovableKey && !openAIKey) {
             return jsonResponse(
               {
                 error: "BLOCKED_AI_PROVIDER_REQUIRED",
-                message: "AI provider configuration is required before AI patch preview can run.",
-                requiredEnv: ["LOVABLE_API_KEY"],
+                message:
+                  "AI provider configuration is required before AI patch preview can run. Provide LOVABLE_API_KEY or OPENAI_API_KEY.",
+                requiredEnv: ["LOVABLE_API_KEY", "OPENAI_API_KEY"],
               },
               503,
               context,
             );
           }
 
-          const gateway = createLovableAiGatewayProvider(key);
-          const model = gateway("google/gemini-3-flash-preview");
+          let model;
+          if (lovableKey) {
+            const gateway = createLovableAiGatewayProvider(lovableKey);
+            model = gateway("google/gemini-3-flash-preview");
+          } else if (openAIKey) {
+            const gateway = createDynamicProvider(openAIKey);
+            model = gateway("gpt-4o");
+          } else {
+            throw new Error("No configured provider found.");
+          }
           const result = await generateText({
             model,
             system:

@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import type { PatchSandboxIssue } from "@/features/projects/patchApplySandbox";
+import type { PatchSandboxIssue } from "@/features/projects/patchSandboxTypes";
 import {
   buildWritebackReviewSummary,
   validateWritebackStatusTransition,
@@ -123,6 +123,8 @@ function toWritebackRequest(
         ? row.review_decision
         : null,
     riskLevel: row.risk_level as WritebackRiskLevel,
+    requiredApprovals: row.required_approvals,
+    currentApprovals: row.current_approvals,
     changedFilesCount: row.changed_files_count,
     warnings: asIssues(row.warnings),
     blockers: asIssues(row.blockers),
@@ -247,7 +249,7 @@ async function auditReview(input: {
   });
 
   // Fetch tenant_id from project
-  const { data: projectData } = await input.supabase
+  const { data: projectData } = await (input.supabase as any)
     .from("projects")
     .select("tenant_id")
     .eq("id", input.request.projectId)
@@ -356,32 +358,36 @@ async function applyTransition(input: {
 
   if (reviewerAction) {
     // Phase 6: Upsert approval record
-    const { error: approvalError } = await input.supabase
-      .from("writeback_request_approvals")
-      .upsert({
-        request_id: input.request.id,
-        reviewer_id: input.userId,
-        status: input.action === "approve" ? "approved" : "rejected",
-        reviewer_note: input.note?.trim() || null,
-      }, { onConflict: "request_id, reviewer_id" });
+    const { error: approvalError } = await (input.supabase as any)
+      .from("writeback_approvals")
+      .upsert(
+        {
+          request_id: input.request.id,
+          reviewer_id: input.userId,
+          status: input.action === "approve" ? "approved" : "rejected",
+          reviewer_note: input.note?.trim() || null,
+        },
+        { onConflict: "request_id, reviewer_id" },
+      );
 
     if (approvalError) throw approvalError;
 
     // Phase 5 & 6 Policy Enforcement
     if (input.action === "approve") {
-      const { data: approvalsData, error: approvalsError } = await input.supabase
-        .from("writeback_request_approvals")
+      const { data: approvalsData, error: approvalsError } = await (input.supabase as any)
+        .from("writeback_approvals")
         .select("*")
         .eq("request_id", input.request.id);
 
       if (approvalsError) throw approvalsError;
 
-      const approvals: WritebackApproval[] = approvalsData.map(row => ({
+      const approvals: WritebackApproval[] = approvalsData.map((row: any) => ({
         id: row.id,
         requestId: row.request_id,
         reviewerId: row.reviewer_id,
         status: row.status as "approved" | "rejected",
         reviewerNote: row.reviewer_note,
+        updatedAt: row.updated_at,
         createdAt: row.created_at,
       }));
 

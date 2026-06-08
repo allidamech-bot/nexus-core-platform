@@ -330,6 +330,10 @@ export const translations = {
     limit: "limit",
     usageFormat: "{used} used / {limit} limit",
     nearLimit: "Approaching limit",
+    upgrade: "Upgrade",
+    availablePlans: "Available Plans",
+    contactSales: "Contact Sales",
+    activePlan: "Active Plan",
     limitReached: "Limit reached",
     upgradePrompt: "Upgrade to Pro for higher governance limits.",
 
@@ -1004,6 +1008,10 @@ export const translations = {
     limit: "الحد",
     usageFormat: "المستخدم {used} من أصل {limit}",
     nearLimit: "تقترب من الحد المسموح",
+    upgrade: "ترقية",
+    availablePlans: "الخطط المتاحة",
+    contactSales: "اتصل بالمبيعات",
+    activePlan: "الخطة الحالية",
     limitReached: "تم بلوغ الحد المسموح",
     upgradePrompt: "قم بالترقية إلى خطة Pro للحصول على حدود حوكمة أعلى.",
 

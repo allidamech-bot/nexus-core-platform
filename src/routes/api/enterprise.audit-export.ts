@@ -57,7 +57,7 @@ export const Route = createFileRoute("/api/enterprise/audit-export")({
           }
 
           // Verify user has access to tenant
-          const { data: tenantMember, error: tenantError } = await supabase
+          const { data: tenantMember, error: tenantError } = await (supabase as any)
             .from("tenant_members")
             .select("role")
             .eq("tenant_id", tenantId)
@@ -85,7 +85,10 @@ export const Route = createFileRoute("/api/enterprise/audit-export")({
             },
           });
         } catch (error) {
-          console.error("[audit-export] failed", withLogContext({ correlationId }, safeErrorLog(error)));
+          console.error(
+            "[audit-export] failed",
+            withLogContext({ correlationId }, safeErrorLog(error)),
+          );
           return jsonResponse({ message: "Audit export failed" }, 500, correlationId);
         }
       },

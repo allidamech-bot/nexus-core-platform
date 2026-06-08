@@ -1,57 +1,26 @@
 import { isSensitivePreviewPath } from "./projectFileTree";
 import type { GroundedPatchChange, GroundedPatchPreview, PatchPreviewWarning } from "./types";
 import type { ProjectFile, ProjectTextPreviewWithPath } from "./types";
+import { runCommand } from "../execution/commandRunner.server";
+import "@tanstack/react-start/server-only";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+const { mkdtempSync, rmSync, writeFileSync, mkdirSync } = fs;
+const { join } = path;
+const { tmpdir } = os;
 
 const SANDBOX_PREVIEW_LIMIT = 12_000;
 const SANDBOX_DIFF_DISPLAY_LIMIT = 40_000;
 
-export type PatchSandboxStatus = "verified" | "blocked" | "partial" | "failed";
-
-export interface PatchSandboxIssue extends PatchPreviewWarning {
-  severity: "warning" | "blocker";
-}
-
-export interface PatchSandboxFileResult {
-  filePath: string;
-  contentSha256: string | null;
-  oldPreviewText: string;
-  sandboxPatchedText: string;
-  changed: boolean;
-  changesApplied: number;
-  changesBlocked: number;
-  warnings: PatchSandboxIssue[];
-  blockers: PatchSandboxIssue[];
-  previewLimited: boolean;
-  truncated: boolean;
-}
-
-export interface PatchSandboxSummary {
-  totalFiles: number;
-  changedFiles: number;
-  unchangedFiles: number;
-  changesApplied: number;
-  changesBlocked: number;
-  warnings: number;
-  blockers: number;
-  displayLimited: boolean;
-  noProjectFilesModified: true;
-}
-
-export interface PatchSandboxResult {
-  status: PatchSandboxStatus;
-  projectId: string;
-  patchPreviewId: string;
-  files: PatchSandboxFileResult[];
-  warnings: PatchSandboxIssue[];
-  blockers: PatchSandboxIssue[];
-  summary: PatchSandboxSummary;
-}
-
-export interface PatchSandboxContext {
-  preview: GroundedPatchPreview;
-  files: ProjectFile[];
-  textPreviews: ProjectTextPreviewWithPath[];
-}
+import type {
+  PatchSandboxStatus,
+  PatchSandboxIssue,
+  PatchSandboxFileResult,
+  PatchSandboxSummary,
+  PatchSandboxResult,
+  PatchSandboxContext,
+} from "./patchSandboxTypes";
 
 function issue(input: {
   code: string;
@@ -407,4 +376,166 @@ export function applyPatchPreviewToIndexedTextSandbox(
       blockers: blockers.length,
     },
   };
+}
+
+export async function queueSandboxExecution(input: {
+  supabase: any;
+  userId: string;
+  projectId: string;
+  previewId: string;
+  context: PatchSandboxContext;
+}) {
+  const { data, error } = await input.supabase
+    .from("sandbox_execution_jobs")
+    .insert({
+      project_id: input.projectId,
+      patch_preview_id: input.previewId,
+      created_by: input.userId,
+      status: "queued"
+    })
+    .select("id")
+    .single();
+
+  if (error) throw new Error("Failed to queue sandbox execution: " + error.message);
+  return data.id;
+}
+
+export async function processSandboxJob(
+  supabase: any,
+  jobId: string,
+  context: PatchSandboxContext
+): Promise<PatchSandboxResult> {
+  // Mark as processing
+  await supabase
+    .from("sandbox_execution_jobs")
+    .update({ status: "processing" })
+    .eq("id", jobId);
+
+  const result = applyPatchPreviewToIndexedTextSandbox(context);
+  if (result.status !== "verified" && result.status !== "partial") {
+    await supabase
+      .from("sandbox_execution_jobs")
+      .update({ status: "failed", result })
+      .eq("id", jobId);
+    return result;
+  }
+
+  const workspaceId = `nexus-sandbox-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const workspaceDir = join(tmpdir(), workspaceId);
+  let stdoutLogs = "";
+  let stderrLogs = "";
+
+  const updateLogs = async () => {
+    await supabase
+      .from("sandbox_execution_jobs")
+      .update({ stdout: stdoutLogs, stderr: stderrLogs })
+      .eq("id", jobId);
+  };
+
+  try {
+    mkdirSync(workspaceDir, { recursive: true });
+
+    // Write ALL known text files to create a full working copy
+    for (const file of context.files) {
+      if (file.is_text) {
+        const patchedResult = result.files.find(f => f.filePath === file.path);
+        let content = patchedResult?.sandboxPatchedText;
+        if (!content) {
+          const previewRow = context.textPreviews.find(p => p.file_id === file.id);
+          if (previewRow) {
+            content = previewRow.preview_text;
+          }
+        }
+        if (content) {
+          const fullPath = join(workspaceDir, file.path);
+          mkdirSync(join(fullPath, ".."), { recursive: true });
+          writeFileSync(fullPath, content);
+        }
+      }
+    }
+
+    // Run dependency installation and build pipeline
+    stdoutLogs += "> npm install\n";
+    await updateLogs();
+    
+    const installResult = await runCommand("npm", ["install", "--no-audit", "--no-fund"], workspaceDir);
+    stdoutLogs += installResult.stdout + "\n";
+    stderrLogs += installResult.stderr + "\n";
+    await updateLogs();
+
+    if (installResult.exitCode !== 0) {
+      result.status = "failed";
+      result.blockers.push(
+        issue({
+          code: "install_failed",
+          message: `npm install failed`,
+          severity: "blocker",
+        }),
+      );
+      result.summary.blockers += 1;
+      
+      await supabase
+        .from("sandbox_execution_jobs")
+        .update({ status: "failed", result, stdout: stdoutLogs, stderr: stderrLogs })
+        .eq("id", jobId);
+      return result;
+    }
+
+    stdoutLogs += "> npm run build\n";
+    await updateLogs();
+    
+    const buildResult = await runCommand("npm", ["run", "build"], workspaceDir);
+    stdoutLogs += buildResult.stdout + "\n";
+    stderrLogs += buildResult.stderr + "\n";
+    await updateLogs();
+
+    if (buildResult.exitCode !== 0) {
+      result.status = "failed";
+      result.blockers.push(
+        issue({
+          code: "build_failed",
+          message: `Build pipeline failed with exit code ${buildResult.exitCode}`,
+          severity: "blocker",
+        }),
+      );
+      result.summary.blockers += 1;
+      
+      await supabase
+        .from("sandbox_execution_jobs")
+        .update({ status: "failed", result, stdout: stdoutLogs, stderr: stderrLogs })
+        .eq("id", jobId);
+      return result;
+    }
+
+  } catch (err) {
+    result.status = "failed";
+    result.blockers.push(
+      issue({
+        code: "sandbox_execution_error",
+        message: err instanceof Error ? err.message : String(err),
+        severity: "blocker",
+      }),
+    );
+    result.summary.blockers += 1;
+    stderrLogs += "\n" + (err instanceof Error ? err.stack : String(err));
+    
+    await supabase
+      .from("sandbox_execution_jobs")
+      .update({ status: "failed", result, stdout: stdoutLogs, stderr: stderrLogs })
+      .eq("id", jobId);
+    return result;
+  } finally {
+    try {
+      rmSync(workspaceDir, { recursive: true, force: true });
+    } catch (e) {
+      console.warn("Failed to cleanup tmp dir", e);
+    }
+  }
+
+  await supabase
+    .from("sandbox_execution_jobs")
+    .update({ status: "completed", result, stdout: stdoutLogs, stderr: stderrLogs })
+    .eq("id", jobId);
+
+  return result;
 }

@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import type { PatchSandboxIssue } from "@/features/projects/patchApplySandbox";
+import type { PatchSandboxIssue } from "@/features/projects/patchSandboxTypes";
 import {
   createWorkingCopyExportBundle,
   type WorkingCopyExportBundle,

@@ -3,7 +3,7 @@ import { supabase } from "../../integrations/supabase/client";
 /**
  * Utility to export historical append-only audit logs based on tenant requests.
  * This is a stub for a SOC2-ready data retention export.
- * 
+ *
  * @param tenantId The ID of the tenant.
  * @param format The desired export format.
  * @param startDate The start date for the export range.
@@ -14,9 +14,9 @@ export async function exportTenantAuditLogs(
   tenantId: string,
   format: "csv" | "json",
   startDate?: Date,
-  endDate?: Date
+  endDate?: Date,
 ): Promise<string> {
-  let query = supabase
+  let query = (supabase as any)
     .from("audit_events")
     .select("*")
     .eq("tenant_id", tenantId)
@@ -43,18 +43,29 @@ export async function exportTenantAuditLogs(
   }
 
   if (format === "csv") {
-    if (events.length === 0) return "id,created_at,user_id,actor_user_id,event_type,severity,payload\n";
-    
+    if (events.length === 0)
+      return "id,created_at,user_id,actor_user_id,event_type,severity,payload\n";
+
     // Simple CSV conversion stub
-    const headers = ["id", "created_at", "user_id", "actor_user_id", "event_type", "severity", "payload"];
-    const rows = events.map(event => {
-      return headers.map(h => {
-        const value = event[h];
-        if (typeof value === "object") {
-          return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-        }
-        return `"${String(value).replace(/"/g, '""')}"`;
-      }).join(",");
+    const headers = [
+      "id",
+      "created_at",
+      "user_id",
+      "actor_user_id",
+      "event_type",
+      "severity",
+      "payload",
+    ];
+    const rows = events.map((event) => {
+      return headers
+        .map((h) => {
+          const value = event[h];
+          if (typeof value === "object") {
+            return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+          }
+          return `"${String(value).replace(/"/g, '""')}"`;
+        })
+        .join(",");
     });
 
     return [headers.join(","), ...rows].join("\n");

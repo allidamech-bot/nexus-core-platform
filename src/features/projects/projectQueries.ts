@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   importProjectFolder,
   uploadProjectZip,
@@ -37,7 +38,7 @@ import type {
   ProjectTextPreviewWithPath,
   ProjectWithLatestJob,
 } from "./types";
-import type { PatchSandboxResult } from "./patchApplySandbox";
+import type { PatchSandboxResult } from "./patchSandboxTypes";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import {
   cancelWritebackRequest,
@@ -134,6 +135,34 @@ export function useUploadProjectMutation() {
       qc.invalidateQueries({ queryKey: projectKeys.all });
       qc.invalidateQueries({ queryKey: projectKeys.files(result.project.id) });
       qc.invalidateQueries({ queryKey: projectKeys.previews(result.project.id) });
+      qc.invalidateQueries({ queryKey: governanceKeys.all });
+    },
+  });
+}
+
+export function useSeedDemoProjectMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Unauthorized");
+      const res = await fetch("/api/projects/seed-demo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to seed demo project");
+      }
+      return res.json() as Promise<{ projectId: string }>;
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: projectKeys.all });
+      qc.invalidateQueries({ queryKey: projectKeys.files(result.projectId) });
+      qc.invalidateQueries({ queryKey: projectKeys.previews(result.projectId) });
       qc.invalidateQueries({ queryKey: governanceKeys.all });
     },
   });
@@ -272,16 +301,34 @@ export function useCreateAiPatchPreviewMutation() {
 
 export function usePatchPreviewSandboxMutation() {
   return useMutation({
-    mutationFn: (previewId: string): Promise<PatchSandboxResult> =>
-      runPatchPreviewSandbox(previewId),
+    mutationFn: (previewId: string) => runPatchPreviewSandbox(previewId),
+  });
+}
+
+export function useSandboxJobQuery(jobId: string | null) {
+  return useQuery({
+    queryKey: ["sandboxJob", jobId],
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/sandbox-jobs?jobId=${jobId}`);
+      if (!res.ok) throw new Error("Failed to fetch job");
+      return res.json();
+    },
+    enabled: !!jobId,
+    refetchInterval: (query) => {
+      const data = query.state.data as any;
+      if (data && (data.status === "completed" || data.status === "failed")) {
+        return false;
+      }
+      return 2000;
+    },
   });
 }
 
 export function useCreatePatchSnapshotMutation(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (previewId: string): Promise<CreatePatchSnapshotResult> =>
-      createPatchSnapshot(previewId),
+    mutationFn: (input: { previewId: string; sandboxResult: PatchSandboxResult }): Promise<CreatePatchSnapshotResult> =>
+      createPatchSnapshot(input),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: projectKeys.patchSnapshots(projectId) });
       qc.invalidateQueries({ queryKey: projectKeys.patchSnapshotFiles(result.snapshot.id) });

@@ -9,7 +9,9 @@ import {
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 import { useLocale } from "@/features/i18n/localeContext";
+import { useNavigate } from "@tanstack/react-router";
 import { AI_PATCH_LIMITS } from "./aiPatchPreview";
 import {
   useCreateAiPatchPreviewMutation,
@@ -28,12 +30,15 @@ import {
   usePreviewablePatchTargetsQuery,
   useCancelWritebackRequestMutation,
   useSubmitWritebackRequestMutation,
+  useApproveWritebackRequestMutation,
+  useRejectWritebackRequestMutation,
   useWritebackRequestsQuery,
   useWorkingCopyFilesQuery,
   useWorkingCopiesQuery,
+  useSandboxJobQuery,
 } from "./projectQueries";
 import { ProjectPipelineDiagnosticsPanel } from "./ProjectPipelineDiagnosticsPanel";
-import type { PatchSandboxResult } from "./patchApplySandbox";
+import type { PatchSandboxResult } from "./patchSandboxTypes";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import type { ProjectWritebackRequest } from "./projectWritebackRequestService";
 import type { ProjectWorkingCopy, ProjectWorkingCopyFile } from "./projectWorkingCopyService";
@@ -55,6 +60,7 @@ export function ProjectPatchPreviewPanel({
   disabled?: boolean;
 }) {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const { data: targets = [], isLoading: targetsLoading } =
     usePreviewablePatchTargetsQuery(projectId);
   const { data: patchPreviews = [], isLoading: previewsLoading } = usePatchPreviewsQuery(projectId);
@@ -73,9 +79,13 @@ export function ProjectPatchPreviewPanel({
   const submitWritebackRequest = useSubmitWritebackRequestMutation(projectId);
   const cancelWritebackRequest = useCancelWritebackRequestMutation(projectId);
   const executeWritebackRequest = useExecuteWritebackRequestMutation(projectId);
+  const approveWritebackRequest = useApproveWritebackRequestMutation();
+  const rejectWritebackRequest = useRejectWritebackRequestMutation();
   const [selectedFileId, setSelectedFileId] = useState("");
   const [selectedAiFileIds, setSelectedAiFileIds] = useState<string[]>([]);
   const [selectedPatchPreviewId, setSelectedPatchPreviewId] = useState("");
+  const [activeSandboxJobId, setActiveSandboxJobId] = useState<string | null>(null);
+  const sandboxJob = useSandboxJobQuery(activeSandboxJobId);
   const [createdSnapshotFiles, setCreatedSnapshotFiles] = useState<ProjectPatchSnapshotFile[]>([]);
   const [title, setTitle] = useState("");
   const [oldText, setOldText] = useState("");
@@ -116,13 +126,16 @@ export function ProjectPatchPreviewPanel({
     createPreview.isPending ||
     createAiPreview.isPending ||
     sandboxPreview.isPending ||
+    (sandboxJob.data && sandboxJob.data.status === "processing") ||
     createSnapshot.isPending ||
     downloadSnapshotExport.isPending ||
     downloadWorkingCopyExport.isPending ||
     createWritebackRequest.isPending ||
     submitWritebackRequest.isPending ||
     cancelWritebackRequest.isPending ||
-    executeWritebackRequest.isPending;
+    executeWritebackRequest.isPending ||
+    approveWritebackRequest.isPending ||
+    rejectWritebackRequest.isPending;
 
   useEffect(() => {
     if (!selectedFileId && previewableTargets[0]) {
@@ -212,25 +225,36 @@ export function ProjectPatchPreviewPanel({
   async function handleVerifySandbox() {
     if (!selectedPatchPreview || disabled || sandboxPreview.isPending) return;
     try {
-      const result = await sandboxPreview.mutateAsync(selectedPatchPreview.id);
-      if (result.status === "verified") {
-        toast.success(t("sandboxVerified"));
-      } else if (result.status === "blocked") {
-        toast.error(t("sandboxBlocked"));
-      } else if (result.status === "partial") {
-        toast.warning(t("sandboxPartial"));
-      } else {
-        toast.error(t("sandboxFailed"));
-      }
+      const { jobId, status } = await sandboxPreview.mutateAsync(selectedPatchPreview.id);
+      setActiveSandboxJobId(jobId);
+      toast.success(t("sandboxVerified")); // or generic queued toast
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("sandboxFailed"));
+      const errorMsg = error instanceof Error ? error.message : t("sandboxFailed");
+      if (errorMsg.includes("sandbox_quota_exceeded") || errorMsg.includes("402") || errorMsg.includes("Upgrade required")) {
+        toast.error("Sandbox execution quota exceeded. Upgrade required.", {
+          action: {
+            label: "Upgrade Plan",
+            onClick: () => navigate({ to: "/app/settings" }),
+          },
+          duration: 10000,
+        });
+      } else {
+        toast.error(errorMsg);
+      }
     }
   }
 
   async function handleCreateSnapshot() {
     if (!selectedPatchPreview || disabled || createSnapshot.isPending) return;
+    if (!sandboxJob.data?.result) {
+      toast.error("Sandbox verification result not available.");
+      return;
+    }
     try {
-      const result = await createSnapshot.mutateAsync(selectedPatchPreview.id);
+      const result = await createSnapshot.mutateAsync({
+        previewId: selectedPatchPreview.id,
+        sandboxResult: sandboxJob.data.result,
+      });
       setCreatedSnapshotFiles(result.files);
       toast.success(result.alreadyExists ? t("snapshotAlreadyExists") : t("snapshotCreated"));
     } catch (error) {
@@ -311,6 +335,26 @@ export function ProjectPatchPreviewPanel({
       toast.success(t("workingCopyExportCreated"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("workingCopyExportFailed"));
+    }
+  }
+
+  async function handleApproveWritebackRequest(requestId: string, reviewerNote?: string) {
+    if (disabled || approveWritebackRequest.isPending) return;
+    try {
+      await approveWritebackRequest.mutateAsync({ requestId, reviewerNote });
+      toast.success("Writeback request approved");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Approval failed");
+    }
+  }
+
+  async function handleRejectWritebackRequest(requestId: string, reviewerNote: string) {
+    if (disabled || rejectWritebackRequest.isPending) return;
+    try {
+      await rejectWritebackRequest.mutateAsync({ requestId, reviewerNote });
+      toast.success("Writeback request rejected");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Rejection failed");
     }
   }
 
@@ -486,29 +530,27 @@ export function ProjectPatchPreviewPanel({
             </div>
           )}
           <PatchPreviewResult preview={selectedPatchPreview} />
-          
+
           <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+64px)] z-30 border-t border-border bg-surface/95 p-3 shadow-[-0_10px_40px_rgba(0,0,0,0.1)] backdrop-blur md:static md:bg-transparent md:border-none md:shadow-none md:p-0">
             <div className="mx-auto flex max-w-md flex-col gap-2 md:max-w-none">
               <button
                 type="button"
                 onClick={handleVerifySandbox}
-                disabled={disabled || sandboxPreview.isPending || !selectedPatchPreview}
+                disabled={disabled || sandboxPreview.isPending || (sandboxJob.data && sandboxJob.data.status === "processing") || !selectedPatchPreview}
                 className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/15 px-4 py-2.5 text-[13px] font-bold text-emerald-600 hover:bg-emerald-500/25 active:bg-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400"
               >
-                {sandboxPreview.isPending ? (
+                {sandboxPreview.isPending || (sandboxJob.data && sandboxJob.data.status === "processing") ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <ShieldCheck className="size-4" />
                 )}
                 {t("verifyInSandbox")}
               </button>
-              
+
               <PatchSnapshotAction
                 disabled={disabled}
                 sandbox={
-                  sandboxPreview.data?.patchPreviewId === selectedPatchPreview.id
-                    ? sandboxPreview.data
-                    : null
+                  sandboxJob.data?.result || null
                 }
                 snapshot={latestSnapshotForSelected}
                 files={displayedSnapshotFiles}
@@ -533,14 +575,30 @@ export function ProjectPatchPreviewPanel({
                 onCancelWriteback={handleCancelWritebackRequest}
                 onExecuteWriteback={handleExecuteWritebackRequest}
                 onDownloadWorkingCopyExport={handleDownloadWorkingCopyExport}
+                onApproveWriteback={handleApproveWritebackRequest}
+                onRejectWriteback={handleRejectWritebackRequest}
               />
             </div>
           </div>
-          
-          {sandboxPreview.data &&
-            sandboxPreview.data.patchPreviewId === selectedPatchPreview.id && (
-              <PatchSandboxResultView result={sandboxPreview.data} />
-            )}
+
+          {sandboxJob.data && sandboxJob.data.status === "processing" && (
+            <div className="rounded-xl border border-border bg-black/90 p-4 font-mono text-[10px] text-zinc-300">
+              <div className="flex items-center gap-2 mb-2 text-accent">
+                <Loader2 className="size-3 animate-spin" />
+                Executing Sandbox...
+              </div>
+              {sandboxJob.data.stdout && (
+                <pre className="whitespace-pre-wrap overflow-x-auto text-emerald-400/80">{sandboxJob.data.stdout}</pre>
+              )}
+              {sandboxJob.data.stderr && (
+                <pre className="whitespace-pre-wrap overflow-x-auto text-destructive/80 mt-2">{sandboxJob.data.stderr}</pre>
+              )}
+            </div>
+          )}
+
+          {sandboxJob.data?.result && (
+              <PatchSandboxResultView result={sandboxJob.data.result} />
+          )}
           {sandboxPreview.error && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
               {t("sandboxFailed")}
@@ -576,6 +634,8 @@ function PatchSnapshotAction({
   onCancelWriteback,
   onExecuteWriteback,
   onDownloadWorkingCopyExport,
+  onApproveWriteback,
+  onRejectWriteback,
 }: {
   disabled?: boolean;
   sandbox: PatchSandboxResult | null;
@@ -596,6 +656,8 @@ function PatchSnapshotAction({
   onCancelWriteback: (requestId: string) => void;
   onExecuteWriteback: (requestId: string) => void;
   onDownloadWorkingCopyExport: (workingCopyId: string) => void;
+  onApproveWriteback: (requestId: string, reviewerNote?: string) => void;
+  onRejectWriteback: (requestId: string, reviewerNote: string) => void;
 }) {
   const { t } = useLocale();
   const canCreate = sandbox?.status === "verified" || sandbox?.status === "partial";
@@ -680,6 +742,8 @@ function PatchSnapshotAction({
             onCancel={onCancelWriteback}
             onExecute={onExecuteWriteback}
             onDownloadWorkingCopyExport={onDownloadWorkingCopyExport}
+            onApproveWriteback={onApproveWriteback}
+            onRejectWriteback={onRejectWriteback}
           />
         </>
       )}
@@ -711,6 +775,8 @@ function WritebackRequestPanel({
   onCancel,
   onExecute,
   onDownloadWorkingCopyExport,
+  onApproveWriteback,
+  onRejectWriteback,
 }: {
   disabled?: boolean;
   snapshot: ProjectPatchSnapshot;
@@ -725,6 +791,8 @@ function WritebackRequestPanel({
   onCancel: (requestId: string) => void;
   onExecute: (requestId: string) => void;
   onDownloadWorkingCopyExport: (workingCopyId: string) => void;
+  onApproveWriteback: (requestId: string, reviewerNote?: string) => void;
+  onRejectWriteback: (requestId: string, reviewerNote: string) => void;
 }) {
   const { t } = useLocale();
   const canSubmit = request?.status === "draft";
@@ -733,6 +801,9 @@ function WritebackRequestPanel({
   const approved = request?.status === "approved";
   const rejected = request?.status === "rejected";
   const cancelled = request?.status === "cancelled";
+  const pendingQuorum = request?.status === "pending_quorum";
+
+  const [reviewerNote, setReviewerNote] = useState("");
 
   return (
     <div className="space-y-4 rounded-2xl border border-border bg-surface-elevated/80 p-4 shadow-sm mt-4">
@@ -755,8 +826,10 @@ function WritebackRequestPanel({
 
       <details className="group rounded-xl border border-border bg-surface/50">
         <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-semibold text-foreground select-none">
-          {t("metadata")} & {t("diagnostics")}
-          <span className="text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
+          {t("metadata" as any)} & {t("diagnostics" as any)}
+          <span className="text-muted-foreground group-open:rotate-180 transition-transform">
+            ▼
+          </span>
         </summary>
         <div className="px-4 pb-4 space-y-3 border-t border-border/50 pt-3">
           <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
@@ -778,6 +851,41 @@ function WritebackRequestPanel({
               {request.status === "submitted" && (
                 <div className="rounded-xl border border-warning/20 bg-warning/10 p-3 text-xs font-medium text-warning">
                   {t("waitingForReview")} {t("approvalDoesNotApplyChanges")}
+                </div>
+              )}
+              {pendingQuorum && (
+                <div className="rounded-xl border border-warning/30 bg-warning/15 p-4 text-xs font-medium text-warning space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="size-4" />
+                    <strong>Quorum Approval Required</strong>
+                  </div>
+                  <p className="text-warning/80">
+                    This writeback requires more approvals. Currently {request.currentApprovals ?? 0} out of {request.requiredApprovals ?? 1} required approvals obtained.
+                  </p>
+                  <div className="space-y-2 mt-4 bg-background/50 p-3 rounded-lg border border-warning/20">
+                    <textarea 
+                      placeholder="Reviewer Note (optional for approval, required for rejection)"
+                      value={reviewerNote}
+                      onChange={e => setReviewerNote(e.target.value)}
+                      className="w-full rounded-md border border-border bg-background p-2 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-accent"
+                    />
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => onApproveWriteback(request.id, reviewerNote)}
+                        disabled={disabled || loading}
+                        className="flex-1 py-1.5 rounded-md bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 font-semibold disabled:opacity-50 transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button 
+                        onClick={() => onRejectWriteback(request.id, reviewerNote)}
+                        disabled={disabled || loading || !reviewerNote.trim()}
+                        className="flex-1 py-1.5 rounded-md bg-destructive/20 text-destructive hover:bg-destructive/30 font-semibold disabled:opacity-50 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
               {approved && (
@@ -881,18 +989,18 @@ function WritebackRequestPanel({
               )}
             </div>
             {approved && (
-            <WorkingCopyPanel
-              disabled={disabled}
-              loading={loading}
-              request={request}
-              workingCopy={workingCopy}
-              files={workingCopyFiles}
-              onExecute={onExecute}
-              onDownloadExport={onDownloadWorkingCopyExport}
-            />
-          )}
-        </div>
-      )}
+              <WorkingCopyPanel
+                disabled={disabled}
+                loading={loading}
+                request={request}
+                workingCopy={workingCopy}
+                files={workingCopyFiles}
+                onExecute={onExecute}
+                onDownloadExport={onDownloadWorkingCopyExport}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1278,7 +1386,7 @@ function PatchPreviewResult({ preview }: { preview: GroundedPatchPreview }) {
                   {activeChange.changeType}
                 </span>
               </div>
-              
+
               <div className="p-3">
                 {activeChange.hunks?.length > 0 ? (
                   activeChange.hunks.map((hunk, hi) => (

@@ -6,7 +6,8 @@ import {
   validatePatchPreviewTarget,
 } from "./patchDiff";
 import { isSensitivePreviewPath } from "./projectFileTree";
-import { verifyPatchPreviewCanApply, type PatchSandboxResult } from "./patchApplySandbox";
+
+import type { PatchSandboxResult } from "./patchSandboxTypes";
 import {
   createPatchSnapshotFromSandbox,
   type ProjectPatchSnapshot,
@@ -261,12 +262,25 @@ export async function getPatchPreviewCurrentContext(
   return { files: fileRows, textPreviews };
 }
 
-export async function runPatchPreviewSandbox(previewId: string): Promise<PatchSandboxResult> {
-  const preview = await getPatchPreviewForSandbox(previewId);
-  if (!preview) throw new Error("Patch preview not found.");
-  await validatePatchPreviewSandboxAccess(preview.projectId);
-  const context = await getPatchPreviewCurrentContext(preview.projectId, preview.groundedFiles);
-  return verifyPatchPreviewCanApply({ preview, ...context });
+export async function runPatchPreviewSandbox(previewId: string): Promise<{ jobId: string; status: string }> {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session.session?.access_token;
+
+  const res = await fetch("/api/projects/sandbox-verify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ previewId }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Sandbox verification failed: ${res.status} ${text}`);
+  }
+
+  return await res.json();
 }
 
 async function requireCurrentUserId() {
@@ -329,20 +343,22 @@ export async function getLatestPatchSnapshotForPreview(
   return data ? toPatchSnapshot(data) : null;
 }
 
-export async function createPatchSnapshot(previewId: string): Promise<CreatePatchSnapshotResult> {
+export async function createPatchSnapshot(input: {
+  previewId: string;
+  sandboxResult: PatchSandboxResult;
+}): Promise<CreatePatchSnapshotResult> {
   const userId = await requireCurrentUserId();
-  const preview = await getPatchPreviewForSandbox(previewId);
+  const preview = await getPatchPreviewForSandbox(input.previewId);
   if (!preview) throw new Error("Patch preview not found.");
   await validatePatchSnapshotAccess(preview.projectId);
 
-  const existing = await getLatestPatchSnapshotForPreview(previewId);
+  const existing = await getLatestPatchSnapshotForPreview(input.previewId);
   if (existing) {
     const files = await getPatchSnapshotFiles(existing.id);
     return { snapshot: existing, files, alreadyExists: true };
   }
 
-  const sandbox = await runPatchPreviewSandbox(previewId);
-  const built = await createPatchSnapshotFromSandbox({ preview, sandbox, userId });
+  const built = await createPatchSnapshotFromSandbox({ preview, sandbox: input.sandboxResult, userId });
 
   const { data: snapshotRow, error: snapshotError } = await supabase
     .from("project_patch_snapshots")
@@ -352,7 +368,7 @@ export async function createPatchSnapshot(previewId: string): Promise<CreatePatc
 
   if (snapshotError) {
     if (snapshotError.code === "23505") {
-      const duplicate = await getLatestPatchSnapshotForPreview(previewId);
+      const duplicate = await getLatestPatchSnapshotForPreview(input.previewId);
       if (duplicate) {
         const files = await getPatchSnapshotFiles(duplicate.id);
         return { snapshot: duplicate, files, alreadyExists: true };

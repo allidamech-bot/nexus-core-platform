@@ -1,6 +1,6 @@
 import { isSensitivePreviewPath } from "./projectFileTree";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
-import type { PatchSandboxIssue } from "./patchApplySandbox";
+import type { PatchSandboxIssue } from "./patchSandboxTypes";
 
 export type WritebackRiskLevel = "low" | "medium" | "high" | "blocked";
 

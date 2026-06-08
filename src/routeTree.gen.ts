@@ -18,14 +18,24 @@ import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiTeamsAcceptInvitationRouteImport } from './routes/api/teams.accept-invitation'
 import { Route as ApiProjectsWritebackReviewRouteImport } from './routes/api/projects.writeback-review'
 import { Route as ApiProjectsWritebackExecuteRouteImport } from './routes/api/projects.writeback-execute'
 import { Route as ApiProjectsWorkingCopyExportRouteImport } from './routes/api/projects.working-copy-export'
 import { Route as ApiProjectsSnapshotExportRouteImport } from './routes/api/projects.snapshot-export'
+import { Route as ApiProjectsSeedDemoRouteImport } from './routes/api/projects.seed-demo'
+import { Route as ApiProjectsSandboxVerifyRouteImport } from './routes/api/projects.sandbox-verify'
+import { Route as ApiProjectsSandboxJobsRouteImport } from './routes/api/projects.sandbox-jobs'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
+import { Route as ApiProjectsGithubImportRouteImport } from './routes/api/projects.github-import'
 import { Route as ApiProjectsAiProviderReadinessRouteImport } from './routes/api/projects.ai-provider-readiness'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
+import { Route as ApiGithubWebhookRouteImport } from './routes/api/github.webhook'
+import { Route as ApiGithubReposRouteImport } from './routes/api/github.repos'
+import { Route as ApiGithubInstallRouteImport } from './routes/api/github.install'
 import { Route as ApiEnterpriseAuditExportRouteImport } from './routes/api/enterprise.audit-export'
+import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing.webhook'
+import { Route as ApiBillingCheckoutSessionRouteImport } from './routes/api/billing.checkout-session'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -72,6 +82,12 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTeamsAcceptInvitationRoute =
+  ApiTeamsAcceptInvitationRouteImport.update({
+    id: '/api/teams/accept-invitation',
+    path: '/api/teams/accept-invitation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsWritebackReviewRoute =
   ApiProjectsWritebackReviewRouteImport.update({
     id: '/api/projects/writeback-review',
@@ -96,9 +112,30 @@ const ApiProjectsSnapshotExportRoute =
     path: '/api/projects/snapshot-export',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiProjectsSeedDemoRoute = ApiProjectsSeedDemoRouteImport.update({
+  id: '/api/projects/seed-demo',
+  path: '/api/projects/seed-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProjectsSandboxVerifyRoute =
+  ApiProjectsSandboxVerifyRouteImport.update({
+    id: '/api/projects/sandbox-verify',
+    path: '/api/projects/sandbox-verify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiProjectsSandboxJobsRoute = ApiProjectsSandboxJobsRouteImport.update({
+  id: '/api/projects/sandbox-jobs',
+  path: '/api/projects/sandbox-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProjectsProcessZipRoute = ApiProjectsProcessZipRouteImport.update({
   id: '/api/projects/process-zip',
   path: '/api/projects/process-zip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProjectsGithubImportRoute = ApiProjectsGithubImportRouteImport.update({
+  id: '/api/projects/github-import',
+  path: '/api/projects/github-import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProjectsAiProviderReadinessRoute =
@@ -113,10 +150,36 @@ const ApiProjectsAiPatchPreviewRoute =
     path: '/api/projects/ai-patch-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiGithubWebhookRoute = ApiGithubWebhookRouteImport.update({
+  id: '/api/github/webhook',
+  path: '/api/github/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubReposRoute = ApiGithubReposRouteImport.update({
+  id: '/api/github/repos',
+  path: '/api/github/repos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubInstallRoute = ApiGithubInstallRouteImport.update({
+  id: '/api/github/install',
+  path: '/api/github/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEnterpriseAuditExportRoute =
   ApiEnterpriseAuditExportRouteImport.update({
     id: '/api/enterprise/audit-export',
     path: '/api/enterprise/audit-export',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
+  id: '/api/billing/webhook',
+  path: '/api/billing/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBillingCheckoutSessionRoute =
+  ApiBillingCheckoutSessionRouteImport.update({
+    id: '/api/billing/checkout-session',
+    path: '/api/billing/checkout-session',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -130,14 +193,24 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
+  '/api/github/install': typeof ApiGithubInstallRoute
+  '/api/github/repos': typeof ApiGithubReposRoute
+  '/api/github/webhook': typeof ApiGithubWebhookRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
+  '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
+  '/api/projects/sandbox-jobs': typeof ApiProjectsSandboxJobsRoute
+  '/api/projects/sandbox-verify': typeof ApiProjectsSandboxVerifyRoute
+  '/api/projects/seed-demo': typeof ApiProjectsSeedDemoRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
   '/api/projects/working-copy-export': typeof ApiProjectsWorkingCopyExportRoute
   '/api/projects/writeback-execute': typeof ApiProjectsWritebackExecuteRoute
   '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
+  '/api/teams/accept-invitation': typeof ApiTeamsAcceptInvitationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,14 +221,24 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
+  '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
+  '/api/github/install': typeof ApiGithubInstallRoute
+  '/api/github/repos': typeof ApiGithubReposRoute
+  '/api/github/webhook': typeof ApiGithubWebhookRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
+  '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
+  '/api/projects/sandbox-jobs': typeof ApiProjectsSandboxJobsRoute
+  '/api/projects/sandbox-verify': typeof ApiProjectsSandboxVerifyRoute
+  '/api/projects/seed-demo': typeof ApiProjectsSeedDemoRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
   '/api/projects/working-copy-export': typeof ApiProjectsWorkingCopyExportRoute
   '/api/projects/writeback-execute': typeof ApiProjectsWritebackExecuteRoute
   '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
+  '/api/teams/accept-invitation': typeof ApiTeamsAcceptInvitationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -168,14 +251,24 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
+  '/api/github/install': typeof ApiGithubInstallRoute
+  '/api/github/repos': typeof ApiGithubReposRoute
+  '/api/github/webhook': typeof ApiGithubWebhookRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
+  '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
+  '/api/projects/sandbox-jobs': typeof ApiProjectsSandboxJobsRoute
+  '/api/projects/sandbox-verify': typeof ApiProjectsSandboxVerifyRoute
+  '/api/projects/seed-demo': typeof ApiProjectsSeedDemoRoute
   '/api/projects/snapshot-export': typeof ApiProjectsSnapshotExportRoute
   '/api/projects/working-copy-export': typeof ApiProjectsWorkingCopyExportRoute
   '/api/projects/writeback-execute': typeof ApiProjectsWritebackExecuteRoute
   '/api/projects/writeback-review': typeof ApiProjectsWritebackReviewRoute
+  '/api/teams/accept-invitation': typeof ApiTeamsAcceptInvitationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,14 +282,24 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app/'
+    | '/api/billing/checkout-session'
+    | '/api/billing/webhook'
     | '/api/enterprise/audit-export'
+    | '/api/github/install'
+    | '/api/github/repos'
+    | '/api/github/webhook'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
+    | '/api/projects/github-import'
     | '/api/projects/process-zip'
+    | '/api/projects/sandbox-jobs'
+    | '/api/projects/sandbox-verify'
+    | '/api/projects/seed-demo'
     | '/api/projects/snapshot-export'
     | '/api/projects/working-copy-export'
     | '/api/projects/writeback-execute'
     | '/api/projects/writeback-review'
+    | '/api/teams/accept-invitation'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,14 +310,24 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app'
+    | '/api/billing/checkout-session'
+    | '/api/billing/webhook'
     | '/api/enterprise/audit-export'
+    | '/api/github/install'
+    | '/api/github/repos'
+    | '/api/github/webhook'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
+    | '/api/projects/github-import'
     | '/api/projects/process-zip'
+    | '/api/projects/sandbox-jobs'
+    | '/api/projects/sandbox-verify'
+    | '/api/projects/seed-demo'
     | '/api/projects/snapshot-export'
     | '/api/projects/working-copy-export'
     | '/api/projects/writeback-execute'
     | '/api/projects/writeback-review'
+    | '/api/teams/accept-invitation'
   id:
     | '__root__'
     | '/'
@@ -226,14 +339,24 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/settings'
     | '/app/'
+    | '/api/billing/checkout-session'
+    | '/api/billing/webhook'
     | '/api/enterprise/audit-export'
+    | '/api/github/install'
+    | '/api/github/repos'
+    | '/api/github/webhook'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
+    | '/api/projects/github-import'
     | '/api/projects/process-zip'
+    | '/api/projects/sandbox-jobs'
+    | '/api/projects/sandbox-verify'
+    | '/api/projects/seed-demo'
     | '/api/projects/snapshot-export'
     | '/api/projects/working-copy-export'
     | '/api/projects/writeback-execute'
     | '/api/projects/writeback-review'
+    | '/api/teams/accept-invitation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,14 +365,24 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiBillingCheckoutSessionRoute: typeof ApiBillingCheckoutSessionRoute
+  ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
   ApiEnterpriseAuditExportRoute: typeof ApiEnterpriseAuditExportRoute
+  ApiGithubInstallRoute: typeof ApiGithubInstallRoute
+  ApiGithubReposRoute: typeof ApiGithubReposRoute
+  ApiGithubWebhookRoute: typeof ApiGithubWebhookRoute
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsAiProviderReadinessRoute: typeof ApiProjectsAiProviderReadinessRoute
+  ApiProjectsGithubImportRoute: typeof ApiProjectsGithubImportRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
+  ApiProjectsSandboxJobsRoute: typeof ApiProjectsSandboxJobsRoute
+  ApiProjectsSandboxVerifyRoute: typeof ApiProjectsSandboxVerifyRoute
+  ApiProjectsSeedDemoRoute: typeof ApiProjectsSeedDemoRoute
   ApiProjectsSnapshotExportRoute: typeof ApiProjectsSnapshotExportRoute
   ApiProjectsWorkingCopyExportRoute: typeof ApiProjectsWorkingCopyExportRoute
   ApiProjectsWritebackExecuteRoute: typeof ApiProjectsWritebackExecuteRoute
   ApiProjectsWritebackReviewRoute: typeof ApiProjectsWritebackReviewRoute
+  ApiTeamsAcceptInvitationRoute: typeof ApiTeamsAcceptInvitationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -317,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/teams/accept-invitation': {
+      id: '/api/teams/accept-invitation'
+      path: '/api/teams/accept-invitation'
+      fullPath: '/api/teams/accept-invitation'
+      preLoaderRoute: typeof ApiTeamsAcceptInvitationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/writeback-review': {
       id: '/api/projects/writeback-review'
       path: '/api/projects/writeback-review'
@@ -345,11 +485,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsSnapshotExportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/seed-demo': {
+      id: '/api/projects/seed-demo'
+      path: '/api/projects/seed-demo'
+      fullPath: '/api/projects/seed-demo'
+      preLoaderRoute: typeof ApiProjectsSeedDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/projects/sandbox-verify': {
+      id: '/api/projects/sandbox-verify'
+      path: '/api/projects/sandbox-verify'
+      fullPath: '/api/projects/sandbox-verify'
+      preLoaderRoute: typeof ApiProjectsSandboxVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/projects/sandbox-jobs': {
+      id: '/api/projects/sandbox-jobs'
+      path: '/api/projects/sandbox-jobs'
+      fullPath: '/api/projects/sandbox-jobs'
+      preLoaderRoute: typeof ApiProjectsSandboxJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/process-zip': {
       id: '/api/projects/process-zip'
       path: '/api/projects/process-zip'
       fullPath: '/api/projects/process-zip'
       preLoaderRoute: typeof ApiProjectsProcessZipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/projects/github-import': {
+      id: '/api/projects/github-import'
+      path: '/api/projects/github-import'
+      fullPath: '/api/projects/github-import'
+      preLoaderRoute: typeof ApiProjectsGithubImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/projects/ai-provider-readiness': {
@@ -366,11 +534,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsAiPatchPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/github/webhook': {
+      id: '/api/github/webhook'
+      path: '/api/github/webhook'
+      fullPath: '/api/github/webhook'
+      preLoaderRoute: typeof ApiGithubWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/repos': {
+      id: '/api/github/repos'
+      path: '/api/github/repos'
+      fullPath: '/api/github/repos'
+      preLoaderRoute: typeof ApiGithubReposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github/install': {
+      id: '/api/github/install'
+      path: '/api/github/install'
+      fullPath: '/api/github/install'
+      preLoaderRoute: typeof ApiGithubInstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/enterprise/audit-export': {
       id: '/api/enterprise/audit-export'
       path: '/api/enterprise/audit-export'
       fullPath: '/api/enterprise/audit-export'
       preLoaderRoute: typeof ApiEnterpriseAuditExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/billing/webhook': {
+      id: '/api/billing/webhook'
+      path: '/api/billing/webhook'
+      fullPath: '/api/billing/webhook'
+      preLoaderRoute: typeof ApiBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/billing/checkout-session': {
+      id: '/api/billing/checkout-session'
+      path: '/api/billing/checkout-session'
+      fullPath: '/api/billing/checkout-session'
+      preLoaderRoute: typeof ApiBillingCheckoutSessionRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -398,14 +601,24 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiBillingCheckoutSessionRoute: ApiBillingCheckoutSessionRoute,
+  ApiBillingWebhookRoute: ApiBillingWebhookRoute,
   ApiEnterpriseAuditExportRoute: ApiEnterpriseAuditExportRoute,
+  ApiGithubInstallRoute: ApiGithubInstallRoute,
+  ApiGithubReposRoute: ApiGithubReposRoute,
+  ApiGithubWebhookRoute: ApiGithubWebhookRoute,
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsAiProviderReadinessRoute: ApiProjectsAiProviderReadinessRoute,
+  ApiProjectsGithubImportRoute: ApiProjectsGithubImportRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
+  ApiProjectsSandboxJobsRoute: ApiProjectsSandboxJobsRoute,
+  ApiProjectsSandboxVerifyRoute: ApiProjectsSandboxVerifyRoute,
+  ApiProjectsSeedDemoRoute: ApiProjectsSeedDemoRoute,
   ApiProjectsSnapshotExportRoute: ApiProjectsSnapshotExportRoute,
   ApiProjectsWorkingCopyExportRoute: ApiProjectsWorkingCopyExportRoute,
   ApiProjectsWritebackExecuteRoute: ApiProjectsWritebackExecuteRoute,
   ApiProjectsWritebackReviewRoute: ApiProjectsWritebackReviewRoute,
+  ApiTeamsAcceptInvitationRoute: ApiTeamsAcceptInvitationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

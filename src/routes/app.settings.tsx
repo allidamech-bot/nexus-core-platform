@@ -10,6 +10,7 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
+import { TeamsHub } from "@/features/teams/TeamsHub";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useLocale } from "@/features/i18n/localeContext";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +19,9 @@ import { UsageMeters } from "@/features/governance/UsageMeters";
 import { ThemeSelector } from "@/features/theme/ThemeSelector";
 import { useIsAdminQuery } from "@/features/admin/adminQueries";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
+import { AiProviderSettings } from "@/features/settings/AiProviderSettings";
+import { useBillingPlansQuery, useCheckoutSessionMutation } from "@/features/billing/billingQueries";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/settings")({
   component: SettingsRoute,
@@ -30,6 +34,17 @@ function SettingsRoute() {
   const userId = session?.user.id ?? "";
   const { data: isAdmin = false } = useIsAdminQuery(Boolean(session), userId);
   const { activeProject } = useProjectWorkspace();
+  const { data: plans = [], isLoading: plansLoading } = useBillingPlansQuery();
+  const checkoutMutation = useCheckoutSessionMutation();
+
+  const handleCheckout = async (planId: string) => {
+    try {
+      const url = await checkoutMutation.mutateAsync(planId);
+      window.location.href = url;
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
@@ -98,13 +113,14 @@ function SettingsRoute() {
             </SettingsCard>
 
             <SettingsCard icon={UsersRound} title={t("organization")}>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                {t("organizationBody")}
-              </p>
+              <div className="pt-2">
+                <TeamsHub />
+              </div>
             </SettingsCard>
 
             <SettingsCard icon={KeyRound} title={t("apiAccess")}>
               <p className="text-xs leading-relaxed text-muted-foreground">{t("apiAccessBody")}</p>
+              <AiProviderSettings />
             </SettingsCard>
 
             <div className="pt-2 font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
@@ -124,7 +140,38 @@ function SettingsRoute() {
                 {t("currentPlanBody")}
               </p>
             </SettingsCard>
-            {usage && <UsageMeters overview={usage} />}
+            {usage && <UsageMeters overview={usage} onUpgrade={() => {
+              const upgradePlan = plans.find(p => p.id !== usage.planId && p.id !== "starter");
+              if (upgradePlan) handleCheckout(upgradePlan.id);
+            }} />}
+            
+            <SettingsCard icon={CreditCard} title={t("availablePlans")}>
+              {plansLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-3 mt-3">
+                  {plans.map((plan) => (
+                    <div key={plan.id} className="flex items-center justify-between rounded-lg border border-border bg-background/50 p-3">
+                      <div>
+                        <div className="font-semibold text-sm">{plan.name}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {plan.monthly_price_cents ? `$${(plan.monthly_price_cents / 100).toFixed(2)}/mo` : t("contactSales")}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleCheckout(plan.id)}
+                        disabled={usage?.planId === plan.id || checkoutMutation.isPending || !plan.stripe_price_id}
+                        className="rounded-md border border-accent bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent hover:text-white disabled:opacity-50"
+                      >
+                        {usage?.planId === plan.id ? t("activePlan") : t("upgrade")}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SettingsCard>
           </div>
         </div>
       </div>

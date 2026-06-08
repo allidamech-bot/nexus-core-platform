@@ -14,11 +14,11 @@ export interface ExternalApplyQueueItem {
   updatedAt: string;
 }
 
-export type AuditEventType = 
-  | "session_created" 
-  | "patch_generated" 
-  | "review_approved" 
-  | "export_executed" 
+export type AuditEventType =
+  | "session_created"
+  | "patch_generated"
+  | "review_approved"
+  | "export_executed"
   | "external_apply_triggered";
 
 export interface AuditEvent {
@@ -38,7 +38,10 @@ export interface ExecutionAdapterConfig {
 
 export interface ExecutionAdapter {
   type: ExecutionAdapterType;
-  execute(workingCopyId: string, payload: Record<string, any>): Promise<{ success: boolean; resultMetadata: Record<string, any>; error?: string }>;
+  execute(
+    workingCopyId: string,
+    payload: Record<string, any>,
+  ): Promise<{ success: boolean; resultMetadata: Record<string, any>; error?: string }>;
 }
 
 export interface GitHubExecutionAdapter extends ExecutionAdapter {

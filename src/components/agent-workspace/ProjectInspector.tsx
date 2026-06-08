@@ -172,15 +172,8 @@ export function ProjectInspector() {
 
     try {
       setIsVerifyingSandbox(true);
-      const result = await sandboxPreview.mutateAsync(readyPreview.id);
-      if (result.status === "blocked" || result.status === "failed") {
-        const errorMsg = result.blockers.map((b) => b.message).join(", ") || "Verification failed";
-        toast.error(`Sandbox verification failed: ${errorMsg}`);
-      } else {
-        toast.success(
-          `Sandbox verification successful! Applied ${result.summary.changesApplied} changes across ${result.summary.changedFiles} files.`,
-        );
-      }
+      const { jobId, status } = await sandboxPreview.mutateAsync(readyPreview.id);
+      toast.success(`Sandbox verification queued: ${jobId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to run sandbox verification");
     } finally {
@@ -194,7 +187,7 @@ export function ProjectInspector() {
 
     try {
       setIsCreatingSnapshot(true);
-      const result = await createPatchSnapshot.mutateAsync(readyPreview.id);
+      const result = await createPatchSnapshot.mutateAsync({ previewId: readyPreview.id, sandboxResult: {} as any });
       if (result.alreadyExists) {
         toast.info("A patch snapshot already exists for this preview.");
       } else {

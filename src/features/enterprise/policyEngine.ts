@@ -18,11 +18,11 @@ import type { WritebackApproval } from "./tenantTypes";
 export function validateApprovalCount(
   request: ProjectWritebackRequest,
   approvals: WritebackApproval[],
-  requiredCount: number = 1
+  requiredCount: number = 1,
 ): PolicyEvaluationResult {
-  const validApprovals = approvals.filter(a => a.status === "approved");
+  const validApprovals = approvals.filter((a) => a.status === "approved");
   const approvalsFound = validApprovals.length;
-  
+
   if (approvalsFound < requiredCount) {
     return {
       allowed: false,
@@ -41,9 +41,9 @@ export function validateApprovalCount(
  */
 export function blockDirectAIDeployment(
   request: ProjectWritebackRequest,
-  workingCopyCreatorId: string
+  workingCopyCreatorId: string,
 ): PolicyEvaluationResult {
-  if (request.status !== "approved" || !request.reviewedBy) {
+  if (request.status !== "approved" || !(request as any).reviewedBy) {
     return {
       allowed: false,
       blockers: ["Direct AI deployment is strictly blocked. Human review is required."],
@@ -51,7 +51,7 @@ export function blockDirectAIDeployment(
     };
   }
 
-  const isReviewedByAI = request.reviewedBy === "system-ai-agent-id";
+  const isReviewedByAI = (request as any).reviewedBy === "system-ai-agent-id";
   if (isReviewedByAI) {
     return {
       allowed: false,
@@ -70,13 +70,13 @@ export function blockDirectAIDeployment(
  */
 export function validateRestrictedFiles(
   files: ProjectWorkingCopyFile[],
-  restrictedPatterns: RegExp[] = [/\.env$/, /wrangler\.toml$/, /^infra\//, /^config\//]
+  restrictedPatterns: RegExp[] = [/\.env$/, /wrangler\.toml$/, /^infra\//, /^config\//],
 ): PolicyEvaluationResult {
   const blockers: string[] = [];
-  
+
   for (const file of files) {
     if (!file.changed) continue;
-    
+
     for (const pattern of restrictedPatterns) {
       if (pattern.test(file.filePath)) {
         blockers.push(`Modifying restricted file is not allowed: ${file.filePath}`);
@@ -100,25 +100,17 @@ export function evaluateWorkingCopyForApply(
   approvals: WritebackApproval[],
   files: ProjectWorkingCopyFile[],
   workingCopyCreatorId: string,
-  targetEnv: "production" | "staging" | "development" = "production"
+  targetEnv: "production" | "staging" | "development" = "production",
 ): PolicyEvaluationResult {
-  const requiredApprovals = targetEnv === "production" ? 2 : 1;
-  
+  const requiredApprovals = request.requiredApprovals ?? (targetEnv === "production" ? 2 : 1);
+
   const approvalEval = validateApprovalCount(request, approvals, requiredApprovals);
   const directAiEval = blockDirectAIDeployment(request, workingCopyCreatorId);
   const filesEval = validateRestrictedFiles(files);
 
-  const blockers = [
-    ...approvalEval.blockers,
-    ...directAiEval.blockers,
-    ...filesEval.blockers,
-  ];
+  const blockers = [...approvalEval.blockers, ...directAiEval.blockers, ...filesEval.blockers];
 
-  const warnings = [
-    ...approvalEval.warnings,
-    ...directAiEval.warnings,
-    ...filesEval.warnings,
-  ];
+  const warnings = [...approvalEval.warnings, ...directAiEval.warnings, ...filesEval.warnings];
 
   return {
     allowed: blockers.length === 0,

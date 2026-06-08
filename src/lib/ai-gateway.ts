@@ -1,5 +1,15 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
+export const createDynamicProvider = (apiKey: string, baseURL?: string) => {
+  return createOpenAICompatible({
+    name: "dynamic-provider",
+    baseURL: baseURL || "https://api.openai.com/v1",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+};
+
 export const createLovableAiGatewayProvider = (lovableApiKey: string) =>
   createOpenAICompatible({
     name: "lovable",

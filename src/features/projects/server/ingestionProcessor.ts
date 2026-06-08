@@ -279,6 +279,35 @@ export async function processProjectArchive({
     await updateJob(supabase, job.id, { status: "processing", stage: "scanning" });
     const inventory = readZipCentralDirectory(archiveBytes);
 
+    let ignorePatterns: string[] = [];
+    const ignoreFile = inventory.files.find((f) => f.path.endsWith(".nexusignore"));
+    if (ignoreFile) {
+      try {
+        const { readZipEntryBytes } = await import("./zipCentralDirectory");
+        const bytes = await readZipEntryBytes(archiveBytes, ignoreFile);
+        const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+        if (text) {
+          const { parseNexusIgnore, isPathIgnored } =
+            await import("../../security/nexusIgnoreParser");
+          ignorePatterns = parseNexusIgnore(text);
+
+          const filteredFiles = [];
+          for (const file of inventory.files) {
+            if (isPathIgnored(file.path, ignorePatterns)) {
+              inventory.skipped["nexusignore_blocked"] =
+                (inventory.skipped["nexusignore_blocked"] ?? 0) + 1;
+            } else {
+              filteredFiles.push(file);
+            }
+          }
+          inventory.files = filteredFiles;
+          inventory.totalSizeBytes = filteredFiles.reduce((sum, f) => sum + f.size_bytes, 0);
+        }
+      } catch (err) {
+        console.warn("Failed to read or parse .nexusignore during ingestion", err);
+      }
+    }
+
     await updateJob(supabase, job.id, { status: "processing", stage: "manifest_generation" });
     const manifest = generateProjectManifest(inventory);
     await updateJob(supabase, job.id, { status: "processing", stage: "text_preview_indexing" });

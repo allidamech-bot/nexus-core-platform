@@ -1,7 +1,7 @@
 import { recordAuditEvent } from "@/features/governance/governanceService";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { PatchSandboxIssue } from "./patchApplySandbox";
+import type { PatchSandboxResult, PatchSandboxIssue } from "./patchSandboxTypes";
 import type { ProjectPatchSnapshot, ProjectPatchSnapshotFile } from "./patchSnapshot";
 import {
   getPatchSnapshot,
@@ -17,6 +17,7 @@ import {
 export type WritebackRequestStatus =
   | "draft"
   | "submitted"
+  | "pending_quorum"
   | "approved"
   | "rejected"
   | "cancelled"
@@ -34,6 +35,8 @@ export interface ProjectWritebackRequest {
   requesterNote: string | null;
   reviewerNote: string | null;
   reviewDecision: "approved" | "rejected" | null;
+  requiredApprovals: number | null;
+  currentApprovals: number | null;
   riskLevel: WritebackRiskLevel;
   changedFilesCount: number;
   warnings: PatchSandboxIssue[];
@@ -123,6 +126,8 @@ function toWritebackRequest(row: {
   updated_at: string;
   submitted_at: string | null;
   reviewed_at: string | null;
+  required_approvals?: number | null;
+  current_approvals?: number | null;
 }): ProjectWritebackRequest {
   return {
     id: row.id,
@@ -140,6 +145,8 @@ function toWritebackRequest(row: {
         ? row.review_decision
         : null,
     riskLevel: row.risk_level as WritebackRiskLevel,
+    requiredApprovals: row.required_approvals ?? null,
+    currentApprovals: row.current_approvals ?? null,
     changedFilesCount: row.changed_files_count,
     warnings: asIssues(row.warnings),
     blockers: asIssues(row.blockers),
@@ -205,7 +212,7 @@ async function auditWritebackRequest(input: {
       userId: input.userId,
       actorUserId: input.userId,
       projectId: input.projectId,
-      tenantId: projectData?.tenant_id ?? null,
+      tenantId: (projectData as any)?.tenant_id ?? null,
       eventType: input.eventType,
       severity: input.riskLevel === "blocked" ? "warning" : "info",
       payload: {

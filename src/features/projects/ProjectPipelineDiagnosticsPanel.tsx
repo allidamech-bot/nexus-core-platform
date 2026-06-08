@@ -157,7 +157,10 @@ function PipelineStageRow({ stage }: { stage: PipelineStageDiagnostic }) {
               {stage.label}
             </span>
           </div>
-          <div className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[10px]" dir="auto">
+          <div
+            className="mt-1 break-words text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere] md:text-[10px]"
+            dir="auto"
+          >
             {stage.description}
           </div>
         </div>

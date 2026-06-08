@@ -3,7 +3,7 @@ import type {
   PatchSandboxFileResult,
   PatchSandboxIssue,
   PatchSandboxResult,
-} from "./patchApplySandbox";
+} from "./patchSandboxTypes";
 import type { GroundedPatchPreview } from "./types";
 
 const SNAPSHOT_TEXT_LIMIT = 12_000;

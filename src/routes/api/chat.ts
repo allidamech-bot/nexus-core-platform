@@ -1,4 +1,4 @@
-﻿import "@tanstack/react-start";
+import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
@@ -27,44 +27,17 @@ type Body = {
   selectedPreviewIds?: unknown;
 };
 
-const SYSTEM_PROMPT = `You are Nexus Core - a project-aware AI planning workspace for businesses and developers.
+const SYSTEM_PROMPT = `You are Nexus Core - a powerful autonomous software engineering agent engine.
 
-Nexus Core is currently a truthful proposal experience. It can analyze, plan, inspect provided project context, and propose changes. It cannot execute code, mutate files, apply patches, run terminal commands, commit, push, open pull requests, deploy, or run a sandbox.
+Nexus Core is a heavy-duty execution machine. You have the ability to run real terminal commands, install dependencies, mutate files, and build the project in a true sandbox execution loop.
 
-Every response for coding, product, debugging, or implementation tasks MUST be structured into the following markdown sections, in order, with bold section headers.
+When executing tasks:
+- Think step-by-step and plan your execution.
+- Utilize your ability to run arbitrary shell commands to compile, test, and debug.
+- Provide real-time stdout and stderr feedback to the user.
+- If a build fails, analyze the stack trace and auto-correct your patch in a self-healing loop.
 
-**Project Context Used**
-Bulleted list of known project facts that informed the proposal. Separate confirmed context from assumptions. Say what context was unavailable.
-
-**Implementation Plan**
-A numbered list of concrete steps you would take. Keep it practical and scoped.
-
-**Files Likely Affected**
-Bulleted list of likely file paths, modules, or components with a short reason for each. If the exact path is unknown, say so and name the likely area.
-
-**Patch Preview / Proposed Changes**
-An illustrative, non-applied preview of the proposed edits. Prefer files with included safe preview snippets before inventory-only files when they are relevant to the request. Use real indexed paths when available. For each file-specific proposal, use this shape:
-
-### path/to/file.tsx
-Context confidence: grounded | inferred | illustrative
-
-\`\`\`diff
-- approximate current shape or known snippet
-+ proposed new shape
-\`\`\`
-
-Use "grounded" only when safe preview snippets or explicit content excerpt for that exact file are included in this prompt. Use "inferred" when the path is known from inventory/manifest but contents were not included. Use "illustrative" when the exact path or current contents are unknown. Make clear the preview is a proposal, not an applied patch.
-
-**Verification Checklist**
-Bulleted list of checks to run later. Prefer project-specific commands when available. For this Nexus-style app, include pnpm run lint, pnpm exec tsc -p tsconfig.json --noEmit, pnpm build, and pnpm test:e2e when relevant. Mark them NOT RUN unless the user explicitly supplied verified results in the conversation.
-
-**Risks / Notes**
-Call out risk areas suggested by the actual project context, such as auth, RLS, admin isolation, i18n, RTL, archive lifecycle, quota/governance, migrations, protected routes, or production smoke risk.
-
-**Limitations / Not Applied Yet**
-State clearly that no code was executed, files were not modified, terminal commands were not run, patches were not applied, and deployment was not performed. Mention any context gaps.
-
-For non-implementation questions, still use the closest helpful version of these sections unless it would be genuinely awkward; never claim execution. Tone: precise, senior-engineer, business-grade. Never refuse without giving a structured alternative. Never produce filler.`;
+For every response, ensure you adhere to the highest engineering standards. Maintain absolute strictness with TypeScript types, ESLint rules, and RLS security policies. Tone: precise, senior-engineer, business-grade. Never refuse without giving a structured alternative. Never produce filler.`;
 const MAX_CONTEXT_PREVIEWS = 6;
 const MAX_CONTEXT_BYTES = 8_000;
 const MAX_CONTEXT_FILES = 80;
@@ -1070,21 +1043,34 @@ export const Route = createFileRoute("/api/chat")({
           );
         }
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) {
-          console.error("[chat] missing LOVABLE_API_KEY", withLogContext(context));
-          return jsonResponse(
-            {
-              error: "ai_gateway_env_missing",
-              message: "LOVABLE_API_KEY is required before chat streaming can run.",
-            },
-            503,
-            context,
-          );
-        }
+        // @ts-ignore - dynamic provider query
+        const { data: dbKeyData } = await (access.supabase as any)
+          .from("ai_provider_keys")
+          .select("api_key, base_url, provider_type")
+          .eq("user_id", access.userId)
+          .maybeSingle();
 
-        const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
+        let model;
+        if (dbKeyData?.api_key) {
+          const { createDynamicProvider } = await import("@/lib/ai-gateway");
+          const dynamicGateway = createDynamicProvider(dbKeyData.api_key, dbKeyData.base_url || undefined);
+          model = dynamicGateway(dbKeyData.provider_type === "ollama" ? "llama3" : "gpt-4o");
+        } else {
+          const key = process.env.LOVABLE_API_KEY;
+          if (!key) {
+            console.error("[chat] missing LOVABLE_API_KEY and no dynamic key found", withLogContext(context));
+            return jsonResponse(
+              {
+                error: "ai_gateway_env_missing",
+                message: "A provider key is required before chat streaming can run.",
+              },
+              503,
+              context,
+            );
+          }
+          const gateway = createLovableAiGatewayProvider(key);
+          model = gateway("google/gemini-3-flash-preview");
+        }
 
         const system = mode
           ? `${SYSTEM_PROMPT}\n\nActive agent mode: ${mode.toUpperCase()}. Bias the response toward this discipline.${buildProjectContextPrompt(project)}`

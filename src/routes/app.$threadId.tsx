@@ -3,13 +3,29 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Archive, Send, Upload, GitBranch, Loader2, Terminal, PanelRight, MessageSquare } from "lucide-react";
+import {
+  Archive,
+  Send,
+  Upload,
+  GitBranch,
+  Loader2,
+  Terminal,
+  PanelRight,
+  MessageSquare,
+  FolderOpen,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const agentModes = [
+  { id: "engineering", label: "Engineering" },
+  { id: "business", label: "Business" },
+  { id: "research", label: "Research" },
+] as const;
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { agentModes, mockExecutionSteps, mockFileTree, mockVerification } from "@/lib/mock-data";
-import type { AgentMode, FileNode, TaskStatus, VerificationStatus } from "@/lib/types";
+import type { AgentMode } from "@/lib/types";
 import { toast } from "sonner";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
@@ -39,6 +55,7 @@ import {
 import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -75,6 +92,7 @@ function ThreadView() {
   const qc = useQueryClient();
   const { t } = useLocale();
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [mode, setMode] = useState<AgentMode>("engineering");
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -212,7 +230,14 @@ function ThreadView() {
       });
       if (error) console.error("save assistant", error);
     },
-    onError: (err) => toast.error(friendlyChatError(err)),
+    onError: (err) => {
+      const msg = friendlyChatError(err);
+      if (msg.includes("limit") || msg.includes("quota")) {
+        setIsUpgradeModalOpen(true);
+      } else {
+        toast.error(msg);
+      }
+    },
   });
 
   const hydratedThreadRef = useRef<string | null>(null);
@@ -403,364 +428,201 @@ function ThreadView() {
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-1 overflow-hidden">
-      <section className="flex min-w-0 flex-1 flex-col border-r border-border">
-        <div className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-surface/30 px-3 py-2 sm:px-4 md:px-6">
+    <>
+      <div className="flex h-full min-w-0 flex-1 overflow-hidden bg-background">
+        {/* LEFT SIDEBAR: FILE TREE */}
+      <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-border bg-surface/20 overflow-y-auto shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
+        <DrawerSection title="Project Context">
+          <ProjectContextStatus
+            state={projectContextState}
+            projectName={projectContextName}
+            isArchived={isArchived}
+            onAttach={handleAttachProject}
+            t={t}
+          />
+        </DrawerSection>
+        {projectContextProjectId && activeProjectManifest && (
+          <DrawerSection title="Project Scope">
+            <ProjectManifestCard manifest={activeProjectManifest} />
+          </DrawerSection>
+        )}
+        <DrawerSection title={projectContextProjectId ? t("safePreview") : "File Explorer"}>
+          {projectContextProjectId ? (
+            <ProjectSafePreviewPanel
+              files={projectFiles}
+              previews={projectPreviews}
+              manifest={activeProjectManifest}
+              latestJob={projectContextProject?.latest_job ?? null}
+              loading={projectFilesLoading || projectPreviewsLoading || attachedProjectLoading}
+              emptyMessage={threadProjectId ? projectContextEmptyMessage : undefined}
+            />
+          ) : (
+            <div className="text-xs text-muted-foreground">Select a project to view file tree.</div>
+          )}
+        </DrawerSection>
+      </aside>
+
+      {/* CENTER CORE: EDITOR & TERMINAL */}
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+          {projectContextProjectId ? (
+            <div className="mx-auto max-w-5xl space-y-6">
+              <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
+                <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <PanelRight className="size-3.5" /> Editor Tabs
+                </div>
+                <div className="p-4">
+                  <ProjectTextPreviewPanel
+                    previews={projectPreviews}
+                    loading={projectPreviewsLoading}
+                    selectedPreviewIds={selectedPreviewIds}
+                    onTogglePreview={handleTogglePreview}
+                  />
+                </div>
+              </div>
+
+              {session && (
+                <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
+                  <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <GitBranch className="size-3.5" /> Patch Workstation
+                  </div>
+                  <div className="p-4">
+                    <ProjectPatchPreviewPanel
+                      projectId={projectContextProjectId}
+                      userId={session.user.id}
+                      previews={projectPreviews}
+                      disabled={isArchived || !projectContextProject || projectPreviewDataUnavailable}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid h-full place-items-center text-center text-muted-foreground">
+              <div>
+                <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
+                  <FolderOpen className="size-6" />
+                </div>
+                <h3 className="mb-2 text-lg font-bold text-foreground">No active project context</h3>
+                <p className="text-sm">Seed a demo workspace or upload a project to begin.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* BOTTOM TERMINAL */}
+        <div className="h-[30vh] min-h-[200px] shrink-0 border-t border-border bg-[#050505] p-4 font-mono text-[11px] text-muted-foreground overflow-y-auto shadow-inner">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+            <Terminal className="size-3.5" /> Sandbox Execution Stdout
+          </div>
+          <div className="space-y-1">
+            <div>&gt; Nexus IDE Engine Initialized.</div>
+            <div>&gt; Listening for sandbox execution jobs...</div>
+          </div>
+        </div>
+      </main>
+
+      {/* RIGHT SIDEBAR: AI CHAT */}
+      <aside className="flex w-full shrink-0 flex-col border-l border-border bg-surface/30 md:w-[28rem] z-30 shadow-[-1px_0_10px_rgba(0,0,0,0.02)]">
+        <div className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-background/50 px-3 py-2 sm:px-4">
           <div className="min-w-0 flex-1">
             <div className="truncate text-base font-semibold leading-tight md:text-sm">
               {thread?.title ?? "Session"}
             </div>
-            <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground md:text-[11px]">
+            <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Agent #{threadId.slice(0, 6)} / {mode}
-              {projectContextName ? ` / ${projectContextName}` : ""}
-              {isArchived ? ` / ${t("archivedSession")}` : ""}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1 md:gap-2">
-            {session && (
-              <ProjectUploadDialog
-                userId={session.user.id}
-                trigger={
-                  <button
-                    type="button"
-                    className="hidden min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:flex"
-                  >
-                    <Upload className="size-4 md:size-3" />
-                    <span className="hidden md:inline">Upload ZIP</span>
-                  </button>
-                }
-              />
-            )}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-block">
-                    <button
-                      className="hidden min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 md:flex"
-                      disabled
-                    >
-                      <GitBranch className="size-4 md:size-3" />
-                      <span className="hidden md:inline">{t("connectRepo")}</span>
-                    </button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">{t("connectRepoDisabledTooltip")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={handleNewSession}
-              className="flex min-h-[44px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition-colors md:flex"
+              className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 md:min-h-[32px]"
             >
-              <MessageSquare className="size-4 md:size-3" />
-              <span className="hidden md:inline">New Session</span>
+              <MessageSquare className="size-3.5 md:size-3" />
+              <span className="hidden md:inline">New Chat</span>
             </button>
             {hasThreadLifecycle && !isArchived && (
               <button
                 type="button"
                 onClick={handleArchiveThread}
-                className="hidden min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:flex"
+                className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:min-h-[32px]"
               >
-                <Archive className="size-4 md:size-3" />
-                <span className="hidden md:inline">{t("archiveSession")}</span>
+                <Archive className="size-3.5 md:size-3" />
               </button>
             )}
+          </div>
+        </div>
+
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 pb-6 pt-4 md:px-5">
+          {loadingMsgs && <div className="font-mono text-xs text-muted-foreground">Loading session...</div>}
+          {!loadingMsgs && messages.length === 0 && <EmptyChat />}
+          {messages.map((m) => (
+            <MessageBlock key={m.id} message={m} />
+          ))}
+          {status === "submitted" && (
+            <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
+              <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-border bg-background p-3 md:p-4">
+          <div className="mb-3 flex min-w-0 gap-1.5 overflow-x-auto">
+            {agentModes.map((m) => {
+              const active = mode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  disabled={isArchived}
+                  onClick={() => setMode(m.id as AgentMode)}
+                  className={`whitespace-nowrap rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                    active
+                      ? "border-accent/30 bg-accent/10 text-accent"
+                      : "border-border bg-muted/60 text-muted-foreground hover:text-foreground"
+                  } disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="relative min-w-0">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Ask Nexus IDE..."
+              disabled={isArchived}
+              className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm text-start shadow-inner focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:pb-4 md:pr-14"
+              dir="auto"
+            />
             <button
-              onClick={() => setIsInspectorOpen((o) => !o)}
-              className={`flex min-h-[44px] items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                isInspectorOpen
-                  ? "bg-accent/10 border-accent/20 text-accent"
-                  : "border-border text-muted-foreground hover:bg-muted"
-              }`}
+              onClick={handleSend}
+              disabled={busy || !input.trim() || isArchived}
+              className="absolute bottom-3 right-3 flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground shadow-md disabled:opacity-50"
             >
-              <PanelRight className="size-4 md:size-3" />
-              <span className="hidden md:inline">Inspector</span>
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </button>
           </div>
-        </div>
-
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-none min-w-0 space-y-4 px-3 pb-6 pt-4 md:max-w-3xl md:px-6 md:py-8 md:space-y-6">
-            {isArchived && (
-              <div className="rounded-md border border-border bg-surface/70 px-3 py-2 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{t("thisSessionIsArchived")}</span>{" "}
-                {t("startNewTaskAfterArchiving")}
-              </div>
-            )}
-            <ProjectContextStatus
-              state={projectContextState}
-              projectName={projectContextName}
-              isArchived={isArchived}
-              onAttach={handleAttachProject}
-              t={t}
-            />
-            {loadingMsgs && (
-              <div className="text-xs text-muted-foreground font-mono">Loading session...</div>
-            )}
-            {!loadingMsgs && messages.length === 0 && <EmptyChat />}
-            {messages.map((m) => (
-              <MessageBlock key={m.id} message={m} />
-            ))}
-            {status === "submitted" && (
-              <div className="font-mono text-[11px] text-accent flex items-center gap-2">
-                <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="border-t border-border bg-background px-3 py-4 md:px-6">
-          <div className="mx-auto w-full max-w-none min-w-0 md:max-w-3xl">
-            <div className="mb-3 flex min-w-0 gap-1.5 overflow-x-auto">
-              {agentModes.map((m) => {
-                const active = mode === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    disabled={isArchived}
-                    onClick={() => setMode(m.id as AgentMode)}
-                    className={`px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap border transition-colors ${
-                      active
-                        ? "bg-accent/10 text-accent border-accent/30"
-                        : "bg-muted/60 text-muted-foreground border-border hover:text-foreground"
-                    } disabled:cursor-not-allowed disabled:opacity-60`}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="relative min-w-0">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Ask Nexus Core to analyze, plan, scope, or review..."
-                disabled={isArchived}
-                className="min-h-[116px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-base text-start focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:min-h-[100px] md:pb-4 md:pr-28 md:text-sm"
-                dir="auto"
-              />
-              <button
-                onClick={handleSend}
-                disabled={busy || !input.trim() || isArchived}
-                className="mt-3 flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-[13px] font-bold text-accent-foreground shadow-lg disabled:opacity-50 md:absolute md:bottom-3 md:right-3 md:mt-0 md:min-h-[44px] md:w-auto md:rounded-md"
-              >
-                {busy ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
-                Send
-              </button>
-            </div>
-            <div className="mt-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-              Cmd/Ctrl + Enter to send · {t("nexusHelperText")}
+            <div className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+              Cmd/Ctrl + Enter to send
             </div>
           </div>
-        </div>
-      </section>
-
-      {isInspectorOpen && (
-        <aside className="fixed inset-y-0 right-0 z-40 flex w-[95vw] max-w-md shrink-0 flex-col overflow-y-auto border-l border-border bg-surface shadow-xl md:static md:w-72 md:bg-surface/40 md:shadow-none">
-          <DrawerSection title="Active Project">
-            {projectContextProject ? (
-              <div className="rounded-md border border-accent/20 bg-accent/5 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="truncate text-xs font-semibold text-foreground">
-                    {projectContextProject.name}
-                  </div>
-                  <ProjectStatusBadge
-                    status={
-                      projectContextProject.latest_job?.status ?? projectContextProject.status
-                    }
-                  />
-                </div>
-                <div className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {projectContextProject.source_type} / ingestion{" "}
-                  {projectContextProject.latest_job?.status.replace(/_/g, " ") ?? "not started"}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAttachProject}
-                  disabled={threadProjectId === projectContextProject.id || isArchived}
-                  className="mt-3 w-full rounded border border-border px-2 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {threadProjectId === projectContextProject.id
-                    ? t("projectContextAttached")
-                    : t("attachThisProject")}
-                </button>
-              </div>
-            ) : threadProjectId ? (
-              <div className="rounded-md border border-accent/20 bg-accent/5 p-3 text-xs leading-relaxed text-muted-foreground">
-                <div className="font-medium text-foreground">{t("projectContextIsAttached")}</div>
-                {projectContextName && (
-                  <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {projectContextName}
-                  </div>
-                )}
-                <div className="mt-2">
-                  {attachedProjectLoading
-                    ? t("loadingProjects")
-                    : projectPreviewDataUnavailable
-                      ? t("projectContextCouldNotBeLoaded")
-                      : t("projectContextAttachedNoProcessedFiles")}
-                </div>
-                {!attachedProjectLoading && (
-                  <div className="mt-1 text-[11px] text-muted-foreground">
-                    {t("checkZipProcessingStatus")}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {t("noProjectContextAvailable")}
-                </span>
-                <br />
-                {t("responsesMayBeGeneralWithoutProjectContext")}
-              </div>
-            )}
-          </DrawerSection>
-
-          <DrawerSection title="Project Summary">
-            {threadProjectId && !activeProjectManifest ? (
-              <div className="rounded-md border border-border bg-background/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                {t("projectContextAttachedNoProcessedFiles")}
-              </div>
-            ) : (
-              <ProjectManifestCard manifest={activeProjectManifest} />
-            )}
-          </DrawerSection>
-
-          {projectContextProjectId && (
-            <DrawerSection title="Project Health">
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <StatusMetric
-                  label="Files"
-                  value={projectFilesLoading ? "..." : projectFiles.length.toString()}
-                />
-                <StatusMetric
-                  label="Previews"
-                  value={projectPreviewsLoading ? "..." : projectPreviews.length.toString()}
-                />
-                <StatusMetric
-                  label="Ingestion"
-                  value={
-                    projectContextProject?.latest_job?.status.replaceAll("_", " ") ??
-                    projectContextProject?.status ??
-                    t("checkZipProcessingStatus")
-                  }
-                />
-                <StatusMetric label="Context" value={`${selectedPreviewIds.length} selected`} />
-              </div>
-              <div className="mt-3 rounded-md border border-border bg-background/40 p-3">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Ingestion timeline
-                </div>
-                {["uploaded", "manifest", "safe previews", "ready"].map((step, index) => (
-                  <div key={step} className="flex items-center gap-2 py-1 text-[11px]">
-                    <span
-                      className={`size-1.5 rounded-full ${
-                        index <= 2 && projectContextProject?.latest_job?.status === "completed"
-                          ? "bg-emerald-400"
-                          : "bg-muted-foreground"
-                      }`}
-                    />
-                    <span className="text-muted-foreground">{step}</span>
-                  </div>
-                ))}
-              </div>
-            </DrawerSection>
-          )}
-
-          <DrawerSection title={projectContextProjectId ? t("safePreview") : "Example file scope"}>
-            {projectContextProjectId ? (
-              <ProjectSafePreviewPanel
-                files={projectFiles}
-                previews={projectPreviews}
-                manifest={activeProjectManifest}
-                latestJob={projectContextProject?.latest_job ?? null}
-                loading={projectFilesLoading || projectPreviewsLoading || attachedProjectLoading}
-                emptyMessage={threadProjectId ? projectContextEmptyMessage : undefined}
-              />
-            ) : (
-              <FileTree nodes={mockFileTree} depth={0} />
-            )}
-          </DrawerSection>
-
-          {projectContextProjectId && (
-            <DrawerSection title="Safe Text Previews">
-              <ProjectTextPreviewPanel
-                previews={projectPreviews}
-                loading={projectPreviewsLoading}
-                selectedPreviewIds={selectedPreviewIds}
-                onTogglePreview={handleTogglePreview}
-              />
-            </DrawerSection>
-          )}
-
-          {projectContextProjectId && session && (
-            <DrawerSection title={t("groundedPatchPreview")}>
-              <ProjectPatchPreviewPanel
-                projectId={projectContextProjectId}
-                userId={session.user.id}
-                previews={projectPreviews}
-                disabled={isArchived || !projectContextProject || projectPreviewDataUnavailable}
-              />
-            </DrawerSection>
-          )}
-
-          <DrawerSection title="Planning Pipeline">
-            <div className="space-y-3 relative ml-1.5 mt-1">
-              <div className="absolute left-[-9px] top-1 bottom-1 w-px bg-border" />
-              {mockExecutionSteps.map((s) => (
-                <div key={s.id} className="relative flex items-center gap-3">
-                  <div
-                    className={`size-2 rounded-full ring-4 ring-background ${statusDot(s.status)}`}
-                  />
-                  <span
-                    className={`text-[11px] ${s.status === "completed" ? "text-muted-foreground" : s.status === "running" ? "text-foreground" : "text-muted-foreground"}`}
-                  >
-                    {s.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </DrawerSection>
-
-          <DrawerSection title="Readiness checks">
-            <div className="space-y-2">
-              {mockVerification.map((v) => (
-                <div key={v.id} className="flex items-center justify-between">
-                  <span className="text-xs text-foreground">{v.type}</span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${verifPill(v.status)}`}
-                  >
-                    {v.status.replace("_", " ")}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </DrawerSection>
-
-          <DrawerSection title="Guardrails">
-            <div className="p-3 rounded-md border border-border bg-background/40">
-              <div className="text-[11px] font-semibold text-foreground mb-1">
-                Pre-execution mode
-              </div>
-              <div className="text-[11px] leading-relaxed text-muted-foreground">
-                Nexus can analyze manifest and preview context, but cannot execute commands, install
-                dependencies, modify files, or open pull requests in this phase.
-              </div>
-            </div>
-          </DrawerSection>
         </aside>
-      )}
-    </div>
+      </div>
+
+      <PricingUpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
+    </>
   );
 }
 
@@ -932,9 +794,7 @@ function StructuredAssistant({ text }: { text: string }) {
           remarkPlugins={[remarkGfm]}
           components={{
             p: ({ node, ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
-            ul: ({ node, ...props }) => (
-              <ul className="mb-2 list-disc space-y-1 pl-5" {...props} />
-            ),
+            ul: ({ node, ...props }) => <ul className="mb-2 list-disc space-y-1 pl-5" {...props} />,
             ol: ({ node, ...props }) => (
               <ol className="mb-2 list-decimal space-y-1 pl-5" {...props} />
             ),
@@ -943,7 +803,10 @@ function StructuredAssistant({ text }: { text: string }) {
             h3: ({ node, ...props }) => <h3 className="mb-2 mt-3 text-sm font-bold" {...props} />,
             code: ({ node, inline, ...props }: any) =>
               inline ? (
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-accent" {...props} />
+                <code
+                  className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-accent"
+                  {...props}
+                />
               ) : (
                 <pre className="mb-2 overflow-x-auto rounded-md border border-border bg-muted/50 p-3 font-mono text-[11px]">
                   <code {...props} />
@@ -1019,12 +882,21 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
                 ol: ({ node, ...props }) => (
                   <ol className="mb-2 list-decimal space-y-1 pl-5" {...props} />
                 ),
-                h1: ({ node, ...props }) => <h1 className="mb-2 mt-4 text-lg font-bold" {...props} />,
-                h2: ({ node, ...props }) => <h2 className="mb-2 mt-4 text-base font-bold" {...props} />,
-                h3: ({ node, ...props }) => <h3 className="mb-2 mt-3 text-sm font-bold" {...props} />,
+                h1: ({ node, ...props }) => (
+                  <h1 className="mb-2 mt-4 text-lg font-bold" {...props} />
+                ),
+                h2: ({ node, ...props }) => (
+                  <h2 className="mb-2 mt-4 text-base font-bold" {...props} />
+                ),
+                h3: ({ node, ...props }) => (
+                  <h3 className="mb-2 mt-3 text-sm font-bold" {...props} />
+                ),
                 code: ({ node, inline, ...props }: any) =>
                   inline ? (
-                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-accent" {...props} />
+                    <code
+                      className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-accent"
+                      {...props}
+                    />
                   ) : (
                     <pre className="mb-2 overflow-x-auto rounded-md border border-border bg-muted/50 p-3 font-mono text-[11px]">
                       <code {...props} />
@@ -1046,6 +918,16 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
     </section>
   );
 }
+
+export type VerificationStatus = "passed" | "failed" | "warning" | "not_run" | "running";
+export type TaskStatus = "pending" | "running" | "verifying" | "completed" | "failed" | "awaiting_approval";
+export type FileNode = {
+  id: string;
+  name: string;
+  type: "file" | "dir";
+  status?: "added" | "modified" | "removed" | "unchanged";
+  children?: FileNode[];
+};
 
 function stripCodeFence(s: string) {
   return s

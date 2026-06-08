@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, Outlet, createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -27,6 +27,7 @@ import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspacePr
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { projectKeys, useArchiveProjectMutation } from "@/features/projects/projectQueries";
 import { useIsAdminQuery } from "@/features/admin/adminQueries";
+import { usePendingQuorumCountQuery } from "@/features/governance/governanceQueries";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useLocale } from "@/features/i18n/localeContext";
 import { ProjectSidebar } from "@/components/agent-workspace/ProjectSidebar";
@@ -89,10 +90,13 @@ function AppWorkspace({
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isIdeLayout = location.pathname.startsWith("/app/") && location.pathname !== "/app" && !location.pathname.startsWith("/app/settings") && !location.pathname.startsWith("/app/admin");
   const qc = useQueryClient();
   const { activeProject, setSelectedProjectId } = useProjectWorkspace();
   const archiveProject = useArchiveProjectMutation();
   const { data: isAdmin = false } = useIsAdminQuery(!!session, session.user.id);
+  const { data: pendingQuorumCount = 0 } = usePendingQuorumCountQuery();
   const { t } = useLocale();
 
   async function handleArchiveProject() {
@@ -168,16 +172,26 @@ function AppWorkspace({
               {isAdmin && (
                 <Link
                   to="/app/admin"
-                  className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
+                  className="relative px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
                 >
                   <Boxes className="size-3.5" /> {t("adminControl")}
+                  {pendingQuorumCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                      {pendingQuorumCount}
+                    </span>
+                  )}
                 </Link>
               )}
               <Link
                 to="/app/settings"
-                className="px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
+                className="relative px-2.5 py-1.5 text-xs font-medium rounded-md text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors"
               >
                 <Settings className="size-3.5" /> {t("settings")}
+                {!isAdmin && pendingQuorumCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                    {pendingQuorumCount}
+                  </span>
+                )}
               </Link>
             </div>
 
@@ -229,7 +243,7 @@ function AppWorkspace({
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Left Sidebar */}
-        {isLeftSidebarOpen && (
+        {isLeftSidebarOpen && !isIdeLayout && (
           <aside className="w-72 shrink-0 border-r border-border hidden md:flex flex-col">
             <ProjectSidebar />
           </aside>
@@ -241,7 +255,7 @@ function AppWorkspace({
         </main>
 
         {/* Right Inspector */}
-        {isRightSidebarOpen && (
+        {isRightSidebarOpen && !isIdeLayout && (
           <aside className="w-[22rem] shrink-0 border-l border-border hidden xl:flex flex-col bg-surface/10">
             <ProjectInspector />
           </aside>
@@ -256,18 +270,18 @@ function AppWorkspace({
             activeProps={{ className: "text-accent bg-accent/10 font-semibold" }}
           >
             <Home className="mb-1 size-5" />
-            {t("home") || "Home"}
+            {t("home" as any) || "Home"}
           </Link>
 
           <Link
-            to="/app/inbox"
+            to={"/app/inbox" as any}
             className="flex min-h-[44px] flex-col items-center justify-center rounded-xl text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-accent/10 active:text-accent [&.active]:text-accent [&.active]:bg-accent/10 [&.active]:font-semibold"
             activeProps={{ className: "text-accent bg-accent/10 font-semibold" }}
           >
             <div className="relative">
               <Inbox className="mb-1 size-5" />
             </div>
-            {t("inbox") || "Inbox"}
+            {t("inbox" as any) || "Inbox"}
           </Link>
 
           <Sheet>

@@ -53,7 +53,7 @@ function Meter({
   );
 }
 
-export function UsageMeters({ overview }: { overview: UsageOverview }) {
+export function UsageMeters({ overview, onUpgrade }: { overview: UsageOverview, onUpgrade?: () => void }) {
   const { t } = useLocale();
   const warning = [
     ["max_projects", overview.projects, overview.limits?.max_projects],
@@ -111,9 +111,17 @@ export function UsageMeters({ overview }: { overview: UsageOverview }) {
       {warning && (
         <div className="mt-4 flex gap-2 rounded-md border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-          <div>
+          <div className="flex-1">
             <div className="font-semibold">{t("nearLimit")}</div>
             <div className="mt-1 text-warning/80">{t("upgradePrompt")}</div>
+            {onUpgrade && (
+              <button 
+                onClick={onUpgrade}
+                className="mt-2 text-[10px] uppercase tracking-widest font-bold underline underline-offset-2 hover:text-warning/80 transition-colors"
+              >
+                {t("upgrade")}
+              </button>
+            )}
           </div>
         </div>
       )}

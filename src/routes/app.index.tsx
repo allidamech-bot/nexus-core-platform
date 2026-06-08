@@ -10,6 +10,7 @@ import { ProjectActionCard } from "@/components/agent-workspace/ProjectActionCar
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { checkQuota } from "@/features/governance/governanceService";
 import { governanceKeys } from "@/features/governance/governanceQueries";
+import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 
 export const Route = createFileRoute("/app/")({
   component: AppIndex,
@@ -48,6 +49,7 @@ function AppIndex() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<ComposerStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   const { data: recentThreads = [] } = useQuery({
     enabled: Boolean(session?.user.id),
@@ -146,7 +148,11 @@ function AppIndex() {
         : t(friendlyCreateSessionError(err));
       const nextStatus = message === t("sessionQuotaReached") ? "quota" : "error";
       setComposerStatus(nextStatus, message);
-      toast.error(message);
+      if (nextStatus === "quota") {
+        setIsUpgradeModalOpen(true);
+      } else {
+        toast.error(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -165,8 +171,12 @@ function AppIndex() {
           >
             Welcome to Nexus Core Secure Workspace
           </h1>
-          <p dir="ltr" className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base">
-            Autonomous AI patching under strict corporate governance. Your source code remains 100% immutable.
+          <p
+            dir="ltr"
+            className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base"
+          >
+            Autonomous AI patching under strict corporate governance. Your source code remains 100%
+            immutable.
           </p>
         </div>
 
@@ -306,7 +316,8 @@ function AppIndex() {
                       {thread.title || t("untitled")}
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {t("activeSession") || "Active"} • {new Date(thread.updated_at).toLocaleDateString()}
+                      {t("activeSession" as any) || "Active"} •{" "}
+                      {new Date(thread.updated_at).toLocaleDateString()}
                     </span>
                   </div>
                   <Link
@@ -314,7 +325,7 @@ function AppIndex() {
                     params={{ threadId: thread.id }}
                     className="flex min-h-[44px] items-center justify-center rounded-xl bg-accent/10 px-4 text-[13px] font-semibold text-accent transition-colors hover:bg-accent/20 active:bg-accent/30"
                   >
-                    {t("viewPatch") || "View Patch"}
+                    {t("viewPatch" as any) || "View Patch"}
                   </Link>
                 </div>
               ))}
@@ -351,6 +362,11 @@ function AppIndex() {
 
         {!activeProject && session && <ProjectActionCard />}
       </div>
+      
+      <PricingUpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
     </div>
   );
 }

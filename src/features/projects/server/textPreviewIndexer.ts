@@ -4,6 +4,7 @@ import { detectLanguageForPath, isPreviewEligible, summarizeFile } from "./fileC
 import { containsLikelySecret, redactSecrets } from "./previewSanitizer";
 import { TEXT_PREVIEW_LIMITS } from "./textPreviewConstants";
 import { readZipEntryBytes, type ZipInventoryFile } from "./zipCentralDirectory";
+import { extractAstMetadata } from "./astExtractor";
 
 export interface GeneratedTextPreview {
   path: string;
@@ -183,6 +184,7 @@ export async function generateTextPreviewsFromArchive(
         size_bytes: file.size_bytes,
         checksum: file.checksum,
         redacted: redacted.redacted,
+        ast: extractAstMetadata(file.path, redacted.text) as unknown as Json,
       },
     });
     totalIndexedBytes += file.size_bytes;
