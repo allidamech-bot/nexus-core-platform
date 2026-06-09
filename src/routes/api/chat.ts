@@ -1043,7 +1043,6 @@ export const Route = createFileRoute("/api/chat")({
           );
         }
 
-        // @ts-expect-error - dynamic provider query
         const { data: dbKeyData } = await (access.supabase as any)
           .from("ai_provider_keys")
           .select("api_key, base_url, provider_type")
