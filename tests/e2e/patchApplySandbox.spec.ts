@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { verifyPatchPreviewCanApply } from "../../src/features/projects/patchApplySandbox";
+import { verifyPatchPreviewCanApply } from "../../src/features/projects/patchApplySandbox.server";
 import {
   createPatchSnapshotFromSandbox,
   hashPatchedText,
