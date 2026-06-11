@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Terminal, Send, Loader2, AlertCircle } from "lucide-react";
+import { Send, Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,20 +163,20 @@ function AppIndex() {
       <div className="w-full max-w-none min-w-0 space-y-5 md:my-auto md:max-w-3xl md:space-y-8">
         <div className="flex w-full min-w-0 flex-col items-start pt-0 text-left md:items-center md:pt-2 md:text-center">
           <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-accent shadow-sm">
-            🔒 SECURE GOVERNED PIPELINE
+            GOVERNED REVIEW PIPELINE
           </div>
           <h1
             dir="auto"
             className="w-full max-w-full break-words text-[1.45rem] font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl md:leading-tight lg:text-4xl"
           >
-            Welcome to Nexus Core Secure Workspace
+            Welcome to the Nexus Core governed workspace
           </h1>
           <p
             dir="ltr"
             className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base"
           >
-            Autonomous AI patching under strict corporate governance. Your source code remains 100%
-            immutable.
+            Safe previews, grounded proposals, review gates, and exportable working copies. Nexus
+            Core does not directly mutate source files.
           </p>
         </div>
 
@@ -239,10 +239,10 @@ function AppIndex() {
         ) && (
           <div className="hidden md:flex mt-6 flex-col gap-4 rounded-2xl border border-border bg-surface-elevated/50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
             {[
-              { num: 1, label: "AI Chat", active: true },
+              { num: 1, label: "AI Session", active: true },
               { num: 2, label: "Safe Preview", active: false },
-              { num: 3, label: "Patch Review", active: false },
-              { num: 4, label: "Secure Export", active: false },
+              { num: 3, label: "Review Gate", active: false },
+              { num: 4, label: "Working Copy Export", active: false },
             ].map((step, idx, arr) => (
               <div key={idx} className="flex flex-1 items-center gap-3">
                 <div className="flex items-center gap-2">

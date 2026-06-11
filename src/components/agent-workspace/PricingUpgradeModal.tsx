@@ -44,11 +44,11 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
               <Sparkles className="size-4" /> Limit Reached
             </div>
             <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl mb-4">
-              Unlock the Full Power of Nexus Core
+              Expand Nexus Core Governance Limits
             </h2>
             <p className="text-base text-gray-400 sm:text-lg">
-              Upgrade your workspace to access unlimited sandboxes, advanced AI capabilities, and
-              strict governance tools.
+              Review available capability tiers for higher governed workspace limits, expanded AI
+              planning capacity, and handoff controls.
             </p>
           </div>
 
@@ -74,10 +74,10 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
 
                     <ul className="space-y-4 mb-8">
                       {[
-                        "Unlimited Sandbox Executions",
-                        "Advanced Patch Generation",
-                        "Priority GPU Access",
-                        "Quorum Approval Engine",
+                        "Expanded preview verification limits",
+                        "Advanced AI patch-preview preparation",
+                        "Higher governed workspace quotas",
+                        "Review handoff controls",
                       ].map((feature, i) => (
                         <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
                           <Check className="size-5 shrink-0 text-yellow-500" />
@@ -95,7 +95,7 @@ export function PricingUpgradeModal({ isOpen, onClose }: PricingUpgradeModalProp
                     {checkoutMutation.isPending ? (
                       <Loader2 className="mx-auto size-5 animate-spin" />
                     ) : (
-                      "Upgrade Now"
+                      "Review Tier"
                     )}
                   </button>
                 </div>

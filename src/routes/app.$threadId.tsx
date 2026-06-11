@@ -9,10 +9,10 @@ import {
   Upload,
   GitBranch,
   Loader2,
-  Terminal,
   PanelRight,
   MessageSquare,
   FolderOpen,
+  ShieldCheck,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -464,14 +464,14 @@ function ThreadView() {
           </DrawerSection>
         </aside>
 
-        {/* CENTER CORE: EDITOR & TERMINAL */}
+        {/* CENTER CORE: PREVIEW AND REVIEW WORKSPACE */}
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
             {projectContextProjectId ? (
               <div className="mx-auto max-w-5xl space-y-6">
                 <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
                   <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    <PanelRight className="size-3.5" /> Editor Tabs
+                    <PanelRight className="size-3.5" /> Safe Preview Tabs
                   </div>
                   <div className="p-4">
                     <ProjectTextPreviewPanel
@@ -486,7 +486,7 @@ function ThreadView() {
                 {session && (
                   <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
                     <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                      <GitBranch className="size-3.5" /> Patch Workstation
+                      <GitBranch className="size-3.5" /> Patch Preview Workstation
                     </div>
                     <div className="p-4">
                       <ProjectPatchPreviewPanel
@@ -516,14 +516,14 @@ function ThreadView() {
             )}
           </div>
 
-          {/* BOTTOM TERMINAL */}
+          {/* BOTTOM GOVERNANCE LOG */}
           <div className="h-[30vh] min-h-[200px] shrink-0 border-t border-border bg-[#050505] p-4 font-mono text-[11px] text-muted-foreground overflow-y-auto shadow-inner">
             <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-              <Terminal className="size-3.5" /> Sandbox Execution Stdout
+              <ShieldCheck className="size-3.5" /> Governance Handoff Log
             </div>
             <div className="space-y-1">
-              <div>&gt; Nexus IDE Engine Initialized.</div>
-              <div>&gt; Listening for sandbox execution jobs...</div>
+              <div>&gt; Safe preview and review workspace initialized.</div>
+              <div>&gt; Direct source writeback disabled; exportable handoff artifacts only.</div>
             </div>
           </div>
         </main>
@@ -606,7 +606,7 @@ function ThreadView() {
                     handleSend();
                   }
                 }}
-                placeholder="Ask Nexus IDE..."
+                placeholder="Ask Nexus Core..."
                 disabled={isArchived}
                 className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm text-start shadow-inner focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:pb-4 md:pr-14"
                 dir="auto"
@@ -639,7 +639,7 @@ function EmptyChat() {
   return (
     <div className="min-w-0 py-10 text-center sm:py-12">
       <div className="mx-auto mb-4 grid size-10 place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
-        <Terminal className="size-4" />
+        <MessageSquare className="size-4" />
       </div>
       <h2 className="mb-2 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">
         {t("tellNexusToChange")}
@@ -777,9 +777,9 @@ const SECTION_NAMES = [
   "Risks",
   "Files to inspect or change",
   "Proposed actions",
-  "Execution log",
+  "Readiness log",
   "Verification",
-  "Final result",
+  "Handoff summary",
 ];
 
 function StructuredAssistant({ text }: { text: string }) {
