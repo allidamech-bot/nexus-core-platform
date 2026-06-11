@@ -307,7 +307,7 @@ export function buildProjectPipelineDiagnostics(
       label: "Grounded patch preview",
       description: "Creates read-only patch proposals grounded in safe preview text.",
       requiredNextAction: readyPatchPreview
-        ? "Verify the patch preview in the sandbox."
+        ? "Verify the patch preview against indexed text."
         : "Generate a grounded patch preview from safe preview text.",
       blockers: safePreviews.length > 0 ? [] : ["Safe previews are required first."],
       warnings: [],
@@ -347,11 +347,11 @@ export function buildProjectPipelineDiagnostics(
     stage({
       key: "sandboxVerification",
       status: snapshot ? "complete" : readyPatchPreview ? "ready" : "blocked",
-      label: "Sandbox verification",
+      label: "Patch preview verification",
       description: "Verifies patch changes against indexed text only without executing code.",
       requiredNextAction: snapshot
         ? "Create or export a versioned patch snapshot."
-        : "Run sandbox verification on a ready patch preview.",
+        : "Verify a ready patch preview against indexed text.",
       blockers: readyPatchPreview ? [] : ["A ready patch preview is required."],
       warnings: [],
       sourceIds: { patchPreviewId: patchPreviews[0]?.id ?? null },
@@ -362,7 +362,7 @@ export function buildProjectPipelineDiagnostics(
       label: "Patch snapshot",
       description: "Stores a derived, versioned snapshot from sandbox-verified preview text.",
       requiredNextAction: snapshot
-        ? "Export the snapshot or request writeback review."
+        ? "Export the snapshot or request review handoff."
         : "Create a versioned patch snapshot.",
       blockers: readyPatchPreview ? [] : ["A ready patch preview is required."],
       warnings: snapshot?.blockers.length ? ["Latest snapshot has blockers."] : [],
@@ -383,11 +383,11 @@ export function buildProjectPipelineDiagnostics(
     stage({
       key: "writebackRequest",
       status: request ? "complete" : snapshot ? "ready" : "blocked",
-      label: "Writeback request",
-      description: "Creates a governed request for future writeback consideration.",
+      label: "Review handoff request",
+      description: "Creates a governed request for working-copy export consideration.",
       requiredNextAction: request
-        ? "Submit or monitor the writeback request."
-        : "Create a writeback review request from the snapshot.",
+        ? "Submit or monitor the review handoff request."
+        : "Create a review handoff request from the snapshot.",
       blockers: snapshot ? [] : ["A snapshot is required before requesting review."],
       warnings: [],
       sourceIds: { requestId: request?.id ?? null, patchSnapshotId: snapshot?.id ?? null },
@@ -403,14 +403,14 @@ export function buildProjectPipelineDiagnostics(
             : request
               ? "warning"
               : "blocked",
-      label: "Writeback review",
+      label: "Review handoff",
       description: "Admin/reviewer approval or rejection; approval does not apply changes.",
       requiredNextAction: approvedRequest
         ? "Create a separate versioned working copy."
         : request?.status === "submitted"
           ? "Reviewer/admin can approve or reject."
           : "Submit the request for review.",
-      blockers: request ? [] : ["A writeback request is required."],
+      blockers: request ? [] : ["A review handoff request is required."],
       warnings:
         request && request.status !== "submitted" && request.status !== "approved"
           ? [`Request is ${request.status}.`]

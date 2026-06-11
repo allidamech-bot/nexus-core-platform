@@ -6,9 +6,7 @@ import {
   GitBranch,
   Lock,
   ShieldCheck,
-  Terminal,
   Workflow,
-  Zap,
 } from "lucide-react";
 import heroPreview from "@/assets/hero-preview.jpg";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
@@ -36,10 +34,10 @@ function Nav() {
               How it works
             </a>
             <a href="#security" className="hover:text-foreground transition-colors">
-              Security
+              Governance
             </a>
             <a href="#pricing" className="hover:text-foreground transition-colors">
-              Pricing
+              Access
             </a>
           </div>
         </div>
@@ -70,28 +68,28 @@ function Hero() {
       <div className="relative mx-auto max-w-5xl pt-28 pb-24 px-6 text-center animate-entrance">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-white/5 text-[12px] font-medium mb-8">
           <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-          Project-aware AI workspace - Public Preview
+          Governed AI project workspace - Public Preview
         </div>
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance mb-8">
-          Nexus Core turns project context into{" "}
-          <span className="text-accent">structured plans</span>
+          Nexus Core moves AI changes through{" "}
+          <span className="text-accent">human review gates</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 text-pretty">
-          An AI workspace for developers and businesses. Ingest project context, analyze codebase
-          structure, plan work, and prepare verification-ready workflows.
+          Ingest safe project context, shape grounded proposals, preserve no-direct-writeback
+          boundaries, and export working-copy handoffs for external human review.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/signup"
             className="w-full sm:w-auto px-8 py-3 bg-foreground text-background font-semibold rounded-lg hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2"
           >
-            Start Building <ArrowRight className="size-4" />
+            Open Preview Access <ArrowRight className="size-4" />
           </Link>
           <a
-            href="#platform"
+            href="#workflow"
             className="w-full sm:w-auto px-8 py-3 bg-white/5 border border-border font-semibold rounded-lg hover:bg-white/10 transition-colors"
           >
-            Watch Demo
+            View Governance Flow
           </a>
         </div>
 
@@ -109,29 +107,6 @@ function Hero() {
   );
 }
 
-function Logos() {
-  const items = ["Acme Labs", "Polymer", "Northwind", "Hyperion", "Veridian", "Lattice"];
-  return (
-    <section className="border-y border-border bg-surface/40 py-10">
-      <div className="mx-auto max-w-6xl px-6">
-        <p className="text-center text-[11px] uppercase tracking-widest text-muted-foreground mb-6">
-          Trusted by engineering teams operating at scale
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 opacity-60">
-          {items.map((n) => (
-            <div
-              key={n}
-              className="text-center text-sm font-semibold tracking-tight text-muted-foreground"
-            >
-              {n}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Problem() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-28">
@@ -144,9 +119,9 @@ function Problem() {
             Chatbots answer. Operators need grounded project plans.
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            Most AI tools stop at generic suggestions. Your team is still left to inspect context,
-            plan implementation, and decide what is safe to verify. Nexus Core starts with a
-            governed project-understanding layer before execution is introduced.
+            Most AI tools collapse suggestion, execution, and approval into one risky moment. Nexus
+            Core keeps each step explicit: safe context first, grounded proposal second, exportable
+            working copy last, with human review before anything is applied externally.
           </p>
         </div>
         <div className="space-y-3">
@@ -174,34 +149,29 @@ function Problem() {
 
 const features = [
   {
-    icon: Terminal,
-    title: "Engineering agent",
-    body: "Analyze repositories, plan refactors, and propose patches with full file context.",
-  },
-  {
     icon: Workflow,
-    title: "Business workflow agent",
-    body: "Design and run customer onboarding, sales reporting, and ops processes.",
+    title: "Governed pipeline",
+    body: "Move from safe previews to patch previews, review requests, working-copy export, and human apply.",
   },
   {
     icon: ShieldCheck,
-    title: "Verification-ready workflow",
-    body: "Plans are shaped around typecheck, lint, build, tests, and security review before execution exists.",
-  },
-  {
-    icon: GitBranch,
-    title: "Project intelligence",
-    body: "Upload ZIPs or connect repos. Stack detection, risks, and changed-file diffs.",
+    title: "Safe preview context",
+    body: "Use indexed manifests and limited text previews without exposing secret files or raw source broadly.",
   },
   {
     icon: Lock,
-    title: "Approval gates",
-    body: "Context selection and sensitive actions are audited. Approval workflows expand before execution ships.",
+    title: "No direct source writeback",
+    body: "Nexus Core prepares review artifacts and exportable working copies; source mutation stays external.",
   },
   {
-    icon: Zap,
-    title: "Multi-model routing",
-    body: "Route tasks across reasoning, fast, and image models for the best result.",
+    icon: GitBranch,
+    title: "Grounded proposals",
+    body: "Label proposed file changes as grounded, inferred, or illustrative based on available project context.",
+  },
+  {
+    icon: Boxes,
+    title: "Exportable handoff",
+    body: "Bundle derived working-copy artifacts for manual review and external application by your team.",
   },
 ];
 
@@ -212,10 +182,12 @@ function Features() {
         <div className="font-mono text-[10px] text-accent uppercase tracking-widest mb-3">
           Platform
         </div>
-        <h2 className="text-4xl font-bold tracking-tight mb-4">One workspace. Every operator.</h2>
+        <h2 className="text-4xl font-bold tracking-tight mb-4">
+          One workspace. Governed change preparation.
+        </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Nexus Core combines structured AI planning, project intelligence, and governance into a
-          single workspace. The execution layer is intentionally reserved for a later sandbox phase.
+          Nexus Core combines structured AI planning, project intelligence, and artifact review in a
+          single workspace. Direct source writeback remains intentionally disabled.
         </p>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -239,33 +211,28 @@ function Features() {
 const steps = [
   {
     n: "01",
-    title: "Understand",
-    body: "Restates intent, scopes the request, and pulls relevant project context.",
+    title: "Project Context",
+    body: "Attach an indexed project and select safe preview context for the AI session.",
   },
   {
     n: "02",
-    title: "Plan",
-    body: "Produces a concrete, numbered plan with risks and files in scope.",
+    title: "Safe Preview",
+    body: "Use manifest and allowlisted text snippets rather than direct source access.",
   },
   {
     n: "03",
-    title: "Approve",
-    body: "Pauses at approval gates for any destructive or irreversible action.",
+    title: "Grounded Proposal",
+    body: "Create plans, risks, patch-preview guidance, and confidence labels.",
   },
   {
     n: "04",
-    title: "Prepare",
-    body: "Creates a readiness log and verification checklist for later execution phases.",
+    title: "Review Gate",
+    body: "Submit review requests before creating exportable working-copy artifacts.",
   },
   {
     n: "05",
-    title: "Verify",
-    body: "Typecheck, lint, build, tests, security scan - every run, every time.",
-  },
-  {
-    n: "06",
-    title: "Report",
-    body: "Delivers a final report with changed files, diffs, and recommended next steps.",
+    title: "Working Copy Export",
+    body: "Export the derived handoff for human review and external apply.",
   },
 ];
 
@@ -275,13 +242,14 @@ function How() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-16">
           <div className="font-mono text-[10px] text-accent uppercase tracking-widest mb-3">
-            How it works
+            Governed pipeline
           </div>
           <h2 className="text-4xl font-bold tracking-tight">
-            A deterministic loop from prompt to proof.
+            Project Context {"->"} Safe Preview {"->"} Grounded Proposal {"->"} Review Gate {"->"}{" "}
+            Working Copy Export.
           </h2>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden border border-border">
+        <div className="grid md:grid-cols-5 gap-px bg-border rounded-xl overflow-hidden border border-border">
           {steps.map((s) => (
             <div key={s.n} className="p-6 bg-surface">
               <div className="font-mono text-[11px] text-accent mb-3">[{s.n}]</div>
@@ -301,21 +269,25 @@ function Security() {
       <div className="grid md:grid-cols-[1fr_auto] gap-12 items-end mb-12">
         <div>
           <div className="font-mono text-[10px] text-accent uppercase tracking-widest mb-3">
-            Security &amp; trust
+            Proof / Governance Posture
           </div>
-          <h2 className="text-4xl font-bold tracking-tight">Built for regulated environments.</h2>
+          <h2 className="text-4xl font-bold tracking-tight">
+            Trust claims tied to current platform behavior.
+          </h2>
         </div>
         <p className="text-sm text-muted-foreground max-w-md">
-          Row-level access, audit logs, explicit context selection, and no code execution in the
-          current phase. Your data never trains shared models.
+          Nexus Core is designed around explicit review artifacts and source-control boundaries,
+          without claiming formal compliance certification.
         </p>
       </div>
-      <div className="grid md:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden border border-border">
+      <div className="grid md:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden border border-border">
         {[
-          { k: "SOC 2", v: "Type II ready" },
-          { k: "Audit logs", v: "Every action" },
-          { k: "RLS", v: "Per-user isolation" },
-          { k: "Approvals", v: "Human-in-the-loop" },
+          { k: "Writeback", v: "No direct source writeback" },
+          { k: "Context", v: "Safe preview context only" },
+          { k: "Isolation", v: "RLS-backed workspace isolation" },
+          { k: "Events", v: "Audit and usage events" },
+          { k: "Review", v: "Human approval gates" },
+          { k: "Handoff", v: "Working copy export" },
         ].map((x) => (
           <div key={x.k} className="p-6 bg-surface">
             <div className="text-2xl font-bold tracking-tight">{x.v}</div>
@@ -331,39 +303,37 @@ function Security() {
 
 const plans = [
   {
-    name: "Starter",
-    price: "$49",
-    per: "/mo",
-    features: ["5 active sessions", "1 project", "Planning checklist", "Community support"],
+    name: "Preview Access",
+    price: "Public preview",
+    per: "",
+    features: [
+      "Governed sessions",
+      "Safe project previews",
+      "Patch-preview guidance",
+      "Usage limits",
+    ],
   },
   {
-    name: "Pro",
-    price: "$299",
-    per: "/mo",
+    name: "Capability Tiers",
+    price: "Limits-based",
+    per: "",
     features: [
-      "Unlimited sessions",
-      "10 projects",
-      "Verification-ready planning",
-      "Approval workflows",
-      "Priority support",
+      "Higher project limits",
+      "Expanded preview quotas",
+      "Review workflows",
+      "Working-copy exports",
     ],
     featured: true,
   },
   {
-    name: "Business",
-    price: "$999",
-    per: "/mo",
-    features: ["Team workspaces", "Audit logs export", "Business agents", "SSO", "SLAs"],
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
+    name: "Enterprise Review",
+    price: "Contact review",
     per: "",
     features: [
-      "Dedicated instance",
-      "Private data posture",
-      "Compliance review",
-      "Custom integrations",
+      "Governance assessment",
+      "Security posture review",
+      "Custom limits discussion",
+      "Operational handoff planning",
     ],
   },
 ];
@@ -373,11 +343,13 @@ function Pricing() {
     <section id="pricing" className="mx-auto max-w-6xl px-6 py-28">
       <div className="text-center mb-16">
         <div className="font-mono text-[10px] text-accent uppercase tracking-widest mb-3">
-          Pricing
+          Access
         </div>
-        <h2 className="text-4xl font-bold tracking-tight">Scale from prototype to production.</h2>
+        <h2 className="text-4xl font-bold tracking-tight">
+          Preview access without unverified billing claims.
+        </h2>
       </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         {plans.map((p) => (
           <div
             key={p.name}
@@ -387,7 +359,7 @@ function Pricing() {
           >
             <div className="text-sm font-semibold mb-1">{p.name}</div>
             <div className="flex items-baseline gap-1 mb-6">
-              <span className="text-3xl font-bold tracking-tight">{p.price}</span>
+              <span className="text-2xl font-bold tracking-tight">{p.price}</span>
               <span className="text-sm text-muted-foreground">{p.per}</span>
             </div>
             <ul className="space-y-2 text-sm text-zinc-300 flex-1">
@@ -405,7 +377,7 @@ function Pricing() {
                   : "border border-border hover:bg-white/5"
               }`}
             >
-              {p.name === "Enterprise" ? "Contact sales" : "Start free"}
+              {p.name === "Enterprise Review" ? "Contact for review" : "Request access"}
             </Link>
           </div>
         ))}
@@ -417,7 +389,7 @@ function Pricing() {
 const faqs = [
   {
     q: "Does Nexus Core execute code today?",
-    a: "No. This version is pre-execution: it ingests project context, builds safe manifests, indexes limited previews, and produces structured plans. Sandboxed execution comes later.",
+    a: "No. Nexus Core ingests project context, builds safe manifests, indexes limited previews, and produces structured plans and review artifacts. Direct source mutation stays outside the platform.",
   },
   {
     q: "What about my source code privacy?",
@@ -429,7 +401,7 @@ const faqs = [
   },
   {
     q: "Which AI models does it use?",
-    a: "Nexus Core routes across multiple frontier models depending on task - reasoning, fast, and multimodal.",
+    a: "Nexus Core can use configured AI providers for project-aware planning. Provider availability depends on the workspace configuration.",
   },
 ];
 
@@ -466,16 +438,17 @@ function FinalCTA() {
     <section className="mx-auto max-w-4xl px-6 py-32 text-center">
       <Boxes className="size-10 mx-auto text-accent mb-6" />
       <h2 className="text-5xl font-bold tracking-tight mb-6">
-        Create your first project-aware AI workspace.
+        Create your first governed AI project workspace.
       </h2>
       <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-        Free during preview. No credit card. Spin up a workspace in under a minute.
+        Public preview access for safe project context, grounded proposals, review gates, and
+        working-copy export handoff.
       </p>
       <Link
         to="/signup"
         className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-foreground text-background font-semibold rounded-lg hover:bg-zinc-200"
       >
-        Start Building <ArrowRight className="size-4" />
+        Request Preview Access <ArrowRight className="size-4" />
       </Link>
     </section>
   );
@@ -490,7 +463,7 @@ function Footer() {
             Nexus Core
           </span>
           <p className="text-sm text-muted-foreground max-w-xs">
-            The project-aware planning layer for modern AI operations.
+            The governed planning and review handoff layer for AI-assisted software work.
           </p>
         </div>
         <div className="space-y-3">
@@ -508,7 +481,7 @@ function Footer() {
             </li>
             <li>
               <a href="#pricing" className="hover:text-foreground">
-                Pricing
+                Access
               </a>
             </li>
           </ul>
@@ -522,13 +495,13 @@ function Footer() {
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-foreground">
-                Privacy
+              <a href="#security" className="hover:text-foreground">
+                Governance posture
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-foreground">
-                Status
+              <a href="#workflow" className="hover:text-foreground">
+                Review flow
               </a>
             </li>
           </ul>
@@ -548,7 +521,6 @@ function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       <Nav />
       <Hero />
-      <Logos />
       <Problem />
       <Features />
       <How />

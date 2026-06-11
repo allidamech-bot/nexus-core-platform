@@ -148,8 +148,9 @@ export function ProjectInspector() {
         projectId: activeProject.id,
         userId: session.user.id,
         fileId: targetPreview.file_id,
-        title: "Test deterministic patch",
-        summary: "Created via smoke test UI",
+        title: "Governed patch preview placeholder",
+        summary:
+          "Generated from selected safe preview text for review handoff. This does not apply changes.",
         oldText,
         newText,
       });
@@ -172,10 +173,10 @@ export function ProjectInspector() {
 
     try {
       setIsVerifyingSandbox(true);
-      const { jobId, status } = await sandboxPreview.mutateAsync(readyPreview.id);
-      toast.success(`Sandbox verification queued: ${jobId}`);
+      const { jobId } = await sandboxPreview.mutateAsync(readyPreview.id);
+      toast.success(`Patch preview verification queued: ${jobId}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to run sandbox verification");
+      toast.error(error instanceof Error ? error.message : "Failed to verify patch preview");
     } finally {
       setIsVerifyingSandbox(false);
     }
@@ -213,13 +214,13 @@ export function ProjectInspector() {
       setIsRequestingWriteback(true);
       const result = await createWritebackRequest.mutateAsync({ snapshotId: latestSnapshot.id });
       if (result.alreadyExists) {
-        toast.info("A writeback request already exists for this snapshot.");
+        toast.info("A review handoff request already exists for this snapshot.");
       } else {
-        toast.success("Writeback review requested successfully.");
+        toast.success("Review handoff requested successfully.");
       }
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
-      console.error("Writeback request failed", {
+      console.error("Review handoff request failed", {
         snapshotId: latestSnapshot.id,
         projectId: activeProject?.id,
         userId: session?.user?.id,
@@ -229,7 +230,7 @@ export function ProjectInspector() {
         ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
         : "";
       toast.error(
-        `Failed to request writeback review: ${error.message || "Unknown error"}${supabaseDetails}`,
+        `Failed to request review handoff: ${error.message || "Unknown error"}${supabaseDetails}`,
       );
     } finally {
       setIsRequestingWriteback(false);
@@ -243,10 +244,10 @@ export function ProjectInspector() {
     try {
       setIsSubmittingWriteback(true);
       await submitWritebackRequest.mutateAsync(latestRequest.id);
-      toast.success("Writeback review submitted successfully.");
+      toast.success("Review handoff submitted successfully.");
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
-      console.error("Writeback submit failed", {
+      console.error("Review handoff submit failed", {
         requestId: latestRequest.id,
         projectId: activeProject?.id,
         userId: session?.user?.id,
@@ -256,7 +257,7 @@ export function ProjectInspector() {
         ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
         : "";
       toast.error(
-        `Failed to submit writeback review: ${error.message || "Unknown error"}${supabaseDetails}`,
+        `Failed to submit review handoff: ${error.message || "Unknown error"}${supabaseDetails}`,
       );
     } finally {
       setIsSubmittingWriteback(false);
@@ -271,17 +272,17 @@ export function ProjectInspector() {
       setIsApprovingWriteback(true);
       await approveWritebackRequest.mutateAsync({
         requestId: latestRequest.id,
-        reviewerNote: "Approved via Agent Workspace",
+        reviewerNote: "Approved for working-copy export via Agent Workspace",
       });
-      toast.success("Writeback request approved successfully.");
+      toast.success("Review handoff approved for working-copy export.");
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
-      console.error("Writeback approval failed", { requestId: latestRequest.id, error });
+      console.error("Review handoff approval failed", { requestId: latestRequest.id, error });
       const supabaseDetails = error?.code
         ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
         : "";
       toast.error(
-        `Failed to approve writeback request: ${error.message || "Unknown error"}${supabaseDetails}`,
+        `Failed to approve review handoff: ${error.message || "Unknown error"}${supabaseDetails}`,
       );
     } finally {
       setIsApprovingWriteback(false);
@@ -296,17 +297,17 @@ export function ProjectInspector() {
       setIsRejectingWriteback(true);
       await rejectWritebackRequest.mutateAsync({
         requestId: latestRequest.id,
-        reviewerNote: "Rejected via Agent Workspace",
+        reviewerNote: "Rejected during review handoff via Agent Workspace",
       });
-      toast.success("Writeback request rejected.");
+      toast.success("Review handoff rejected.");
     } catch (err) {
       const error = err as Error & { code?: string; details?: string; hint?: string };
-      console.error("Writeback rejection failed", { requestId: latestRequest.id, error });
+      console.error("Review handoff rejection failed", { requestId: latestRequest.id, error });
       const supabaseDetails = error?.code
         ? ` (Code: ${error.code}) ${error.details || ""} ${error.hint || ""}`
         : "";
       toast.error(
-        `Failed to reject writeback request: ${error.message || "Unknown error"}${supabaseDetails}`,
+        `Failed to reject review handoff: ${error.message || "Unknown error"}${supabaseDetails}`,
       );
     } finally {
       setIsRejectingWriteback(false);
@@ -382,14 +383,16 @@ export function ProjectInspector() {
     ? canSubmitWriteback
       ? {
           key: "submitWriteback",
-          label: isSubmittingWriteback ? "Submitting review..." : "Submit writeback request",
+          label: isSubmittingWriteback ? "Submitting handoff..." : "Submit review handoff request",
           disabled: isSubmittingWriteback,
           onClick: handleSubmitWriteback,
         }
       : canApproveRejectWriteback
         ? {
             key: "approveWriteback",
-            label: isApprovingWriteback ? "Approving request..." : "Approve writeback request",
+            label: isApprovingWriteback
+              ? "Approving handoff..."
+              : "Approve exportable working-copy request",
             disabled: isApprovingWriteback || isRejectingWriteback,
             onClick: handleApproveWriteback,
           }
@@ -410,16 +413,14 @@ export function ProjectInspector() {
             : canRequestWriteback
               ? {
                   key: "requestWriteback",
-                  label: isRequestingWriteback
-                    ? "Requesting review..."
-                    : "Request source writeback review",
+                  label: isRequestingWriteback ? "Requesting handoff..." : "Request review handoff",
                   disabled: isRequestingWriteback,
                   onClick: handleRequestWriteback,
                 }
               : hasReadyPatchPreview
                 ? {
                     key: "runSandbox",
-                    label: isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification",
+                    label: isVerifyingSandbox ? "Verifying preview..." : "Verify patch preview",
                     disabled: isVerifyingSandbox,
                     onClick: handleRunSandbox,
                   }
@@ -551,7 +552,7 @@ export function ProjectInspector() {
                     onClick={handleRunSandbox}
                   >
                     {isVerifyingSandbox && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                    {isVerifyingSandbox ? "Verifying sandbox..." : "Run sandbox verification"}
+                    {isVerifyingSandbox ? "Verifying preview..." : "Verify patch preview"}
                   </Button>
                 )}
               {patchPreviews.some((p) => p.status === "ready") && (
@@ -575,9 +576,7 @@ export function ProjectInspector() {
                   onClick={handleRequestWriteback}
                 >
                   {isRequestingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  {isRequestingWriteback
-                    ? "Requesting review..."
-                    : "Request source writeback review"}
+                  {isRequestingWriteback ? "Requesting handoff..." : "Request review handoff"}
                 </Button>
               )}
               {canSubmitWriteback && !isPrimaryAction("submitWriteback") && (
@@ -590,8 +589,8 @@ export function ProjectInspector() {
                 >
                   {isSubmittingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                   {isSubmittingWriteback
-                    ? "Submitting review..."
-                    : "Submit writeback request for review"}
+                    ? "Submitting handoff..."
+                    : "Submit review handoff request"}
                 </Button>
               )}
               {canApproveRejectWriteback && (
@@ -605,7 +604,9 @@ export function ProjectInspector() {
                       onClick={handleApproveWriteback}
                     >
                       {isApprovingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                      {isApprovingWriteback ? "Approving request..." : "Approve writeback request"}
+                      {isApprovingWriteback
+                        ? "Approving handoff..."
+                        : "Approve exportable working-copy request"}
                     </Button>
                   )}
                   <Button
@@ -616,7 +617,7 @@ export function ProjectInspector() {
                     onClick={handleRejectWriteback}
                   >
                     {isRejectingWriteback && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                    {isRejectingWriteback ? "Rejecting request..." : "Reject writeback request"}
+                    {isRejectingWriteback ? "Rejecting handoff..." : "Reject review handoff"}
                   </Button>
                 </>
               )}
