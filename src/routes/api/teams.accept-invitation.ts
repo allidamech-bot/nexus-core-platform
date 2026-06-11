@@ -4,10 +4,49 @@ import { createClient } from "@supabase/supabase-js";
 import { getRequestCorrelationId, withLogContext, safeErrorLog } from "@/lib/safeLogging";
 import type { Database } from "@/integrations/supabase/types";
 
-const supabaseAdmin = createClient<Database>(
-  process.env.VITE_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-);
+function jsonResponse(payload: Record<string, unknown>, status: number, correlationId: string) {
+  return Response.json(
+    { ...payload, correlationId },
+    {
+      status,
+      headers: { "x-correlation-id": correlationId },
+    },
+  );
+}
+
+function getSupabaseEnv(): {
+  url: string;
+  serviceRoleKey: string;
+  publishableKey: string;
+} {
+  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const publishableKey =
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.SUPABASE_ANON_KEY ??
+    process.env.VITE_SUPABASE_ANON_KEY;
+
+  const missing = [
+    ...(!url ? ["SUPABASE_URL or VITE_SUPABASE_URL"] : []),
+    ...(!serviceRoleKey ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
+    ...(!publishableKey
+      ? [
+          "SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_ANON_KEY, or VITE_SUPABASE_ANON_KEY",
+        ]
+      : []),
+  ];
+
+  if (missing.length > 0) {
+    throw new Error(`Missing Supabase environment variable(s): ${missing.join(", ")}.`);
+  }
+
+  return {
+    url: url as string,
+    serviceRoleKey: serviceRoleKey as string,
+    publishableKey: publishableKey as string,
+  };
+}
 
 export const Route = createFileRoute("/api/teams/accept-invitation")({
   server: {
@@ -18,11 +57,32 @@ export const Route = createFileRoute("/api/teams/accept-invitation")({
           const authHeader = request.headers.get("Authorization");
           if (!authHeader) return new Response("Unauthorized", { status: 401 });
 
-          const supabaseUserClient = createClient<Database>(
-            process.env.VITE_SUPABASE_URL || "",
-            process.env.VITE_SUPABASE_ANON_KEY || "",
-            { global: { headers: { Authorization: authHeader } } },
-          );
+          let env: ReturnType<typeof getSupabaseEnv>;
+          try {
+            env = getSupabaseEnv();
+          } catch (error) {
+            console.error(
+              "[teams] Missing Supabase environment",
+              withLogContext({ correlationId }, safeErrorLog(error)),
+            );
+            return jsonResponse(
+              {
+                error: "supabase_env_missing",
+                message:
+                  "Supabase environment variables are required before invitations can be accepted.",
+              },
+              503,
+              correlationId,
+            );
+          }
+
+          const supabaseUserClient = createClient<Database>(env.url, env.publishableKey, {
+            global: { headers: { Authorization: authHeader } },
+            auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+          });
+          const supabaseAdmin = createClient<Database>(env.url, env.serviceRoleKey, {
+            auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+          });
 
           const {
             data: { user },
