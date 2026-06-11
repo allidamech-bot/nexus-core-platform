@@ -8,10 +8,20 @@ import type { Database } from "@/integrations/supabase/types";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock");
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_test_mock";
 
-const supabaseAdmin = createClient<Database>(
-  process.env.VITE_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-);
+function getSupabaseAdminEnv() {
+  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    const missing = [
+      ...(!url ? ["SUPABASE_URL or VITE_SUPABASE_URL"] : []),
+      ...(!serviceRoleKey ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
+    ];
+    throw new Error(`Missing Supabase environment variable(s): ${missing.join(", ")}.`);
+  }
+
+  return { url, serviceRoleKey };
+}
 
 export const Route = createFileRoute("/api/billing/webhook")({
   server: {
@@ -32,6 +42,28 @@ export const Route = createFileRoute("/api/billing/webhook")({
           } catch (err) {
             console.error("Webhook signature verification failed.", err);
             return new Response(`Webhook Error: ${(err as Error).message}`, { status: 400 });
+          }
+
+          let supabaseAdmin: ReturnType<typeof createClient<Database>>;
+          try {
+            const env = getSupabaseAdminEnv();
+            supabaseAdmin = createClient<Database>(env.url, env.serviceRoleKey, {
+              auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+            });
+          } catch (error) {
+            console.error(
+              "[billing] Missing Supabase environment",
+              withLogContext({ correlationId }, { message: (error as Error).message }),
+            );
+            return Response.json(
+              {
+                error: "supabase_env_missing",
+                message:
+                  "Supabase environment variables are required before billing webhooks can be processed.",
+                correlationId,
+              },
+              { status: 503, headers: { "x-correlation-id": correlationId } },
+            );
           }
 
           switch (event.type) {
