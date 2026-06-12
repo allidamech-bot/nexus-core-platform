@@ -17,6 +17,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTeamsAcceptInvitationRouteImport } from './routes/api/teams.accept-invitation'
 import { Route as ApiProjectsWritebackReviewRouteImport } from './routes/api/projects.writeback-review'
@@ -76,6 +77,11 @@ const AppThreadIdRoute = AppThreadIdRouteImport.update({
   id: '/$threadId',
   path: '/$threadId',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
@@ -247,6 +255,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
   '/app/settings': typeof AppSettingsRoute
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/api/chat'
+    | '/api/health'
     | '/app/$threadId'
     | '/app/admin'
     | '/app/settings'
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/api/chat'
+    | '/api/health'
     | '/app/$threadId'
     | '/app/admin'
     | '/app/settings'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/api/chat'
+    | '/api/health'
     | '/app/$threadId'
     | '/app/admin'
     | '/app/settings'
@@ -365,6 +377,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiBillingCheckoutSessionRoute: typeof ApiBillingCheckoutSessionRoute
   ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
   ApiEnterpriseAuditExportRoute: typeof ApiEnterpriseAuditExportRoute
@@ -442,6 +455,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/$threadId'
       preLoaderRoute: typeof AppThreadIdRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
       id: '/api/chat'
@@ -601,6 +621,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiBillingCheckoutSessionRoute: ApiBillingCheckoutSessionRoute,
   ApiBillingWebhookRoute: ApiBillingWebhookRoute,
   ApiEnterpriseAuditExportRoute: ApiEnterpriseAuditExportRoute,

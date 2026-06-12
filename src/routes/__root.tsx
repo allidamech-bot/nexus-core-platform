@@ -8,7 +8,6 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/lib/auth";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 import { ThemeProvider, useTheme } from "@/features/theme/themeContext";
 import { createCorrelationId, safeErrorLog, withLogContext } from "@/lib/safeLogging";
@@ -133,6 +132,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
@@ -167,10 +167,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LocaleProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <Outlet />
-            <ThemeAwareToaster />
-          </AuthProvider>
+          <Outlet />
+          <ThemeAwareToaster />
         </ThemeProvider>
       </LocaleProvider>
     </QueryClientProvider>
