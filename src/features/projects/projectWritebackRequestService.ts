@@ -106,7 +106,7 @@ function asIssues(value: Json): PatchSandboxIssue[] {
 function toWritebackRequest(row: {
   id: string;
   project_id: string;
-  patch_preview_id: string;
+  patch_preview_id: string | null;
   snapshot_id: string;
   requested_by: string;
   reviewed_by: string | null;
@@ -129,6 +129,10 @@ function toWritebackRequest(row: {
   required_approvals?: number | null;
   current_approvals?: number | null;
 }): ProjectWritebackRequest {
+  if (!row.patch_preview_id) {
+    throw new Error("Writeback request is missing its patch preview link.");
+  }
+
   return {
     id: row.id,
     projectId: row.project_id,
