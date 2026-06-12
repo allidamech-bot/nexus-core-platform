@@ -2,14 +2,22 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { LanguageSwitcher } from "@/features/i18n/LanguageSwitcher";
 import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
 
 export const Route = createFileRoute("/login")({
-  component: LoginPage,
+  component: LoginRoute,
 });
+
+function LoginRoute() {
+  return (
+    <AuthProvider>
+      <LoginPage />
+    </AuthProvider>
+  );
+}
 
 function LoginPage() {
   const navigate = useNavigate();

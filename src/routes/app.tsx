@@ -29,7 +29,7 @@ import {
   PanelRightOpen,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { ProjectWorkspaceProvider } from "@/features/projects/ProjectWorkspaceProvider";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { projectKeys, useArchiveProjectMutation } from "@/features/projects/projectQueries";
@@ -51,8 +51,16 @@ import {
 } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/app")({
-  component: AppLayout,
+  component: AppRoute,
 });
+
+function AppRoute() {
+  return (
+    <AuthProvider>
+      <AppLayout />
+    </AuthProvider>
+  );
+}
 
 function AppLayout() {
   const { session, loading, signOut, error } = useAuth();

@@ -2,13 +2,21 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { AuthNotice, AuthShell, Field, friendlyAuthError } from "./login";
 import { useLocale } from "@/features/i18n/localeContext";
 
 export const Route = createFileRoute("/signup")({
-  component: SignupPage,
+  component: SignupRoute,
 });
+
+function SignupRoute() {
+  return (
+    <AuthProvider>
+      <SignupPage />
+    </AuthProvider>
+  );
+}
 
 function SignupPage() {
   const navigate = useNavigate();
