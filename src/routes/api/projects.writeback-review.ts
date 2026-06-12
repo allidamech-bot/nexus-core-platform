@@ -107,6 +107,10 @@ function asIssues(value: Json): PatchSandboxIssue[] {
 function toWritebackRequest(
   row: Database["public"]["Tables"]["project_writeback_requests"]["Row"],
 ): ProjectWritebackRequest {
+  if (!row.patch_preview_id) {
+    throw new Error("Writeback request is missing its patch preview link.");
+  }
+
   return {
     id: row.id,
     projectId: row.project_id,
