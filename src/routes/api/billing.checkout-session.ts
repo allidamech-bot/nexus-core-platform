@@ -1,11 +1,17 @@
 import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
-import Stripe from "stripe";
 import { getRequestCorrelationId, withLogContext } from "@/lib/safeLogging";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock");
+async function createStripeClient() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error("STRIPE_SECRET_KEY not configured");
+  }
+  const { default: Stripe } = await import("stripe");
+  return new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
+}
 
 export const Route = createFileRoute("/api/billing/checkout-session")({
   server: {
@@ -47,6 +53,24 @@ export const Route = createFileRoute("/api/billing/checkout-session")({
             );
           }
 
+          let stripe;
+          try {
+            stripe = await createStripeClient();
+          } catch (error) {
+            console.error(
+              "[billing] Stripe configuration error",
+              withLogContext({ correlationId }, { message: (error as Error).message }),
+            );
+            return Response.json(
+              {
+                error: "billing_not_configured",
+                message: "Billing is not configured for this runtime environment.",
+                correlationId,
+              },
+              { status: 503 },
+            );
+          }
+
           const { data: sub } = await supabase
             .from("user_subscriptions")
             .select("stripe_customer_id")
@@ -77,6 +101,10 @@ export const Route = createFileRoute("/api/billing/checkout-session")({
             headers: { "Content-Type": "application/json" },
           });
         } catch (error) {
+          console.error(
+            "[billing] Checkout session error",
+            withLogContext({ correlationId }, { message: (error as Error).message }),
+          );
           return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });
         }
       },
