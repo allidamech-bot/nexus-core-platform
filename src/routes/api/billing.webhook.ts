@@ -1,14 +1,19 @@
 import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
-import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { getRequestCorrelationId, withLogContext } from "@/lib/safeLogging";
 import type { Database } from "@/integrations/supabase/types";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock");
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_test_mock";
+async function createStripeClient() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error("STRIPE_SECRET_KEY not configured");
+  }
+  const { default: Stripe } = await import("stripe");
+  return new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
+}
 
-function getSupabaseAdminEnv() {
+async function getSupabaseAdminEnv() {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -34,19 +39,55 @@ export const Route = createFileRoute("/api/billing/webhook")({
             return new Response("No signature", { status: 400 });
           }
 
-          const body = await request.text();
-          let event: Stripe.Event;
+          let stripe;
+          try {
+            stripe = await createStripeClient();
+          } catch (error) {
+            console.error(
+              "[billing] Stripe configuration error",
+              withLogContext({ correlationId }, { message: (error as Error).message }),
+            );
+            return Response.json(
+              {
+                error: "billing_not_configured",
+                message: "Billing is not configured for this runtime environment.",
+                correlationId,
+              },
+              { status: 503 },
+            );
+          }
 
+          const body = await request.text();
+          const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+          if (!webhookSecret) {
+            console.error(
+              "[billing] Missing webhook secret",
+              withLogContext({ correlationId }, {}),
+            );
+            return Response.json(
+              {
+                error: "billing_not_configured",
+                message: "Billing webhook secret not configured.",
+                correlationId,
+              },
+              { status: 503 },
+            );
+          }
+
+          let event: import("stripe").Stripe.Event;
           try {
             event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
           } catch (err) {
-            console.error("Webhook signature verification failed.", err);
+            console.error(
+              "[billing] Webhook signature verification failed",
+              withLogContext({ correlationId }, { message: (err as Error).message }),
+            );
             return new Response(`Webhook Error: ${(err as Error).message}`, { status: 400 });
           }
 
           let supabaseAdmin: ReturnType<typeof createClient<Database>>;
           try {
-            const env = getSupabaseAdminEnv();
+            const env = await getSupabaseAdminEnv();
             supabaseAdmin = createClient<Database>(env.url, env.serviceRoleKey, {
               auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
             });
@@ -144,7 +185,10 @@ export const Route = createFileRoute("/api/billing/webhook")({
 
           return new Response(JSON.stringify({ received: true }), { status: 200 });
         } catch (error) {
-          console.error("Webhook processing failed", error);
+          console.error(
+            "[billing] Webhook processing failed",
+            withLogContext({ correlationId }, { message: (error as Error).message }),
+          );
           return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });
         }
       },
