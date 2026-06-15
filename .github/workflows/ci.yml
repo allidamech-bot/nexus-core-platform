@@ -49,26 +49,28 @@ jobs:
 
       - name: Preflight persisted E2E secrets
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
-          E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
+          SECRET_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SECRET_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SECRET_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SECRET_E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          SECRET_E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          SECRET_E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
+          SECRET_E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
         run: |
           missing=()
-          for name in \
-            SUPABASE_URL \
-            SUPABASE_PUBLISHABLE_KEY \
-            SUPABASE_SERVICE_ROLE_KEY \
-            E2E_ADMIN_EMAIL \
-            E2E_ADMIN_PASSWORD \
-            E2E_NON_ADMIN_EMAIL \
-            E2E_NON_ADMIN_PASSWORD
+          for pair in \
+            "SECRET_SUPABASE_URL:SUPABASE_URL" \
+            "SECRET_SUPABASE_PUBLISHABLE_KEY:SUPABASE_PUBLISHABLE_KEY" \
+            "SECRET_SUPABASE_SERVICE_ROLE_KEY:SUPABASE_SERVICE_ROLE_KEY" \
+            "SECRET_E2E_ADMIN_EMAIL:E2E_ADMIN_EMAIL" \
+            "SECRET_E2E_ADMIN_PASSWORD:E2E_ADMIN_PASSWORD" \
+            "SECRET_E2E_NON_ADMIN_EMAIL:E2E_NON_ADMIN_EMAIL" \
+            "SECRET_E2E_NON_ADMIN_PASSWORD:E2E_NON_ADMIN_PASSWORD"
           do
-            if [ -z "${!name}" ]; then
-              missing+=("$name")
+            secret_name="${pair%%:*}"
+            public_name="${pair#*:}"
+            if [ -z "${!secret_name}" ]; then
+              missing+=("$public_name")
             fi
           done
 
@@ -80,13 +82,46 @@ jobs:
 
       - name: E2E
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
-          E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
-        run: pnpm test:e2e
+          SECRET_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SECRET_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SECRET_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SECRET_E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          SECRET_E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          SECRET_E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
+          SECRET_E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
+        run: |
+          missing=()
+          for pair in \
+            "SECRET_SUPABASE_URL:SUPABASE_URL" \
+            "SECRET_SUPABASE_PUBLISHABLE_KEY:SUPABASE_PUBLISHABLE_KEY" \
+            "SECRET_SUPABASE_SERVICE_ROLE_KEY:SUPABASE_SERVICE_ROLE_KEY" \
+            "SECRET_E2E_ADMIN_EMAIL:E2E_ADMIN_EMAIL" \
+            "SECRET_E2E_ADMIN_PASSWORD:E2E_ADMIN_PASSWORD" \
+            "SECRET_E2E_NON_ADMIN_EMAIL:E2E_NON_ADMIN_EMAIL" \
+            "SECRET_E2E_NON_ADMIN_PASSWORD:E2E_NON_ADMIN_PASSWORD"
+          do
+            secret_name="${pair%%:*}"
+            public_name="${pair#*:}"
+            if [ -z "${!secret_name}" ]; then
+              missing+=("$public_name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            export SUPABASE_URL="$SECRET_SUPABASE_URL"
+            export SUPABASE_PUBLISHABLE_KEY="$SECRET_SUPABASE_PUBLISHABLE_KEY"
+            export SUPABASE_SERVICE_ROLE_KEY="$SECRET_SUPABASE_SERVICE_ROLE_KEY"
+            export VITE_SUPABASE_URL="$SECRET_SUPABASE_URL"
+            export VITE_SUPABASE_PUBLISHABLE_KEY="$SECRET_SUPABASE_PUBLISHABLE_KEY"
+            export E2E_ADMIN_EMAIL="$SECRET_E2E_ADMIN_EMAIL"
+            export E2E_ADMIN_PASSWORD="$SECRET_E2E_ADMIN_PASSWORD"
+            export E2E_NON_ADMIN_EMAIL="$SECRET_E2E_NON_ADMIN_EMAIL"
+            export E2E_NON_ADMIN_PASSWORD="$SECRET_E2E_NON_ADMIN_PASSWORD"
+            export PERSISTED_GOVERNED_E2E=1
+            echo "Persisted governed workflow E2E enabled."
+          else
+            export PERSISTED_GOVERNED_E2E=0
+            printf 'Persisted governed workflow E2E disabled; missing secret-backed env var(s): %s\n' "${missing[*]}"
+          fi
+
+          pnpm test:e2e
