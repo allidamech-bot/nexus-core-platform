@@ -47,5 +47,46 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Preflight persisted E2E secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
+          E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
+        run: |
+          missing=()
+          for name in \
+            SUPABASE_URL \
+            SUPABASE_PUBLISHABLE_KEY \
+            SUPABASE_SERVICE_ROLE_KEY \
+            E2E_ADMIN_EMAIL \
+            E2E_ADMIN_PASSWORD \
+            E2E_NON_ADMIN_EMAIL \
+            E2E_NON_ADMIN_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Persisted governed workflow E2E will skip; missing secret-backed env var(s): %s\n' "${missing[*]}"
+          else
+            echo "Persisted governed workflow E2E secret-backed env is configured."
+          fi
+
       - name: E2E
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
+          E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
         run: pnpm test:e2e
