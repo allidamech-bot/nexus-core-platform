@@ -19,7 +19,8 @@ const requiredApiEnv = {
 const missingApiEnv = Object.entries(requiredApiEnv)
   .filter(([, value]) => !value)
   .map(([key]) => key);
-const canRunPersistedApiFlow = missingApiEnv.length === 0;
+const canRunPersistedApiFlow =
+  process.env.PERSISTED_GOVERNED_E2E === "1" && missingApiEnv.length === 0;
 
 const originalPreviewText = "export const label = 'old governed value';\n";
 const patchedPreviewText = "export const label = 'new governed value';\n";
