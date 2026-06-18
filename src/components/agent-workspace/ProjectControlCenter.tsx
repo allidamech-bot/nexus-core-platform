@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
-import { projectKeys } from "@/features/projects/projectQueries";
+import {
+  createProjectAttachedThread,
+  logThreadContextSelection,
+} from "@/features/projects/projectService";
 import { ProjectSelectorDialog } from "@/components/agent-workspace/ProjectSelectorDialog";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
@@ -46,22 +49,40 @@ export function ProjectControlCenter() {
     setCreatingSession(true);
     try {
       const title = project.name?.slice(0, 60) || "New Session";
-      const { data: thread, error: threadError } = await supabase
-        .from("threads")
-        .insert({ user_id: session.user.id, title, mode: "engineering" })
-        .select()
-        .single();
-
-      if (threadError) throw threadError;
+      const status = project.latest_job?.status ?? project.status;
+      const thread = await createProjectAttachedThread({
+        userId: session.user.id,
+        title,
+        projectId: project.id,
+        projectName: project.name,
+      });
 
       await supabase.from("messages").insert({
         thread_id: thread.id,
         user_id: session.user.id,
         role: "user",
-        parts: [{ type: "text", text: `Starting session for project: ${project.name}` }] as never,
+        parts: [
+          {
+            type: "text",
+            text: `Workspace handoff for ${project.name}. Source type: ${project.source_type}. Status: ${status}. Nexus Core will use the governed preview, review, and export flow for this project.`,
+          },
+        ] as never,
       });
 
+      await logThreadContextSelection({
+        threadId: thread.id,
+        projectId: project.id,
+        userId: session.user.id,
+        action: "attached_project",
+        metadata: {
+          project_name: project.name,
+          source_type: project.source_type,
+          status,
+        },
+      }).catch(() => undefined);
+
       qc.invalidateQueries({ queryKey: ["threads"] });
+      qc.invalidateQueries({ queryKey: ["thread", thread.id] });
       navigate({ to: "/app/$threadId", params: { threadId: thread.id } });
     } catch {
       toast.error("Failed to create session for this project.");
