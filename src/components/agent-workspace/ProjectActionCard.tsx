@@ -1,4 +1,5 @@
 import { Archive, FileArchive, FolderOpen, FolderSync, Sparkles, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
@@ -13,6 +14,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useLocale } from "@/features/i18n/localeContext";
 import { GithubRepoSelector } from "@/features/github/GithubRepoSelector";
 import { Github } from "lucide-react";
+import { ProjectSelectorDialog } from "@/components/agent-workspace/ProjectSelectorDialog";
 
 export function ProjectActionCard() {
   const { session } = useAuth();
@@ -22,6 +24,7 @@ export function ProjectActionCard() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { t } = useLocale();
+  const [selectorOpen, setSelectorOpen] = useState(false);
 
   if (!session) return null;
 
@@ -51,6 +54,12 @@ export function ProjectActionCard() {
     } catch {
       toast.error("Failed to seed demo workspace.");
     }
+  }
+
+  async function handleSelectProject(projectId: string) {
+    setSelectedProjectId(projectId);
+    setSelectorOpen(false);
+    toast.success("Project selected.");
   }
 
   return (
@@ -121,12 +130,8 @@ export function ProjectActionCard() {
         />
 
         <button
-          onClick={() => {
-            const sidebar = document.querySelector('[data-project-sidebar="true"]');
-            if (sidebar) {
-              sidebar.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
+          type="button"
+          onClick={() => setSelectorOpen(true)}
           className="group flex min-h-[88px] min-w-0 items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left text-sm font-medium shadow-sm transition-colors hover:bg-surface-elevated"
         >
           <div className="grid size-11 place-items-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-surface-elevated">
@@ -139,6 +144,12 @@ export function ProjectActionCard() {
             </span>
           </div>
         </button>
+
+        <ProjectSelectorDialog
+          open={selectorOpen}
+          onOpenChange={setSelectorOpen}
+          onSelect={handleSelectProject}
+        />
 
         <GithubRepoSelector
           onSuccess={setSelectedProjectId}
