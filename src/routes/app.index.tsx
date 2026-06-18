@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocale } from "@/features/i18n/localeContext";
 import { ProjectActionCard } from "@/components/agent-workspace/ProjectActionCard";
+import { ProjectControlCenter } from "@/components/agent-workspace/ProjectControlCenter";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
 import { checkQuota } from "@/features/governance/governanceService";
 import { governanceKeys } from "@/features/governance/governanceQueries";
@@ -361,6 +362,7 @@ function AppIndex() {
         )}
 
         {!activeProject && session && <ProjectActionCard />}
+        {activeProject && <ProjectControlCenter />}
       </div>
 
       <PricingUpgradeModal

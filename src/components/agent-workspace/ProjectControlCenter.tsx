@@ -1,0 +1,182 @@
+import { Archive, FileArchive, FolderSync, Loader2, MessageSquarePlus } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
+import { projectKeys } from "@/features/projects/projectQueries";
+import { ProjectSelectorDialog } from "@/components/agent-workspace/ProjectSelectorDialog";
+import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
+import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
+import type { ProjectWithLatestJob } from "@/features/projects/types";
+import { useLocale } from "@/features/i18n/localeContext";
+
+const PIPELINE_STEPS = [
+  { id: "source", label: "Source Package" },
+  { id: "preview", label: "Safe Preview" },
+  { id: "review", label: "Review Gate" },
+  { id: "export", label: "Working Copy Export" },
+] as const;
+
+export function ProjectControlCenter() {
+  const { session } = useAuth();
+  const { activeProject, setSelectedProjectId } = useProjectWorkspace();
+  const { t } = useLocale();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [creatingSession, setCreatingSession] = useState(false);
+
+  if (!session || !activeProject) return null;
+
+  const project = activeProject;
+
+  const previewReady =
+    project.status === "indexed_manifest" ||
+    project.status === "completed" ||
+    project.latest_job?.status === "completed" ||
+    project.latest_job?.status === "indexing_mocked";
+
+  const currentPipelineIndex = previewReady ? 1 : 0;
+
+  async function handleNewSession() {
+    if (creatingSession || !session) return;
+    setCreatingSession(true);
+    try {
+      const title = project.name?.slice(0, 60) || "New Session";
+      const { data: thread, error: threadError } = await supabase
+        .from("threads")
+        .insert({ user_id: session.user.id, title, mode: "engineering" })
+        .select()
+        .single();
+
+      if (threadError) throw threadError;
+
+      await supabase.from("messages").insert({
+        thread_id: thread.id,
+        user_id: session.user.id,
+        role: "user",
+        parts: [{ type: "text", text: `Starting session for project: ${project.name}` }] as never,
+      });
+
+      qc.invalidateQueries({ queryKey: ["threads"] });
+      navigate({ to: "/app/$threadId", params: { threadId: thread.id } });
+    } catch {
+      toast.error("Failed to create session for this project.");
+    } finally {
+      setCreatingSession(false);
+    }
+  }
+
+  function handleSelectProject(projectId: string) {
+    setSelectedProjectId(projectId);
+    setSelectorOpen(false);
+    toast.success("Project switched.");
+  }
+
+  return (
+    <div className="mx-auto mt-5 flex w-full max-w-none min-w-0 flex-col gap-4 md:max-w-3xl">
+      <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm md:p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-base font-bold text-foreground">{project.name}</span>
+              <ProjectStatusBadge status={project.status} />
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="font-mono uppercase tracking-wider">{project.source_type}</span>
+              <span className="text-border">|</span>
+              <span>Updated {new Date(project.updated_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleNewSession}
+              disabled={creatingSession}
+              className="flex min-h-[44px] items-center gap-2 rounded-xl bg-accent px-4 text-sm font-bold text-accent-foreground shadow-lg transition-colors hover:bg-accent/90 disabled:opacity-50"
+            >
+              {creatingSession ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <MessageSquarePlus className="size-4" />
+              )}
+              Continue Workspace
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectorOpen(true)}
+              className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated"
+            >
+              <FolderSync className="size-4" />
+              Choose Different
+            </button>
+
+            <ProjectUploadDialog
+              userId={session.user.id}
+              defaultMode="zip"
+              onSuccess={setSelectedProjectId}
+              trigger={
+                <button className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated">
+                  <FileArchive className="size-4" />
+                  Upload Another
+                </button>
+              }
+            />
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Governed Pipeline
+          </div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {PIPELINE_STEPS.map((step, idx) => {
+              const isCurrent = idx === currentPipelineIndex;
+              const isCompleted = idx < currentPipelineIndex;
+              const isFuture = idx > currentPipelineIndex;
+
+              return (
+                <div
+                  key={step.id}
+                  className={`rounded-xl border px-3 py-2.5 text-center transition-colors ${
+                    isCompleted
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : isCurrent
+                        ? "border-accent/30 bg-accent/10"
+                        : "border-border bg-background/40"
+                  }`}
+                >
+                  <div
+                    className={`text-[10px] font-semibold uppercase tracking-wider ${
+                      isCompleted
+                        ? "text-emerald-400"
+                        : isCurrent
+                          ? "text-accent"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {step.label}
+                  </div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    {isCompleted ? "Ready" : isCurrent ? "In Progress" : "Up Next"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <ProjectSelectorDialog
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        onSelect={handleSelectProject}
+      />
+    </div>
+  );
+}
