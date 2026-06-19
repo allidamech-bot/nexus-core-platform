@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useProjectsQuery } from "@/features/projects/projectQueries";
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 import { Loader2, FolderOpen } from "lucide-react";
+import { useLocale } from "@/features/i18n/localeContext";
 
 export function ProjectSelectorDialog({
   open,
@@ -15,25 +16,26 @@ export function ProjectSelectorDialog({
 }) {
   const { data: projects = [], isLoading, error } = useProjectsQuery(open);
   const normalizedError = useMemo(() => (error instanceof Error ? error : null), [error]);
+  const { t } = useLocale();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-border bg-background p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-border px-6 py-5">
-          <DialogTitle className="text-xl tracking-tight">Choose Existing Project</DialogTitle>
+          <DialogTitle className="text-xl tracking-tight">{t("chooseExistingProject")}</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
           {isLoading && (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
-              Loading projects...
+              {t("loadingProjects")}
             </div>
           )}
 
           {normalizedError && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              Failed to load projects: {normalizedError.message}
+              {t("failedToLoadProjects")}: {normalizedError.message}
             </div>
           )}
 
@@ -42,8 +44,8 @@ export function ProjectSelectorDialog({
               <div className="grid size-10 place-items-center rounded-lg border border-border bg-surface text-muted-foreground">
                 <FolderOpen className="size-5" />
               </div>
-              <p className="text-sm font-medium text-foreground">No existing projects</p>
-              <p className="text-xs">Upload a project or try the demo workspace to get started.</p>
+              <p className="text-sm font-medium text-foreground">{t("noExistingProjects")}</p>
+              <p className="text-xs">{t("noProjectsBody")}</p>
             </div>
           )}
 

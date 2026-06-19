@@ -1,4 +1,4 @@
-import { Archive, FileArchive, FolderSync, Loader2, MessageSquarePlus } from "lucide-react";
+import { FileArchive, FolderSync, Loader2, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ import {
 import { ProjectSelectorDialog } from "@/components/agent-workspace/ProjectSelectorDialog";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
-import type { ProjectWithLatestJob } from "@/features/projects/types";
+
 import { useLocale } from "@/features/i18n/localeContext";
 
 const PIPELINE_STEPS = [
@@ -57,7 +57,7 @@ export function ProjectControlCenter() {
         projectName: project.name,
       });
 
-      await supabase.from("messages").insert({
+      const { error } = await supabase.from("messages").insert({
         thread_id: thread.id,
         user_id: session.user.id,
         role: "user",
@@ -68,6 +68,7 @@ export function ProjectControlCenter() {
           },
         ] as never,
       });
+      if (error) throw error;
 
       await logThreadContextSelection({
         threadId: thread.id,
@@ -125,10 +126,7 @@ export function ProjectControlCenter() {
               ) : (
                 <MessageSquarePlus className="size-4" />
               )}
-              Continue Workspace
-              <span className="text-[10px] font-normal text-muted-foreground">
-                {t("continueEngineeringSession")}
-              </span>
+              {t("continueWorkspace")}
             </button>
 
             <button
@@ -137,7 +135,7 @@ export function ProjectControlCenter() {
               className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated"
             >
               <FolderSync className="size-4" />
-              Choose Different
+              {t("chooseDifferent")}
             </button>
 
             <ProjectUploadDialog
@@ -147,7 +145,7 @@ export function ProjectControlCenter() {
               trigger={
                 <button className="flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-bold text-foreground transition-colors hover:bg-surface-elevated">
                   <FileArchive className="size-4" />
-                  Upload Another
+                  {t("uploadAnother")}
                 </button>
               }
             />
@@ -156,13 +154,12 @@ export function ProjectControlCenter() {
 
         <div className="mt-5">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Governed Pipeline
+            {t("governedPipeline")}
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             {PIPELINE_STEPS.map((step, idx) => {
               const isCurrent = idx === currentPipelineIndex;
               const isCompleted = idx < currentPipelineIndex;
-              const isFuture = idx > currentPipelineIndex;
 
               return (
                 <div
@@ -187,7 +184,7 @@ export function ProjectControlCenter() {
                     {step.label}
                   </div>
                   <div className="mt-1 text-[11px] text-muted-foreground">
-                    {isCompleted ? "Ready" : isCurrent ? "In Progress" : "Up Next"}
+                    {isCompleted ? t("ready") : isCurrent ? t("inProgress") : t("upNext")}
                   </div>
                 </div>
               );
