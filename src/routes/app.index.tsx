@@ -317,8 +317,7 @@ function AppIndex() {
                       {thread.title || t("untitled")}
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {t("activeSession" as any) || "Active"} •{" "}
-                      {new Date(thread.updated_at).toLocaleDateString()}
+                      {t("activeSession")} • {new Date(thread.updated_at).toLocaleDateString()}
                     </span>
                   </div>
                   <Link
@@ -326,7 +325,7 @@ function AppIndex() {
                     params={{ threadId: thread.id }}
                     className="flex min-h-[44px] items-center justify-center rounded-xl bg-accent/10 px-4 text-[13px] font-semibold text-accent transition-colors hover:bg-accent/20 active:bg-accent/30"
                   >
-                    {t("viewPatch" as any) || "View Patch"}
+                    {t("viewPatch") || "Open session"}
                   </Link>
                 </div>
               ))}

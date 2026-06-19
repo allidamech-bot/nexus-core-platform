@@ -126,6 +126,9 @@ export function ProjectControlCenter() {
                 <MessageSquarePlus className="size-4" />
               )}
               Continue Workspace
+              <span className="text-[10px] font-normal text-muted-foreground">
+                {t("continueEngineeringSession")}
+              </span>
             </button>
 
             <button
