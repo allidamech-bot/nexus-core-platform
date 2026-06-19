@@ -363,6 +363,12 @@ export const translations = {
     viewPatch: "Open session",
     continueWorkspace: "Continue Workspace",
     continueEngineeringSession: "Starts a new engineering session",
+    inProgress: "In Progress",
+    upNext: "Up Next",
+    ready: "Ready",
+    governedPipeline: "Governed Pipeline",
+    chooseDifferent: "Choose Different",
+    uploadAnother: "Upload Another",
     archiveSession: "Archive session",
     archiveSessionConfirm: "Archive this session?",
     sessionArchived: "Session archived. You can start a new task now.",
@@ -405,9 +411,12 @@ export const translations = {
     notSupportedItem3: "No GitHub OAuth, embeddings, or payment checkout yet",
 
     // Project list / status
+    chooseExistingProject: "Choose Existing Project",
     loadingProjects: "Loading projects",
     noProjectsYet: "No projects yet",
+    noExistingProjects: "No existing projects",
     noProjectsBody: "Upload a ZIP to create the first real project record and ingestion job.",
+    failedToLoadProjects: "Failed to load projects",
 
     // Folder import
     folderImport: "Folder import",
@@ -472,7 +481,6 @@ export const translations = {
     authRls: "Auth/RLS",
     active: "Active",
     projectIngestion: "Project ingestion",
-    ready: "Ready",
     aiGateway: "AI gateway",
     configuredByEnv: "Configured by env",
     executionRuntime: "Execution runtime",
@@ -1043,7 +1051,13 @@ export const translations = {
     viewPatch: "فتح الجلسة",
     continueWorkspace: "استمرار مساحة العمل",
     continueEngineeringSession: "يبدأ جلسة هندسية جديدة",
-    archiveSession: "\u0623\u0631\u0634\u0641 \u0627\u0644\u062c\u0644\u0633\u0629",
+    inProgress: "قيد التنفيذ",
+    upNext: "الخطوة التالية",
+    ready: "جاهز",
+    governedPipeline: "الخطة المحوكَمة",
+    chooseDifferent: "اختر مشروعًا مختلفًا",
+    uploadAnother: "رفع مشروع آخر",
+    archiveSession: "أرشف الجلسة",
     archiveSessionConfirm:
       "\u0647\u0644 \u062a\u0631\u064a\u062f \u0623\u0631\u0634\u0641\u0629 \u0647\u0630\u0647 \u0627\u0644\u062c\u0644\u0633\u0629\u061f",
     sessionArchived:
@@ -1091,9 +1105,12 @@ export const translations = {
     notSupportedItem3: "لا يوجد دعم لـ GitHub OAuth أو التضمينات أو الدفع بعد",
 
     // Project list / status
+    chooseExistingProject: "اختر مشروعًا موجودًا",
     loadingProjects: "جارٍ تحميل المشاريع",
     noProjectsYet: "لا توجد مشاريع بعد",
+    noExistingProjects: "لا توجد مشاريع موجودة",
     noProjectsBody: "ارفع ملف ZIP لإنشاء أول سجل مشروع رسمي ومهمة استيعاب.",
+    failedToLoadProjects: "فشل تحميل المشاريع",
 
     // Folder import
     folderImport: "استيراد مجلد",
@@ -1158,7 +1175,6 @@ export const translations = {
     authRls: "المصادقة وسياسات RLS",
     active: "نشِط",
     projectIngestion: "استيعاب المشاريع",
-    ready: "جاهز",
     aiGateway: "بوابة الذكاء الاصطناعي",
     configuredByEnv: "مهيّأة عبر البيئة",
     executionRuntime: "بيئة التنفيذ",
