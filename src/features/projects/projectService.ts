@@ -300,6 +300,39 @@ export async function logProjectSecurityEvent(input: {
   if (error) throw error;
 }
 
+export async function createProjectAttachedThread(input: {
+  userId: string;
+  title: string;
+  projectId: string;
+  projectName: string;
+  mode?: string;
+}): Promise<{
+  id: string;
+  project_id: string | null;
+  project_name: string | null;
+  title: string;
+  mode: string;
+  status: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}> {
+  const { data, error } = await supabase
+    .from("threads")
+    .insert({
+      user_id: input.userId,
+      title: input.title,
+      mode: input.mode ?? "engineering",
+      project_id: input.projectId,
+      project_name: input.projectName,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function attachProjectToThread(input: {
   threadId: string;
   projectId: string;

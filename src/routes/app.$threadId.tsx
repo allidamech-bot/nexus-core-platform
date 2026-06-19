@@ -507,10 +507,10 @@ function ThreadView() {
                   <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
                     <FolderOpen className="size-6" />
                   </div>
-                  <h3 className="mb-2 text-lg font-bold text-foreground">
-                    No active project context
-                  </h3>
-                  <p className="text-sm">Seed a demo workspace or upload a project to begin.</p>
+                  <h3 className="mb-2 text-lg font-bold text-foreground">No project context</h3>
+                  <p className="text-sm">
+                    Choose or attach a project from the left panel to start.
+                  </p>
                 </div>
               </div>
             )}
@@ -539,6 +539,16 @@ function ThreadView() {
                 Agent #{threadId.slice(0, 6)} / {mode}
               </div>
             </div>
+            {projectContextProject && (
+              <div className="flex shrink-0 items-center gap-2">
+                <ProjectStatusBadge
+                  status={projectContextProject.latest_job?.status ?? projectContextProject.status}
+                />
+                <span className="hidden max-w-[120px] truncate text-xs text-muted-foreground md:inline">
+                  {projectContextName}
+                </span>
+              </div>
+            )}
             <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
