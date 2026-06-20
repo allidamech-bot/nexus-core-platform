@@ -31,8 +31,9 @@ function LoginPage() {
     if (session) navigate({ to: "/app" });
   }, [session, navigate]);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function signIn() {
+    if (loading) return;
+
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !password) {
       toast.error(t("authEmailPasswordRequired"));
@@ -41,20 +42,29 @@ function LoginPage() {
 
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       });
+
       if (error) {
         toast.error(friendlyAuthError(error, t));
         return;
       }
-      navigate({ to: "/app" });
+
+      if (data.session) {
+        navigate({ to: "/app" });
+      }
     } catch (error) {
       toast.error(friendlyAuthError(error, t));
     } finally {
       setLoading(false);
     }
+  }
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void signIn();
   }
 
   return (
@@ -78,6 +88,8 @@ function LoginPage() {
           required
         />
         <button
+          type="button"
+          onClick={() => void signIn()}
           disabled={loading}
           className="w-full bg-foreground text-background font-semibold rounded-md py-2.5 text-sm disabled:opacity-50"
         >

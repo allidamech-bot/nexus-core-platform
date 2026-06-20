@@ -151,7 +151,11 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
               name: fileName,
               size_bytes: Buffer.from(f.content).length,
               is_text: true,
+              is_previewable: true,
+              skipped: false,
+              indexed_at: new Date().toISOString(),
               mime_type: f.path.endsWith(".json") ? "application/json" : "text/plain",
+              checksum: crypto.createHash("sha256").update(f.content).digest("hex"),
               content_sha256: crypto.createHash("sha256").update(f.content).digest("hex"),
             };
           });

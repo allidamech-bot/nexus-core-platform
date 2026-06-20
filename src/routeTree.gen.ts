@@ -28,6 +28,7 @@ import { Route as ApiProjectsSeedDemoRouteImport } from './routes/api/projects.s
 import { Route as ApiProjectsSandboxVerifyRouteImport } from './routes/api/projects.sandbox-verify'
 import { Route as ApiProjectsSandboxJobsRouteImport } from './routes/api/projects.sandbox-jobs'
 import { Route as ApiProjectsProcessZipRouteImport } from './routes/api/projects.process-zip'
+import { Route as ApiProjectsGovernedDemoChainRouteImport } from './routes/api/projects.governed-demo-chain'
 import { Route as ApiProjectsGithubImportRouteImport } from './routes/api/projects.github-import'
 import { Route as ApiProjectsAiProviderReadinessRouteImport } from './routes/api/projects.ai-provider-readiness'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
@@ -139,6 +140,12 @@ const ApiProjectsProcessZipRoute = ApiProjectsProcessZipRouteImport.update({
   path: '/api/projects/process-zip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProjectsGovernedDemoChainRoute =
+  ApiProjectsGovernedDemoChainRouteImport.update({
+    id: '/api/projects/governed-demo-chain',
+    path: '/api/projects/governed-demo-chain',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsGithubImportRoute = ApiProjectsGithubImportRouteImport.update({
   id: '/api/projects/github-import',
   path: '/api/projects/github-import',
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
+  '/api/projects/governed-demo-chain': typeof ApiProjectsGovernedDemoChainRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/sandbox-jobs': typeof ApiProjectsSandboxJobsRoute
   '/api/projects/sandbox-verify': typeof ApiProjectsSandboxVerifyRoute
@@ -238,6 +246,7 @@ export interface FileRoutesByTo {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
+  '/api/projects/governed-demo-chain': typeof ApiProjectsGovernedDemoChainRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/sandbox-jobs': typeof ApiProjectsSandboxJobsRoute
   '/api/projects/sandbox-verify': typeof ApiProjectsSandboxVerifyRoute
@@ -269,6 +278,7 @@ export interface FileRoutesById {
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
+  '/api/projects/governed-demo-chain': typeof ApiProjectsGovernedDemoChainRoute
   '/api/projects/process-zip': typeof ApiProjectsProcessZipRoute
   '/api/projects/sandbox-jobs': typeof ApiProjectsSandboxJobsRoute
   '/api/projects/sandbox-verify': typeof ApiProjectsSandboxVerifyRoute
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/github-import'
+    | '/api/projects/governed-demo-chain'
     | '/api/projects/process-zip'
     | '/api/projects/sandbox-jobs'
     | '/api/projects/sandbox-verify'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/github-import'
+    | '/api/projects/governed-demo-chain'
     | '/api/projects/process-zip'
     | '/api/projects/sandbox-jobs'
     | '/api/projects/sandbox-verify'
@@ -360,6 +372,7 @@ export interface FileRouteTypes {
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/github-import'
+    | '/api/projects/governed-demo-chain'
     | '/api/projects/process-zip'
     | '/api/projects/sandbox-jobs'
     | '/api/projects/sandbox-verify'
@@ -387,6 +400,7 @@ export interface RootRouteChildren {
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsAiProviderReadinessRoute: typeof ApiProjectsAiProviderReadinessRoute
   ApiProjectsGithubImportRoute: typeof ApiProjectsGithubImportRoute
+  ApiProjectsGovernedDemoChainRoute: typeof ApiProjectsGovernedDemoChainRoute
   ApiProjectsProcessZipRoute: typeof ApiProjectsProcessZipRoute
   ApiProjectsSandboxJobsRoute: typeof ApiProjectsSandboxJobsRoute
   ApiProjectsSandboxVerifyRoute: typeof ApiProjectsSandboxVerifyRoute
@@ -533,6 +547,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsProcessZipRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/governed-demo-chain': {
+      id: '/api/projects/governed-demo-chain'
+      path: '/api/projects/governed-demo-chain'
+      fullPath: '/api/projects/governed-demo-chain'
+      preLoaderRoute: typeof ApiProjectsGovernedDemoChainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/projects/github-import': {
       id: '/api/projects/github-import'
       path: '/api/projects/github-import'
@@ -631,6 +652,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsAiProviderReadinessRoute: ApiProjectsAiProviderReadinessRoute,
   ApiProjectsGithubImportRoute: ApiProjectsGithubImportRoute,
+  ApiProjectsGovernedDemoChainRoute: ApiProjectsGovernedDemoChainRoute,
   ApiProjectsProcessZipRoute: ApiProjectsProcessZipRoute,
   ApiProjectsSandboxJobsRoute: ApiProjectsSandboxJobsRoute,
   ApiProjectsSandboxVerifyRoute: ApiProjectsSandboxVerifyRoute,
