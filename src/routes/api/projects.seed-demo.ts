@@ -132,7 +132,7 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
             .insert({
               user_id: userId,
               name: "Demo Workspace",
-              source_type: "demo",
+              source_type: "manual",
               status: "indexed_manifest",
             })
             .select()
