@@ -46,6 +46,9 @@ export async function login(page: Page, credentials: { email?: string; password?
   }
 
   await page.goto("/login");
+  await expect(page.locator('[data-e2e="login-form"]')).toHaveAttribute("data-hydrated", "true", {
+    timeout: 20_000,
+  });
   await page.getByLabel("Email").fill(credentials.email!);
   await page.getByLabel("Password").fill(credentials.password!);
   await page.getByRole("button", { name: "Sign in" }).click();
