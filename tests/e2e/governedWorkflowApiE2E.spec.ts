@@ -122,8 +122,120 @@ test.describe("H.1.1 API-backed governed workflow route validation", () => {
       test.skip(true, `BLOCKED_RLS_PERSISTED_ENV_REQUIRED: missing ${missing}`);
     });
   } else {
-    test("BLOCKED_RLS_PERSISTED_ROUTE_REQUIRED: full persisted route chain needs a product-safe fixture path", async () => {
-      test.skip(true, persistedRlsRouteBlocker);
+    test("runs a full persisted governed route chain through RLS-owned artifacts", async ({
+      browser,
+      request,
+    }) => {
+      const ownerContext = await browser.newContext();
+      const adminContext = await browser.newContext();
+      const ownerPage = await ownerContext.newPage();
+      const adminPage = await adminContext.newPage();
+
+      const { adminCredentials, getAccessToken, login, nonAdminCredentials } =
+        await import("./helpers");
+
+      try {
+        await login(ownerPage, nonAdminCredentials);
+        const ownerToken = await getAccessToken(ownerPage);
+        expect(ownerToken).toBeTruthy();
+
+        await login(adminPage, adminCredentials);
+        const adminToken = await getAccessToken(adminPage);
+        expect(adminToken).toBeTruthy();
+
+        const ownerHeaders = { Authorization: `Bearer ${ownerToken}` };
+        const adminHeaders = { Authorization: `Bearer ${adminToken}` };
+
+        const seed = await request.post("/api/projects/seed-demo", {
+          headers: ownerHeaders,
+          data: {},
+        });
+        await expect(seed).toBeOK();
+        const seedPayload = (await seed.json()) as { projectId: string };
+        expect(seedPayload.projectId).toBeTruthy();
+
+        const chain = await request.post("/api/projects/governed-demo-chain", {
+          headers: ownerHeaders,
+          data: { projectId: seedPayload.projectId },
+        });
+        await expect(chain).toBeOK();
+        const chainPayload = (await chain.json()) as {
+          previewId: string;
+          snapshotId: string;
+          requestId: string;
+          status: string;
+          routeArtifactMap: Record<string, string[]>;
+        };
+        expect(chainPayload.status).toBe("draft");
+        expect(chainPayload.routeArtifactMap["/api/projects/governed-demo-chain"]).toEqual([
+          "project_patch_previews",
+          "project_patch_snapshots",
+          "project_patch_snapshot_files",
+          "project_writeback_requests",
+        ]);
+
+        const submitted = await request.post("/api/projects/writeback-review", {
+          headers: ownerHeaders,
+          data: { requestId: chainPayload.requestId, action: "submit" },
+        });
+        await expect(submitted).toBeOK();
+        await expect(submitted.json()).resolves.toMatchObject({ status: "submitted" });
+
+        const ownerApproval = await request.post("/api/projects/writeback-review", {
+          headers: ownerHeaders,
+          data: {
+            requestId: chainPayload.requestId,
+            action: "approve",
+            reviewerNote: "Owner approval for persisted governed E2E.",
+          },
+        });
+        await expect(ownerApproval).toBeOK();
+
+        const adminApproval = await request.post("/api/projects/writeback-review", {
+          headers: adminHeaders,
+          data: {
+            requestId: chainPayload.requestId,
+            action: "approve",
+            reviewerNote: "Admin approval for persisted governed E2E.",
+          },
+        });
+        await expect(adminApproval).toBeOK();
+        await expect(adminApproval.json()).resolves.toMatchObject({ status: "approved" });
+
+        const executed = await request.post("/api/projects/writeback-execute", {
+          headers: ownerHeaders,
+          data: { requestId: chainPayload.requestId },
+        });
+        await expect(executed).toBeOK();
+        const executePayload = (await executed.json()) as {
+          workingCopyId: string;
+          alreadyExists: boolean;
+          workingCopy: { metadata: Record<string, unknown> };
+        };
+        expect(executePayload.workingCopyId).toBeTruthy();
+        expect(executePayload.workingCopy.metadata).toMatchObject({
+          originalProjectFilesModified: false,
+          originalTextPreviewsModified: false,
+          objectStorageModified: false,
+        });
+
+        const exported = await request.get(
+          `/api/projects/working-copy-export?workingCopyId=${executePayload.workingCopyId}`,
+          { headers: ownerHeaders },
+        );
+        await expect(exported).toBeOK();
+        const exportPayload = await exported.json();
+        expect(exportPayload.manifest).toMatchObject({
+          originalProjectFilesModified: false,
+          sourceZipOverwritten: false,
+          objectStorageModified: false,
+          productionWritebackIncluded: false,
+          exportLimitedToWorkingCopyText: true,
+        });
+      } finally {
+        await ownerContext.close();
+        await adminContext.close();
+      }
     });
   }
 });
