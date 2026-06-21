@@ -66,6 +66,10 @@ async function createAuthenticatedClient(request: Request, context: CorrelationC
   return { supabase, userId };
 }
 
+const seedProjectName = "Demo Workspace";
+const seedProjectSourceType = "manual";
+const seedProjectStatus = "indexed_manifest";
+
 const mockFiles = [
   {
     path: "package.json",
@@ -127,13 +131,29 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
 
         try {
           const { supabase, userId } = auth;
+
+          const { data: existingProjects, error: existingProjectError } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("name", seedProjectName)
+            .eq("source_type", seedProjectSourceType)
+            .limit(1);
+
+          if (existingProjectError) throw existingProjectError;
+
+          const existingProject = existingProjects?.[0];
+          if (existingProject?.id) {
+            return jsonResponse({ projectId: existingProject.id }, 200, context);
+          }
+
           const { data: project, error: projectError } = await supabase
             .from("projects")
             .insert({
               user_id: userId,
-              name: "Demo Workspace",
-              source_type: "manual",
-              status: "indexed_manifest",
+              name: seedProjectName,
+              source_type: seedProjectSourceType,
+              status: seedProjectStatus,
             })
             .select()
             .single();
