@@ -147,7 +147,7 @@ test.describe("H.1.1 API-backed governed workflow route validation", () => {
         const adminHeaders = { Authorization: `Bearer ${adminToken}` };
 
         const seed = await request.post("/api/projects/seed-demo", {
-          headers: ownerHeaders,
+          headers: adminHeaders,
           data: {},
         });
         await expect(seed).toBeOK();

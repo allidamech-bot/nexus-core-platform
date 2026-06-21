@@ -79,7 +79,7 @@ test.describe("credentialed E2E boundaries", () => {
     await page.getByRole("button", { name: /Upload ZIP|رفع ملف ZIP/ }).click();
     await page.locator('input[type="file"][accept*=".zip"]').setInputFiles(fixtures.invalidText);
     await expect(page.getByRole("button", { name: /Create project|إنشاء المشروع/ })).toBeDisabled();
-    await expect(page.getByText(/Only \.zip|ZIP/)).toBeVisible();
+    await expect(page.getByText(/Only \.zip archives are supported/i)).toBeVisible();
 
     await page.locator('input[type="file"][accept*=".zip"]').setInputFiles(fixtures.validZip);
     await expect(page.getByText(/small-valid-project/i)).toBeVisible();
