@@ -77,6 +77,16 @@ jobs:
             echo "Persisted governed workflow E2E secret-backed env is configured."
           fi
 
+      - name: Preflight Supabase credential login
+        env:
+          SECRET_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SECRET_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SECRET_E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          SECRET_E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          SECRET_E2E_NON_ADMIN_EMAIL: ${{ secrets.E2E_NON_ADMIN_EMAIL }}
+          SECRET_E2E_NON_ADMIN_PASSWORD: ${{ secrets.E2E_NON_ADMIN_PASSWORD }}
+        run: node .github/scripts/preflightAuth.mjs
+
       - name: E2E
         env:
           SECRET_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

@@ -66,6 +66,10 @@ async function createAuthenticatedClient(request: Request, context: CorrelationC
   return { supabase, userId };
 }
 
+const seedProjectName = "Demo Workspace";
+const seedProjectSourceType = "manual";
+const seedProjectStatus = "indexed_manifest";
+
 const mockFiles = [
   {
     path: "package.json",
@@ -127,20 +131,37 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
 
         try {
           const { supabase, userId } = auth;
-          const { data: project, error: projectError } = await supabase
+          const { data: existingProject, error: existingProjectError } = await supabase
             .from("projects")
-            .insert({
-              user_id: userId,
-              name: "Demo Workspace",
-              source_type: "demo",
-              status: "indexed_manifest",
-            })
-            .select()
-            .single();
+            .select("id")
+            .eq("user_id", userId)
+            .eq("source_type", seedProjectSourceType)
+            .eq("name", seedProjectName)
+            .limit(1)
+            .maybeSingle();
 
-          if (projectError) throw projectError;
+          if (existingProjectError) throw existingProjectError;
 
-          const projectId = project.id;
+          let projectId: string;
+
+          if (existingProject) {
+            projectId = existingProject.id;
+          } else {
+            const { data: project, error: projectError } = await supabase
+              .from("projects")
+              .insert({
+                user_id: userId,
+                name: seedProjectName,
+                source_type: seedProjectSourceType,
+                status: seedProjectStatus,
+              })
+              .select()
+              .single();
+
+            if (projectError) throw projectError;
+
+            projectId = project.id;
+          }
 
           const filesToInsert = mockFiles.map((f) => {
             const fileName = f.path.split("/").pop() || "unknown";
@@ -162,7 +183,7 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
 
           const { data: insertedFiles, error: filesError } = await supabase
             .from("project_files")
-            .insert(filesToInsert)
+            .upsert(filesToInsert, { onConflict: "project_id,path" })
             .select();
 
           if (filesError) throw filesError;
@@ -181,7 +202,7 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
 
           const { error: previewsError } = await supabase
             .from("project_text_previews")
-            .insert(previewsToInsert);
+            .upsert(previewsToInsert, { onConflict: "project_id,file_id" });
 
           if (previewsError) throw previewsError;
 

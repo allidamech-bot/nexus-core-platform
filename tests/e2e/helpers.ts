@@ -46,10 +46,51 @@ export async function login(page: Page, credentials: { email?: string; password?
   }
 
   await page.goto("/login");
+  await expect(page.locator('[data-e2e="login-form"]')).toHaveAttribute("data-hydrated", "true", {
+    timeout: 20_000,
+  });
   await page.getByLabel("Email").fill(credentials.email!);
   await page.getByLabel("Password").fill(credentials.password!);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/app(?:\/)?$/);
+
+  try {
+    await expect(page).toHaveURL(/\/app(?:\/)?$/, { timeout: 20_000 });
+  } catch (error) {
+    const hasEmail = typeof credentials.email === "string" && credentials.email.length > 0;
+    const hasPassword = typeof credentials.password === "string" && credentials.password.length > 0;
+
+    const bodyText = await page
+      .locator("body")
+      .innerText()
+      .then((text) => text.slice(0, 1200))
+      .catch(() => "<unable to read body text>");
+
+    const toastLocator = page.locator("[data-sonner-toast]");
+    const toastCount = await toastLocator.count().catch(() => 0);
+    const toastTexts: string[] = [];
+    for (let index = 0; index < toastCount; index += 1) {
+      const text = await toastLocator
+        .nth(index)
+        .innerText()
+        .catch(() => "");
+      if (text) toastTexts.push(text);
+    }
+
+    const currentUrl = page.url();
+
+    const hint = [
+      `Login did not reach /app after sign-in.`,
+      `Current URL: ${currentUrl}`,
+      `Body text (first 1200 chars): ${bodyText}`,
+      toastTexts.length > 0
+        ? `Visible toast(s): ${toastTexts.join(" | ")}`
+        : "No visible sonner toasts detected.",
+      `Credentials provided: email=${hasEmail ? "string(non-empty)" : "missing/falsy"}, password=${hasPassword ? "string(non-empty)" : "missing/falsy"}`,
+      "Do not log actual credential values in production.",
+    ].join("\n");
+
+    throw new Error(hint);
+  }
 }
 
 export async function findFirstThreadId(page: Page) {

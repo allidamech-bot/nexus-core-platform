@@ -26,10 +26,15 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (session) navigate({ to: "/app" });
   }, [session, navigate]);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   async function signIn() {
     if (loading) return;
@@ -70,7 +75,12 @@ function LoginPage() {
   return (
     <AuthShell title={t("loginTitle")} subtitle={t("loginSubtitle")}>
       {authError && <AuthNotice message={friendlyAuthError(authError, t)} />}
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form
+        data-e2e="login-form"
+        data-hydrated={hydrated ? "true" : "false"}
+        onSubmit={onSubmit}
+        className="space-y-4"
+      >
         <Field
           label={t("emailLabel")}
           type="email"
