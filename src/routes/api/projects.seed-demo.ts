@@ -68,6 +68,7 @@ async function createAuthenticatedClient(request: Request, context: CorrelationC
 
 const seedProjectName = "Demo Workspace";
 const seedProjectSourceType = "manual";
+const seedProjectStatus = "indexed_manifest";
 
 const mockFiles = [
   {
@@ -152,7 +153,7 @@ export const Route = createFileRoute("/api/projects/seed-demo")({
                 user_id: userId,
                 name: seedProjectName,
                 source_type: seedProjectSourceType,
-                status: "indexed_manifest",
+                status: seedProjectStatus,
               })
               .select()
               .single();
