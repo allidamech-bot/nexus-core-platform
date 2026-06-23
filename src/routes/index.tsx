@@ -68,28 +68,28 @@ function Hero() {
       <div className="relative mx-auto max-w-5xl pt-28 pb-24 px-6 text-center animate-entrance">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-white/5 text-[12px] font-medium mb-8">
           <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-          Governed AI project workspace - Public Preview
+          Governed AI Planning Workspace - Public Preview
         </div>
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance mb-8">
-          Nexus Core moves AI changes through{" "}
-          <span className="text-accent">human review gates</span>
+          Upload your project. <span className="text-accent">Get safe context.</span> Plan changes.
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 text-pretty">
-          Ingest safe project context, shape grounded proposals, preserve no-direct-writeback
-          boundaries, and export working-copy handoffs for external human review.
+          Nexus Core ingests project archives, builds safe manifests, and produces structured plans
+          with explicit review handoffs. Import a ZIP, inspect file previews, and generate change
+          proposals.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/signup"
             className="w-full sm:w-auto px-8 py-3 bg-foreground text-background font-semibold rounded-lg hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2"
           >
-            Open Preview Access <ArrowRight className="size-4" />
+            Start Planning <ArrowRight className="size-4" />
           </Link>
           <a
             href="#workflow"
             className="w-full sm:w-auto px-8 py-3 bg-white/5 border border-border font-semibold rounded-lg hover:bg-white/10 transition-colors"
           >
-            View Governance Flow
+            How It Works
           </a>
         </div>
 
@@ -116,20 +116,20 @@ function Problem() {
             The problem
           </div>
           <h2 className="text-4xl font-bold tracking-tight mb-6">
-            Chatbots answer. Operators need grounded project plans.
+            AI tools ship suggestions without structure.
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            Most AI tools collapse suggestion, execution, and approval into one risky moment. Nexus
-            Core keeps each step explicit: safe context first, grounded proposal second, exportable
-            working copy last, with human review before anything is applied externally.
+            Most AI assistants mix up context, suggestions, and changes. Nexus Core separates these
+            into explicit phases: ingest your codebase safely, plan changes with context, then
+            export review-ready handoffs for your team.
           </p>
         </div>
         <div className="space-y-3">
           {[
-            "Hallucinated code shipped without verification",
-            "No audit trail for AI-driven changes",
-            "Approval gates ignored or invisible",
-            "Business workflows disconnected from project context",
+            "No structured planning workflow",
+            "Suggestion and execution conflated",
+            "Changes applied without review steps",
+            "No export handoff for team review",
           ].map((p) => (
             <div
               key={p}
@@ -150,28 +150,28 @@ function Problem() {
 const features = [
   {
     icon: Workflow,
-    title: "Governed pipeline",
-    body: "Move from safe previews to patch previews, review requests, working-copy export, and human apply.",
+    title: "Plan with context",
+    body: "Create structured implementation plans from indexed project context and safe text previews.",
   },
   {
     icon: ShieldCheck,
-    title: "Safe preview context",
-    body: "Use indexed manifests and limited text previews without exposing secret files or raw source broadly.",
+    title: "Safe preview only",
+    body: "File previews are limited and allowlisted. No raw source, secrets, or executables exposed.",
   },
   {
     icon: Lock,
-    title: "No direct source writeback",
-    body: "Nexus Core prepares review artifacts and exportable working copies; source mutation stays external.",
+    title: "No source mutation",
+    body: "Nexus Core prepares review artifacts and export bundles. Source files stay untouched.",
   },
   {
     icon: GitBranch,
-    title: "Grounded proposals",
-    body: "Label proposed file changes as grounded, inferred, or illustrative based on available project context.",
+    title: "Context labeling",
+    body: "Label proposed changes as grounded (seen), inferred (known path), or illustrative.",
   },
   {
     icon: Boxes,
-    title: "Exportable handoff",
-    body: "Bundle derived working-copy artifacts for manual review and external application by your team.",
+    title: "Export handoffs",
+    body: "Download JSON bundles of proposed changes for external review and manual application.",
   },
 ];
 
@@ -211,28 +211,28 @@ function Features() {
 const steps = [
   {
     n: "01",
-    title: "Project Context",
-    body: "Attach an indexed project and select safe preview context for the AI session.",
+    title: "Upload",
+    body: "Upload a ZIP archive. Nexus builds a file manifest and safe text previews.",
   },
   {
     n: "02",
-    title: "Safe Preview",
-    body: "Use manifest and allowlisted text snippets rather than direct source access.",
+    title: "Context",
+    body: "Select preview files to provide safe context for AI planning.",
   },
   {
     n: "03",
-    title: "Grounded Proposal",
-    body: "Create plans, risks, patch-preview guidance, and confidence labels.",
+    title: "Plan",
+    body: "Get structured plans: implementation steps, risks, and proposed changes.",
   },
   {
     n: "04",
-    title: "Review Gate",
-    body: "Submit review requests before creating exportable working-copy artifacts.",
+    title: "Review",
+    body: "Submit for admin review. Approval authorizes working-copy creation.",
   },
   {
     n: "05",
-    title: "Working Copy Export",
-    body: "Export the derived handoff for human review and external apply.",
+    title: "Export",
+    body: "Download JSON handoff bundle for manual review and application.",
   },
 ];
 
@@ -242,11 +242,10 @@ function How() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-16">
           <div className="font-mono text-[10px] text-accent uppercase tracking-widest mb-3">
-            Governed pipeline
+            How it works
           </div>
           <h2 className="text-4xl font-bold tracking-tight">
-            Project Context {"->"} Safe Preview {"->"} Grounded Proposal {"->"} Review Gate {"->"}{" "}
-            Working Copy Export.
+            Upload → Context → Plan → Review → Export
           </h2>
         </div>
         <div className="grid md:grid-cols-5 gap-px bg-border rounded-xl overflow-hidden border border-border">
