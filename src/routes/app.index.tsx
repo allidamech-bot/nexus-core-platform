@@ -240,10 +240,10 @@ function AppIndex() {
         ) && (
           <div className="hidden md:flex mt-6 flex-col gap-4 rounded-2xl border border-border bg-surface-elevated/50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
             {[
-              { num: 1, label: "AI Session", active: true },
-              { num: 2, label: "Safe Preview", active: false },
-              { num: 3, label: "Review Gate", active: false },
-              { num: 4, label: "Working Copy Export", active: false },
+              { num: 1, label: "Upload", active: !activeProject },
+              { num: 2, label: "Context", active: !!activeProject },
+              { num: 3, label: "Plan", active: !!activeProject },
+              { num: 4, label: "Review", active: !!activeProject },
             ].map((step, idx, arr) => (
               <div key={idx} className="flex flex-1 items-center gap-3">
                 <div className="flex items-center gap-2">
