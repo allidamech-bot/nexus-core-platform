@@ -338,17 +338,20 @@ export const translations = {
     upgradePrompt: "Upgrade to Pro for higher governance limits.",
 
     // Workspace home
-    welcomeTitle: "Welcome to your AI operations workspace.",
+    welcomeTitle: "Welcome to Nexus Core",
     welcomeSubtitle:
-      "Upload a project, inspect the safe manifest, select preview context, then open a session for structured AI planning. Execution remains disabled until the sandbox phase.",
-    tellNexusToChange: "Tell Nexus what to plan or prepare for review.",
+      "Start from an idea or upload an existing project. Nexus Core will discuss, clarify requirements, shape an MVP plan, and prepare a brief before any files exist.",
+    tellNexusToChange: "Describe your idea or existing project...",
     nexusHelperText:
-      "Nexus can plan, preview, and prepare review handoffs. Direct source writeback is disabled.",
-    examplePrompt1: "Fix the login redirect issue",
-    examplePrompt2: "Review this project and find risks",
-    examplePrompt3: "Add a pricing section",
-    examplePrompt4: "Create an implementation plan for Project Memory",
+      "Nexus Core can plan, preview, and prepare review handoffs. Direct source writeback is disabled.",
+    examplePrompt1: "I want to build a project management tool for small teams",
+    examplePrompt2: "Help me scope an MVP for a customer support chatbot",
+    examplePrompt3: "Review this project and find improvement opportunities",
+    examplePrompt4: "What core features should I plan for a fintech dashboard?",
     uploadOrImport: "Upload or import project",
+    uploadOrImportExistingProject: "Upload or import existing project",
+    uploadOrImportExistingProjectSubtitle:
+      "Bring in a ZIP archive or local folder to create a governed project with safe previews, review gates, and exportable working copies.",
     createAiSession: "Create AI session",
     creatingSession: "Creating session...",
     sessionQuotaReached:
@@ -377,6 +380,9 @@ export const translations = {
     thisSessionIsArchived: "This session is archived.",
     archiveExistingSessionToStartNewTask: "Archive an existing session to start a new task.",
     startNewTaskAfterArchiving: "Start a new task after archiving an old session.",
+    startFromIdea: "Start from an idea",
+    startFromIdeaSubtitle:
+      "Describe your concept and Nexus Core will ask clarifying questions, shape an MVP plan, and prepare a brief before any project files exist.",
     ingestionReady: "Project ingestion foundation is ready.",
     ingestionReadyBody:
       "Upload a ZIP or select a local folder to create project records, ingestion jobs, safe file inventory, and manifest context. Nexus never executes imported code.",
@@ -1027,17 +1033,20 @@ export const translations = {
     upgradePrompt: "قم بالترقية إلى خطة Pro للحصول على حدود حوكمة أعلى.",
 
     // Workspace home
-    welcomeTitle: "أهلًا بك في مساحة عمليات الذكاء الاصطناعي.",
+    welcomeTitle: "أهلًا بك في Nexus Core",
     welcomeSubtitle:
-      "ارفع مشروعك، وراجع البيان الآمن، واختر سياق المعاينة، ثم افتح جلسة للتخطيط المنظّم بالذكاء الاصطناعي. يبقى التنفيذ معطّلًا حتى مرحلة البيئة المعزولة.",
-    tellNexusToChange: "اكتب هنا ماذا تريد من Nexus أن يفعل في مشروعك.",
+      "ابدأ من فكرة أو ارفع مشروعًا موجودًا. ستناقش Nexus Core المتطلبات، وتشكل خطة MVP، وتعد موجزًا قبل وجود أي ملفات.",
+    tellNexusToChange: "صف فكرتك أو مشروعك الموجود...",
     nexusHelperText:
-      "يمكن لـ Nexus التخطيط وتحضير التغييرات في المشروع. التنفيذ المباشر غير مفعّل بعد.",
-    examplePrompt1: "إصلاح مشكلة إعادة التوجيه عند تسجيل الدخول",
-    examplePrompt2: "مراجعة هذا المشروع والبحث عن المخاطر",
-    examplePrompt3: "إضافة قسم للأسعار",
-    examplePrompt4: "إنشاء خطة تنفيذ لميزة ذاكرة المشروع",
+      "يمكن لـ Nexus Core التخطيط والمعاينة وتحضير عمليات التسليم للمراجعة. الكتابة المباشرة على المصدر معطّلة.",
+    examplePrompt1: "أريد بناء أداة إدارة مشاريع للفرق الصغيرة",
+    examplePrompt2: "ساعدني في تحديد نطاق MVP لروبوت دعم العملاء",
+    examplePrompt3: "مراجعة هذا المشروع وإيجاد فرص التحسين",
+    examplePrompt4: "ما هي الميزات الأساسية التي يجب التخطيط لها لمنصة مالية؟",
     uploadOrImport: "رفع أو استيراد مشروع",
+    uploadOrImportExistingProject: "رفع أو استيراد مشروع موجود",
+    uploadOrImportExistingProjectSubtitle:
+      "أحضر أرشيف ZIP أو مجلدًا محليًا لإنشاء مشروع محوكَم مع معاينات آمنة وبوابات مراجعة ونسخ عمل قابلة للتصدير.",
     createAiSession: "إنشاء جلسة ذكاء اصطناعي",
     creatingSession: "جارٍ إنشاء الجلسة...",
     sessionQuotaReached: "تم بلوغ حد الجلسات النشطة. افتح جلسة موجودة أو قم بترقية خطتك.",
@@ -1071,6 +1080,9 @@ export const translations = {
       "\u0623\u0631\u0634\u0641 \u062c\u0644\u0633\u0629 \u0645\u0648\u062c\u0648\u062f\u0629 \u0644\u0628\u062f\u0621 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629.",
     startNewTaskAfterArchiving:
       "\u0627\u0628\u062f\u0623 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629 \u0628\u0639\u062f \u0623\u0631\u0634\u0641\u0629 \u062c\u0644\u0633\u0629 \u0642\u062f\u064a\u0645\u0629.",
+    startFromIdea: "ابدأ من فكرة",
+    startFromIdeaSubtitle:
+      "صف مفهومك وستناقش Nexus Core المتطلبات، وتشكل خطة MVP، وتعد موجزًا قبل وجود أي ملفات مشروع.",
     ingestionReady: "أساس استيعاب المشاريع جاهز.",
     ingestionReadyBody:
       "ارفع ملف ZIP أو اختر مجلدًا محليًا لإنشاء سجلات المشاريع ومهام الاستيعاب وفهرس الملفات الآمن وسياق البيان. لا تنفّذ Nexus أي شيفرة مستوردة.",

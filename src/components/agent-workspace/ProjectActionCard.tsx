@@ -64,6 +64,10 @@ export function ProjectActionCard() {
 
   return (
     <div className="mx-auto mt-5 flex w-full max-w-none min-w-0 flex-col gap-3 md:max-w-3xl">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <FolderOpen className="size-3.5" />
+        {t("uploadOrImportExistingProject")}
+      </div>
       <button
         onClick={handleSeedDemo}
         disabled={seedDemoProject.isPending}
