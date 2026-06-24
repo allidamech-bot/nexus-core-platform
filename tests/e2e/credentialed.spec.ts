@@ -8,11 +8,16 @@ import {
   login,
   nonAdminCredentials,
 } from "./helpers";
+import { preflightAuthDiagnostics } from "./diagnostics";
 
 const adminTest = hasCredentials(adminCredentials) ? test : test.skip;
 const nonAdminTest = hasCredentials(nonAdminCredentials) ? test : test.skip;
 
 test.describe("credentialed E2E boundaries", () => {
+  test.beforeAll(async () => {
+    await preflightAuthDiagnostics();
+  });
+
   test.afterAll(async () => {
     await cleanupE2eFixtures();
   });
