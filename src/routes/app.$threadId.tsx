@@ -508,8 +508,9 @@ function ThreadView() {
                     <FolderOpen className="size-6" />
                   </div>
                   <h3 className="mb-2 text-lg font-bold text-foreground">No project context</h3>
-                  <p className="text-sm">
-                    Choose or attach a project from the left panel to start.
+                  <p className="text-sm mb-3">Describe your idea in the chat to start planning.</p>
+                  <p className="text-xs text-muted-foreground/70">
+                    Upload is optional - Nexus will create a draft plan before any files exist.
                   </p>
                 </div>
               </div>

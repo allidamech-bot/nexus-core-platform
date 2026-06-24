@@ -341,13 +341,13 @@ export const translations = {
     welcomeTitle: "Welcome to Nexus Core",
     welcomeSubtitle:
       "Start from an idea or upload an existing project. Nexus Core will discuss, clarify requirements, shape an MVP plan, and prepare a brief before any files exist.",
-    tellNexusToChange: "Describe your idea or existing project...",
+    tellNexusToChange: "Describe your idea...",
     nexusHelperText:
       "Nexus Core can plan, preview, and prepare review handoffs. Direct source writeback is disabled.",
-    examplePrompt1: "I want to build a project management tool for small teams",
-    examplePrompt2: "Help me scope an MVP for a customer support chatbot",
-    examplePrompt3: "Review this project and find improvement opportunities",
-    examplePrompt4: "What core features should I plan for a fintech dashboard?",
+    examplePrompt1: "I want to build a SaaS for importing products to Saudi Arabia",
+    examplePrompt2: "Turn this idea into an MVP plan",
+    examplePrompt3: "Ask me the right questions then create the first build plan",
+    examplePrompt4: "Design the screens and modules for this app",
     uploadOrImport: "Upload or import project",
     uploadOrImportExistingProject: "Upload or import existing project",
     uploadOrImportExistingProjectSubtitle:
@@ -1036,13 +1036,13 @@ export const translations = {
     welcomeTitle: "أهلًا بك في Nexus Core",
     welcomeSubtitle:
       "ابدأ من فكرة أو ارفع مشروعًا موجودًا. ستناقش Nexus Core المتطلبات، وتشكل خطة MVP، وتعد موجزًا قبل وجود أي ملفات.",
-    tellNexusToChange: "صف فكرتك أو مشروعك الموجود...",
+    tellNexusToChange: "صف فكرتك...",
     nexusHelperText:
       "يمكن لـ Nexus Core التخطيط والمعاينة وتحضير عمليات التسليم للمراجعة. الكتابة المباشرة على المصدر معطّلة.",
-    examplePrompt1: "أريد بناء أداة إدارة مشاريع للفرق الصغيرة",
-    examplePrompt2: "ساعدني في تحديد نطاق MVP لروبوت دعم العملاء",
-    examplePrompt3: "مراجعة هذا المشروع وإيجاد فرص التحسين",
-    examplePrompt4: "ما هي الميزات الأساسية التي يجب التخطيط لها لمنصة مالية؟",
+    examplePrompt1: "أريد بناء SaaS لاستيراد المنتجات إلى المملكة العربية السعودية",
+    examplePrompt2: "حوّل هذه الفكرة إلى خطة MVP",
+    examplePrompt3: "اسألني الأسئلة المناسبة ثم أنشئ أول خطة بناء",
+    examplePrompt4: "صمم الشاشات والوحدات لهذا التطبيق",
     uploadOrImport: "رفع أو استيراد مشروع",
     uploadOrImportExistingProject: "رفع أو استيراد مشروع موجود",
     uploadOrImportExistingProjectSubtitle:
