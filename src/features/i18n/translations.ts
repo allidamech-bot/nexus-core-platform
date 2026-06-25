@@ -435,6 +435,14 @@ export const translations = {
     nextActionChooseTask: "Choose next build task",
     nextActionUploadHint: "Or upload an existing project instead.",
 
+    // Guided Question Chips
+    guidedQuestionsTitle: "Guided Questions",
+    guidedChip1: "I want to build a SaaS for...",
+    guidedChip2: "The users are...",
+    guidedChip3: "The main problem is...",
+    guidedChip4: "The MVP should include...",
+    guidedChip5: "Help me choose the first build task.",
+
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
     loadingProjects: "Loading projects",
@@ -1138,20 +1146,28 @@ export const translations = {
     // Builder Brief - Conversation-to-project flow
     builderBriefStep1: "فهم الفكرة",
     builderBriefStep2: "طرح أسئلة مركزة",
-    builderBriefStep3: "مسوددة موجز MVP",
+    builderBriefStep3: "مسودة موجز MVP",
     builderBriefStep4: "خرائط الشاشات/الوحدات",
-    builderBriefStep5: "مسوددة نموذج البيانات",
+    builderBriefStep5: "مسودة نموذج البيانات",
     builderBriefStep6: "خطة البناء",
     builderBriefStep7: "اختيار المهمة التالية",
-    builderBriefUploadHint: "رفع المشروع اختياري - سننشئ مسوددة خطة قبل وجود أي ملفات.",
+    builderBriefUploadHint: "رفع المشروع اختياري - سننشئ مسودة خطة قبل وجود أي ملفات.",
 
     // Builder Next Action Bar
     nextActionTitle: "الإجراء التالي",
     nextActionDescribeIdea: "صف فكرتك لبدء خطة البناء.",
     nextActionAnswerQuestions: "الإجابة على الأسئلة",
-    nextActionDraftMvp: "مسوددة خطة MVP",
+    nextActionDraftMvp: "مسودة خطة MVP",
     nextActionChooseTask: "اختيار مهمة البناء التالية",
     nextActionUploadHint: "أو قم برفع مشروع موجود بدلاً من ذلك.",
+
+    // Guided Question Chips
+    guidedQuestionsTitle: "أسئلة موجهة",
+    guidedChip1: "أريد بناء SaaS لـ...",
+    guidedChip2: "المستخدمون هم...",
+    guidedChip3: "المشكلة الرئيسية هي...",
+    guidedChip4: "الـ MVP يجب أن يتضمن...",
+    guidedChip5: "ساعدني في اختيار مهمة البناء الأولى.",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",
