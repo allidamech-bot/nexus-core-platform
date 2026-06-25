@@ -416,6 +416,17 @@ export const translations = {
     notSupportedItem2: "No autonomous code modification or pull requests",
     notSupportedItem3: "No GitHub OAuth, embeddings, or payment checkout yet",
 
+    // Builder Brief - Conversation-to-project flow
+    builderBriefStep1: "Understand your idea",
+    builderBriefStep2: "Ask focused questions",
+    builderBriefStep3: "Draft MVP brief",
+    builderBriefStep4: "Map screens/modules",
+    builderBriefStep5: "Draft data model",
+    builderBriefStep6: "Create build plan",
+    builderBriefStep7: "Choose next task",
+    builderBriefUploadHint:
+      "Upload is optional - we'll create a draft plan before any files exist.",
+
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
     loadingProjects: "Loading projects",
@@ -1115,6 +1126,16 @@ export const translations = {
     notSupportedItem1: "لا توجد طرفية أو بيئة معزولة أو تثبيت تبعيات",
     notSupportedItem2: "لا توجد تعديلات تلقائية على الشيفرة أو طلبات دمج",
     notSupportedItem3: "لا يوجد دعم لـ GitHub OAuth أو التضمينات أو الدفع بعد",
+
+    // Builder Brief - Conversation-to-project flow
+    builderBriefStep1: "فهم الفكرة",
+    builderBriefStep2: "طرح أسئلة مركزة",
+    builderBriefStep3: "مسوددة موجز MVP",
+    builderBriefStep4: "خرائط الشاشات/الوحدات",
+    builderBriefStep5: "مسوددة نموذج البيانات",
+    builderBriefStep6: "خطة البناء",
+    builderBriefStep7: "اختيار المهمة التالية",
+    builderBriefUploadHint: "رفع المشروع اختياري - سننشئ مسوددة خطة قبل وجود أي ملفات.",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",
