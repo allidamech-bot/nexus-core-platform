@@ -442,6 +442,7 @@ export const translations = {
     guidedChip3: "The main problem is...",
     guidedChip4: "The MVP should include...",
     guidedChip5: "Help me choose the first build task.",
+    guidedHint: "Click a prompt, then press Cmd/Ctrl + Enter to send.",
 
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
@@ -1168,6 +1169,7 @@ export const translations = {
     guidedChip3: "المشكلة الرئيسية هي...",
     guidedChip4: "الـ MVP يجب أن يتضمن...",
     guidedChip5: "ساعدني في اختيار مهمة البناء الأولى.",
+    guidedHint: "انقر على أحد الأسئلة ثم اضغط Cmd/Ctrl + Enter للإرسال.",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",
