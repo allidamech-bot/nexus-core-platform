@@ -427,6 +427,14 @@ export const translations = {
     builderBriefUploadHint:
       "Upload is optional - we'll create a draft plan before any files exist.",
 
+    // Builder Next Action Bar
+    nextActionTitle: "Next Action",
+    nextActionDescribeIdea: "Describe your idea to start the build plan.",
+    nextActionAnswerQuestions: "Answer questions",
+    nextActionDraftMvp: "Draft MVP plan",
+    nextActionChooseTask: "Choose next build task",
+    nextActionUploadHint: "Or upload an existing project instead.",
+
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
     loadingProjects: "Loading projects",
@@ -1136,6 +1144,14 @@ export const translations = {
     builderBriefStep6: "خطة البناء",
     builderBriefStep7: "اختيار المهمة التالية",
     builderBriefUploadHint: "رفع المشروع اختياري - سننشئ مسوددة خطة قبل وجود أي ملفات.",
+
+    // Builder Next Action Bar
+    nextActionTitle: "الإجراء التالي",
+    nextActionDescribeIdea: "صف فكرتك لبدء خطة البناء.",
+    nextActionAnswerQuestions: "الإجابة على الأسئلة",
+    nextActionDraftMvp: "مسوددة خطة MVP",
+    nextActionChooseTask: "اختيار مهمة البناء التالية",
+    nextActionUploadHint: "أو قم برفع مشروع موجود بدلاً من ذلك.",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",
