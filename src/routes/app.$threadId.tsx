@@ -56,6 +56,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
+import { BuilderBriefPanel } from "@/components/agent-workspace/BuilderBriefPanel";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -502,18 +503,7 @@ function ThreadView() {
                 )}
               </div>
             ) : (
-              <div className="grid h-full place-items-center text-center text-muted-foreground">
-                <div>
-                  <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
-                    <FolderOpen className="size-6" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold text-foreground">No project context</h3>
-                  <p className="text-sm mb-3">Describe your idea in the chat to start planning.</p>
-                  <p className="text-xs text-muted-foreground/70">
-                    Upload is optional - Nexus will create a draft plan before any files exist.
-                  </p>
-                </div>
-              </div>
+              <BuilderBriefPanel />
             )}
           </div>
 
