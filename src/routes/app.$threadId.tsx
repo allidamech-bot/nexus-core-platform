@@ -58,6 +58,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 import { BuilderBriefPanel } from "@/components/agent-workspace/BuilderBriefPanel";
 import { BuilderNextActionBar } from "@/components/agent-workspace/BuilderNextActionBar";
+import { GuidedQuestionChips } from "@/components/agent-workspace/GuidedQuestionChips";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -507,6 +508,7 @@ function ThreadView() {
               <div className="flex flex-col items-center justify-center gap-6 p-4 md:p-6">
                 <BuilderBriefPanel />
                 <BuilderNextActionBar />
+                <GuidedQuestionChips />
               </div>
             )}
           </div>
