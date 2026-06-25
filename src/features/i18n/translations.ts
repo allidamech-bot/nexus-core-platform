@@ -444,6 +444,10 @@ export const translations = {
     guidedChip5: "Help me choose the first build task.",
     guidedHint: "Click a prompt, then press Cmd/Ctrl + Enter to send.",
 
+    // Product Builder Workspace
+    productBuilderTitle: "Product Builder",
+    productBuilderSubtitle: "Describe your idea. Nexus will shape it into an MVP plan.",
+
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
     loadingProjects: "Loading projects",
@@ -1170,6 +1174,10 @@ export const translations = {
     guidedChip4: "الـ MVP يجب أن يتضمن...",
     guidedChip5: "ساعدني في اختيار مهمة البناء الأولى.",
     guidedHint: "انقر على أحد الأسئلة ثم اضغط Cmd/Ctrl + Enter للإرسال.",
+
+    // Product Builder Workspace
+    productBuilderTitle: "منشئ المنتجات",
+    productBuilderSubtitle: "صف فكرتك. سيقوم Nexus بتشكيلها إلى خطة MVP.",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",
