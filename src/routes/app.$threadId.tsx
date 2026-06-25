@@ -57,6 +57,7 @@ import type { TranslationKey } from "@/features/i18n/translations";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 import { BuilderBriefPanel } from "@/components/agent-workspace/BuilderBriefPanel";
+import { BuilderNextActionBar } from "@/components/agent-workspace/BuilderNextActionBar";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -503,7 +504,10 @@ function ThreadView() {
                 )}
               </div>
             ) : (
-              <BuilderBriefPanel />
+              <div className="flex flex-col items-center justify-center gap-6 p-4 md:p-6">
+                <BuilderBriefPanel />
+                <BuilderNextActionBar />
+              </div>
             )}
           </div>
 
