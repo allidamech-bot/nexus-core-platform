@@ -38,6 +38,10 @@ export function GuidedQuestionChips({
           </button>
         ))}
       </div>
+
+      <div className="mt-3 text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70">
+        {t("guidedHint")}
+      </div>
     </div>
   );
 }
