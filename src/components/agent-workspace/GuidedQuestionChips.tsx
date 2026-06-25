@@ -9,8 +9,12 @@ const GUIDED_CHIPS = [
   "guidedChip5",
 ] as const;
 
-export function GuidedQuestionChips() {
-  const { t, locale } = useLocale();
+export function GuidedQuestionChips({
+  onSelectPrompt,
+}: {
+  onSelectPrompt?: (prompt: string) => void;
+}) {
+  const { t } = useLocale();
 
   return (
     <div className="w-full max-w-lg rounded-xl border border-border bg-surface-elevated/80 p-4 shadow-lg">
@@ -21,12 +25,17 @@ export function GuidedQuestionChips() {
 
       <div className="flex flex-wrap gap-2">
         {GUIDED_CHIPS.map((chip, i) => (
-          <div
+          <button
             key={i}
-            className="rounded-md border border-border/60 bg-background/40 px-3 py-1.5 text-[11px] text-muted-foreground"
+            type="button"
+            onClick={() => {
+              const prompt = t(chip as any);
+              onSelectPrompt?.(prompt);
+            }}
+            className="rounded-md border border-border/60 bg-background/40 px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-accent/10"
           >
             {t(chip as any)}
-          </div>
+          </button>
         ))}
       </div>
     </div>

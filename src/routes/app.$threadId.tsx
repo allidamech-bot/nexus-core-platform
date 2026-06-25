@@ -508,7 +508,7 @@ function ThreadView() {
               <div className="flex flex-col items-center justify-center gap-6 p-4 md:p-6">
                 <BuilderBriefPanel />
                 <BuilderNextActionBar />
-                <GuidedQuestionChips />
+                <GuidedQuestionChips onSelectPrompt={setInput} />
               </div>
             )}
           </div>
