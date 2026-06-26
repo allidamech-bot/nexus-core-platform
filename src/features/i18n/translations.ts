@@ -338,17 +338,20 @@ export const translations = {
     upgradePrompt: "Upgrade to Pro for higher governance limits.",
 
     // Workspace home
-    welcomeTitle: "Welcome to your AI operations workspace.",
+    welcomeTitle: "Welcome to Nexus Core",
     welcomeSubtitle:
-      "Upload a project, inspect the safe manifest, select preview context, then open a session for structured AI planning. Execution remains disabled until the sandbox phase.",
-    tellNexusToChange: "Tell Nexus what to plan or prepare for review.",
+      "Start from an idea or upload an existing project. Nexus Core will discuss, clarify requirements, shape an MVP plan, and prepare a brief before any files exist.",
+    tellNexusToChange: "Describe your idea...",
     nexusHelperText:
-      "Nexus can plan, preview, and prepare review handoffs. Direct source writeback is disabled.",
-    examplePrompt1: "Fix the login redirect issue",
-    examplePrompt2: "Review this project and find risks",
-    examplePrompt3: "Add a pricing section",
-    examplePrompt4: "Create an implementation plan for Project Memory",
+      "Nexus Core can plan, preview, and prepare review handoffs. Direct source writeback is disabled.",
+    examplePrompt1: "I want to build a SaaS for importing products to Saudi Arabia",
+    examplePrompt2: "Turn this idea into an MVP plan",
+    examplePrompt3: "Ask me the right questions then create the first build plan",
+    examplePrompt4: "Design the screens and modules for this app",
     uploadOrImport: "Upload or import project",
+    uploadOrImportExistingProject: "Upload or import existing project",
+    uploadOrImportExistingProjectSubtitle:
+      "Bring in a ZIP archive or local folder to create a governed project with safe previews, review gates, and exportable working copies.",
     createAiSession: "Create AI session",
     creatingSession: "Creating session...",
     sessionQuotaReached:
@@ -377,6 +380,9 @@ export const translations = {
     thisSessionIsArchived: "This session is archived.",
     archiveExistingSessionToStartNewTask: "Archive an existing session to start a new task.",
     startNewTaskAfterArchiving: "Start a new task after archiving an old session.",
+    startFromIdea: "Start from an idea",
+    startFromIdeaSubtitle:
+      "Describe your concept and Nexus Core will ask clarifying questions, shape an MVP plan, and prepare a brief before any project files exist.",
     ingestionReady: "Project ingestion foundation is ready.",
     ingestionReadyBody:
       "Upload a ZIP or select a local folder to create project records, ingestion jobs, safe file inventory, and manifest context. Nexus never executes imported code.",
@@ -409,6 +415,48 @@ export const translations = {
     notSupportedItem1: "No shell, terminal, sandbox, or dependency installation",
     notSupportedItem2: "No autonomous code modification or pull requests",
     notSupportedItem3: "No GitHub OAuth, embeddings, or payment checkout yet",
+
+    // Builder Brief - Conversation-to-project flow
+    builderBriefStep1: "Understand your idea",
+    builderBriefStep2: "Ask focused questions",
+    builderBriefStep3: "Draft MVP brief",
+    builderBriefStep4: "Map screens/modules",
+    builderBriefStep5: "Draft data model",
+    builderBriefStep6: "Create build plan",
+    builderBriefStep7: "Choose next task",
+    builderBriefUploadHint:
+      "Upload is optional - we'll create a draft plan before any files exist.",
+
+    // Builder Next Action Bar
+    nextActionTitle: "Next Action",
+    nextActionDescribeIdea: "Describe your idea to start the build plan.",
+    nextActionAnswerQuestions: "Answer questions",
+    nextActionDraftMvp: "Draft MVP plan",
+    nextActionChooseTask: "Choose next build task",
+    nextActionUploadHint: "Or upload an existing project instead.",
+
+    // Guided Question Chips
+    guidedQuestionsTitle: "Guided Questions",
+    guidedChip1: "I want to build a SaaS for...",
+    guidedChip2: "The users are...",
+    guidedChip3: "The main problem is...",
+    guidedChip4: "The MVP should include...",
+    guidedChip5: "Help me choose the first build task.",
+    guidedHint: "Click a prompt, then press Cmd/Ctrl + Enter to send.",
+
+    // Product Builder Workspace
+    productBuilderTitle: "Product Builder",
+    productBuilderSubtitle: "Describe your idea. Nexus will shape it into an MVP plan.",
+
+    // Builder Artifact Preview
+    buildPlanPreview: "Build Plan Preview",
+    previewNotPersisted: "This preview shows what the conversation will produce.",
+    draftPreviewLabel: "draft",
+    artifactMvpBrief: "MVP Brief",
+    artifactScreensModules: "Screens / Modules",
+    artifactDataModel: "Data Model Draft",
+    artifactBuildPlan: "Build Plan",
+    artifactNextTask: "Next Task",
 
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
@@ -1027,17 +1075,20 @@ export const translations = {
     upgradePrompt: "قم بالترقية إلى خطة Pro للحصول على حدود حوكمة أعلى.",
 
     // Workspace home
-    welcomeTitle: "أهلًا بك في مساحة عمليات الذكاء الاصطناعي.",
+    welcomeTitle: "أهلًا بك في Nexus Core",
     welcomeSubtitle:
-      "ارفع مشروعك، وراجع البيان الآمن، واختر سياق المعاينة، ثم افتح جلسة للتخطيط المنظّم بالذكاء الاصطناعي. يبقى التنفيذ معطّلًا حتى مرحلة البيئة المعزولة.",
-    tellNexusToChange: "اكتب هنا ماذا تريد من Nexus أن يفعل في مشروعك.",
+      "ابدأ من فكرة أو ارفع مشروعًا موجودًا. ستناقش Nexus Core المتطلبات، وتشكل خطة MVP، وتعد موجزًا قبل وجود أي ملفات.",
+    tellNexusToChange: "صف فكرتك...",
     nexusHelperText:
-      "يمكن لـ Nexus التخطيط وتحضير التغييرات في المشروع. التنفيذ المباشر غير مفعّل بعد.",
-    examplePrompt1: "إصلاح مشكلة إعادة التوجيه عند تسجيل الدخول",
-    examplePrompt2: "مراجعة هذا المشروع والبحث عن المخاطر",
-    examplePrompt3: "إضافة قسم للأسعار",
-    examplePrompt4: "إنشاء خطة تنفيذ لميزة ذاكرة المشروع",
+      "يمكن لـ Nexus Core التخطيط والمعاينة وتحضير عمليات التسليم للمراجعة. الكتابة المباشرة على المصدر معطّلة.",
+    examplePrompt1: "أريد بناء SaaS لاستيراد المنتجات إلى المملكة العربية السعودية",
+    examplePrompt2: "حوّل هذه الفكرة إلى خطة MVP",
+    examplePrompt3: "اسألني الأسئلة المناسبة ثم أنشئ أول خطة بناء",
+    examplePrompt4: "صمم الشاشات والوحدات لهذا التطبيق",
     uploadOrImport: "رفع أو استيراد مشروع",
+    uploadOrImportExistingProject: "رفع أو استيراد مشروع موجود",
+    uploadOrImportExistingProjectSubtitle:
+      "أحضر أرشيف ZIP أو مجلدًا محليًا لإنشاء مشروع محوكَم مع معاينات آمنة وبوابات مراجعة ونسخ عمل قابلة للتصدير.",
     createAiSession: "إنشاء جلسة ذكاء اصطناعي",
     creatingSession: "جارٍ إنشاء الجلسة...",
     sessionQuotaReached: "تم بلوغ حد الجلسات النشطة. افتح جلسة موجودة أو قم بترقية خطتك.",
@@ -1071,6 +1122,9 @@ export const translations = {
       "\u0623\u0631\u0634\u0641 \u062c\u0644\u0633\u0629 \u0645\u0648\u062c\u0648\u062f\u0629 \u0644\u0628\u062f\u0621 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629.",
     startNewTaskAfterArchiving:
       "\u0627\u0628\u062f\u0623 \u0645\u0647\u0645\u0629 \u062c\u062f\u064a\u062f\u0629 \u0628\u0639\u062f \u0623\u0631\u0634\u0641\u0629 \u062c\u0644\u0633\u0629 \u0642\u062f\u064a\u0645\u0629.",
+    startFromIdea: "ابدأ من فكرة",
+    startFromIdeaSubtitle:
+      "صف مفهومك وستناقش Nexus Core المتطلبات، وتشكل خطة MVP، وتعد موجزًا قبل وجود أي ملفات مشروع.",
     ingestionReady: "أساس استيعاب المشاريع جاهز.",
     ingestionReadyBody:
       "ارفع ملف ZIP أو اختر مجلدًا محليًا لإنشاء سجلات المشاريع ومهام الاستيعاب وفهرس الملفات الآمن وسياق البيان. لا تنفّذ Nexus أي شيفرة مستوردة.",
@@ -1103,6 +1157,47 @@ export const translations = {
     notSupportedItem1: "لا توجد طرفية أو بيئة معزولة أو تثبيت تبعيات",
     notSupportedItem2: "لا توجد تعديلات تلقائية على الشيفرة أو طلبات دمج",
     notSupportedItem3: "لا يوجد دعم لـ GitHub OAuth أو التضمينات أو الدفع بعد",
+
+    // Builder Brief - Conversation-to-project flow
+    builderBriefStep1: "فهم الفكرة",
+    builderBriefStep2: "طرح أسئلة مركزة",
+    builderBriefStep3: "مسودة موجز MVP",
+    builderBriefStep4: "خرائط الشاشات/الوحدات",
+    builderBriefStep5: "مسودة نموذج البيانات",
+    builderBriefStep6: "خطة البناء",
+    builderBriefStep7: "اختيار المهمة التالية",
+    builderBriefUploadHint: "رفع المشروع اختياري - سننشئ مسودة خطة قبل وجود أي ملفات.",
+
+    // Builder Next Action Bar
+    nextActionTitle: "الإجراء التالي",
+    nextActionDescribeIdea: "صف فكرتك لبدء خطة البناء.",
+    nextActionAnswerQuestions: "الإجابة على الأسئلة",
+    nextActionDraftMvp: "مسودة خطة MVP",
+    nextActionChooseTask: "اختيار مهمة البناء التالية",
+    nextActionUploadHint: "أو قم برفع مشروع موجود بدلاً من ذلك.",
+
+    // Guided Question Chips
+    guidedQuestionsTitle: "أسئلة موجهة",
+    guidedChip1: "أريد بناء SaaS لـ...",
+    guidedChip2: "المستخدمون هم...",
+    guidedChip3: "المشكلة الرئيسية هي...",
+    guidedChip4: "الـ MVP يجب أن يتضمن...",
+    guidedChip5: "ساعدني في اختيار مهمة البناء الأولى.",
+    guidedHint: "انقر على أحد الأسئلة ثم اضغط Cmd/Ctrl + Enter للإرسال.",
+
+    // Product Builder Workspace
+    productBuilderTitle: "منشئ المنتجات",
+    productBuilderSubtitle: "صف فكرتك. سيقوم Nexus بتشكيلها إلى خطة MVP.",
+
+    // Builder Artifact Preview
+    buildPlanPreview: "معاينة خطة البناء",
+    previewNotPersisted: "تُظهر هذه المعاينة ما سينتج من المحادثة.",
+    draftPreviewLabel: "مسودة",
+    artifactMvpBrief: "موجز MVP",
+    artifactScreensModules: "الشاشات / الوحدات",
+    artifactDataModel: "مسودة نموذج البيانات",
+    artifactBuildPlan: "خطة البناء",
+    artifactNextTask: "المهمة التالية",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, Loader2, AlertCircle } from "lucide-react";
+import { Send, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -170,14 +170,13 @@ function AppIndex() {
             dir="auto"
             className="w-full max-w-full break-words text-[1.45rem] font-bold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl md:leading-tight lg:text-4xl"
           >
-            Welcome to the Nexus Core governed workspace
+            {t("welcomeTitle")}
           </h1>
           <p
             dir="ltr"
             className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground md:mx-auto md:text-base"
           >
-            Safe previews, grounded proposals, review gates, and exportable working copies. Nexus
-            Core does not directly mutate source files.
+            {t("welcomeSubtitle")}
           </p>
         </div>
 
@@ -199,6 +198,10 @@ function AppIndex() {
             activeProject.latest_job?.status === "rejected")
         ) && (
           <div className="hidden md:block rounded-2xl border border-border bg-surface-elevated/80 p-3 shadow-xl md:p-4">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
+              <Sparkles className="size-3.5" />
+              {t("startFromIdea")}
+            </div>
             <div className="relative min-w-0">
               <textarea
                 value={input}

@@ -56,6 +56,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
+import { ProductBuilderWorkspace } from "@/components/agent-workspace/ProductBuilderWorkspace";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -502,17 +503,7 @@ function ThreadView() {
                 )}
               </div>
             ) : (
-              <div className="grid h-full place-items-center text-center text-muted-foreground">
-                <div>
-                  <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent">
-                    <FolderOpen className="size-6" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold text-foreground">No project context</h3>
-                  <p className="text-sm">
-                    Choose or attach a project from the left panel to start.
-                  </p>
-                </div>
-              </div>
+              <ProductBuilderWorkspace onSelectPrompt={setInput} />
             )}
           </div>
 
