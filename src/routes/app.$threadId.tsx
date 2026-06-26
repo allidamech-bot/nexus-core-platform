@@ -56,9 +56,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
-import { BuilderBriefPanel } from "@/components/agent-workspace/BuilderBriefPanel";
-import { BuilderNextActionBar } from "@/components/agent-workspace/BuilderNextActionBar";
-import { GuidedQuestionChips } from "@/components/agent-workspace/GuidedQuestionChips";
+import { ProductBuilderWorkspace } from "@/components/agent-workspace/ProductBuilderWorkspace";
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -505,11 +503,7 @@ function ThreadView() {
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-6 p-4 md:p-6">
-                <BuilderBriefPanel />
-                <BuilderNextActionBar />
-                <GuidedQuestionChips onSelectPrompt={setInput} />
-              </div>
+              <ProductBuilderWorkspace onSelectPrompt={setInput} />
             )}
           </div>
 
