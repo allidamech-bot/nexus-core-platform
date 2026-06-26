@@ -377,7 +377,9 @@ test.describe("H.1 governed workflow end-to-end validation", () => {
     expect(executeRoute).toContain("buildWorkingCopyRows");
     expect(executeRoute).toContain("project_working_copies");
     expect(executeRoute).toContain("project_working_copy_files");
-    expect(executeRoute).toContain("createPullRequestWithChanges");
+    expect(executeRoute).not.toContain("createPullRequestWithChanges");
+    expect(executeRoute).not.toContain("github_pr_url");
+    expect(executeRoute).toContain("Working copy created");
     expect(executeRoute).not.toContain('ref: "refs/heads/main"');
     expect(executeRoute).not.toContain("contents/");
     expect(githubService).toContain("Create PR");
