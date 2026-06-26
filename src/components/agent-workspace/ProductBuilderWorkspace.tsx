@@ -3,6 +3,7 @@ import { useLocale } from "@/features/i18n/localeContext";
 import { BuilderBriefPanel } from "./BuilderBriefPanel";
 import { BuilderNextActionBar } from "./BuilderNextActionBar";
 import { GuidedQuestionChips } from "./GuidedQuestionChips";
+import { BuilderArtifactPreview } from "./BuilderArtifactPreview";
 
 export function ProductBuilderWorkspace({
   onSelectPrompt,
@@ -28,6 +29,10 @@ export function ProductBuilderWorkspace({
 
         <section>
           <GuidedQuestionChips onSelectPrompt={onSelectPrompt} />
+        </section>
+
+        <section>
+          <BuilderArtifactPreview />
         </section>
 
         <section>

@@ -448,6 +448,16 @@ export const translations = {
     productBuilderTitle: "Product Builder",
     productBuilderSubtitle: "Describe your idea. Nexus will shape it into an MVP plan.",
 
+    // Builder Artifact Preview
+    buildPlanPreview: "Build Plan Preview",
+    previewNotPersisted: "This preview shows what the conversation will produce.",
+    draftPreviewLabel: "draft",
+    artifactMvpBrief: "MVP Brief",
+    artifactScreensModules: "Screens / Modules",
+    artifactDataModel: "Data Model Draft",
+    artifactBuildPlan: "Build Plan",
+    artifactNextTask: "Next Task",
+
     // Project list / status
     chooseExistingProject: "Choose Existing Project",
     loadingProjects: "Loading projects",
@@ -1178,6 +1188,16 @@ export const translations = {
     // Product Builder Workspace
     productBuilderTitle: "منشئ المنتجات",
     productBuilderSubtitle: "صف فكرتك. سيقوم Nexus بتشكيلها إلى خطة MVP.",
+
+    // Builder Artifact Preview
+    buildPlanPreview: "معاينة خطة البناء",
+    previewNotPersisted: "تُظهر هذه المعاينة ما سينتج من المحادثة.",
+    draftPreviewLabel: "مسودة",
+    artifactMvpBrief: "موجز MVP",
+    artifactScreensModules: "الشاشات / الوحدات",
+    artifactDataModel: "مسودة نموذج البيانات",
+    artifactBuildPlan: "خطة البناء",
+    artifactNextTask: "المهمة التالية",
 
     // Project list / status
     chooseExistingProject: "اختر مشروعًا موجودًا",
