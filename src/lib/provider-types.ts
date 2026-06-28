@@ -11,6 +11,17 @@ export type ProviderCapability =
 
 export type ProviderStatus = "configured" | "missing_key" | "disabled" | "error" | "rate_limited";
 
+export type ProviderHealthStatus =
+  | "healthy"
+  | "missing_key"
+  | "disabled"
+  | "rate_limited"
+  | "timeout"
+  | "provider_error"
+  | "invalid_response"
+  | "unsupported_provider"
+  | "unknown";
+
 export type TaskType = "coding" | "planning" | "summarization" | "chat" | "analysis";
 
 export interface ProviderInfo {
@@ -32,11 +43,23 @@ export interface ProviderRegistryEntry {
   status: ProviderStatus;
 }
 
+export interface ProviderHealthEntry {
+  providerId: string;
+  status: ProviderHealthStatus;
+  lastCheckedAt: number;
+  lastSuccessAt: number | null;
+  lastErrorAt: number | null;
+  lastErrorSummary: string | null;
+  consecutiveFailures: number;
+  cooldownUntil: number | null;
+}
+
 export type ExecutionErrorType =
   | "missing_key"
   | "rate_limited"
   | "provider_error"
   | "timeout"
+  | "invalid_response"
   | "no_available_provider";
 
 export interface ExecutionError {

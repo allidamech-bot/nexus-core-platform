@@ -3,6 +3,23 @@ import type { ProviderCapability, ProviderStatus, ProviderRegistryEntry } from "
 import { createProviderAdapter } from "./provider-adapter";
 import type { ProviderAdapter } from "./provider-adapter";
 
+// WARNING: Free-tier and local model IDs can change without notice.
+// Always allow model overrides via environment variables for production use.
+
+export const PROVIDER_DEFAULT_MODELS: Record<string, string> = {
+  gemini: "gemini-1.5-flash",
+  openrouter_free: "google/gemini-2.0-flash-exp:free",
+  groq: "llama-3.3-70b-versatile",
+  ollama: "qwen2.5-coder:32b",
+  lmstudio: "google/gemini-2.0-flash-thinking",
+  cerebras: "llama-3.3-70b",
+  mistral: "mistral-large-latest",
+  nvidia_nim: "nvdev/nemotron-4-34b-reward",
+  cloudflare_workers_ai: "@cf/meta/llama-3.1-70b-instruct",
+  github_models: "o1-mini",
+  huggingface: "deepseek-ai/DeepSeek-R1",
+};
+
 interface BaseProviderEntry {
   id: string;
   capabilities: ProviderCapability[];
@@ -18,7 +35,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     id: "gemini",
     capabilities: ["coding", "planning", "summarization", "structured_output", "fast_response"],
     envVar: "GEMINI_API_KEY",
-    defaultModel: "gemini-1.5-flash",
+    defaultModel: PROVIDER_DEFAULT_MODELS.gemini,
     priority: 100,
     freeTier: true,
     supportsModelEnv: "GEMINI_MODEL",
@@ -35,7 +52,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
       "vision",
     ],
     envVar: "OPENROUTER_FREE_API_KEY",
-    defaultModel: "google/gemini-2.0-flash-exp:free",
+    defaultModel: PROVIDER_DEFAULT_MODELS.openrouter_free,
     priority: 95,
     freeTier: true,
     supportsModelEnv: "OPENROUTER_FREE_MODEL",
@@ -44,7 +61,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     id: "groq",
     capabilities: ["coding", "summarization", "fast_response", "tool_calling"],
     envVar: "GROQ_API_KEY",
-    defaultModel: "llama-3.3-70b-versatile",
+    defaultModel: PROVIDER_DEFAULT_MODELS.groq,
     priority: 90,
     freeTier: true,
     supportsModelEnv: "GROQ_MODEL",
@@ -60,9 +77,10 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
       "local",
     ],
     envVar: "OLLAMA_BASE_URL",
-    defaultModel: "qwen2.5-coder:32b",
+    defaultModel: PROVIDER_DEFAULT_MODELS.ollama,
     priority: 80,
     freeTier: true,
+    supportsModelEnv: "OLLAMA_MODEL",
   },
   {
     id: "lmstudio",
@@ -75,41 +93,46 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
       "local",
     ],
     envVar: "LMSTUDIO_BASE_URL",
-    defaultModel: "google/gemini-2.0-flash-thinking",
+    defaultModel: PROVIDER_DEFAULT_MODELS.lmstudio,
     priority: 75,
     freeTier: true,
+    supportsModelEnv: "LMSTUDIO_MODEL",
   },
   {
     id: "cerebras",
     capabilities: ["coding", "summarization", "fast_response", "structured_output"],
     envVar: "CEREBRAS_API_KEY",
-    defaultModel: "llama-3.3-70b",
+    defaultModel: PROVIDER_DEFAULT_MODELS.cerebras,
     priority: 85,
     freeTier: true,
+    supportsModelEnv: "CEREBRAS_MODEL",
   },
   {
     id: "mistral",
     capabilities: ["coding", "planning", "summarization", "structured_output", "vision"],
     envVar: "MISTRAL_API_KEY",
-    defaultModel: "mistral-large-latest",
+    defaultModel: PROVIDER_DEFAULT_MODELS.mistral,
     priority: 70,
     freeTier: true,
+    supportsModelEnv: "MISTRAL_MODEL",
   },
   {
     id: "nvidia_nim",
     capabilities: ["coding", "summarization", "structured_output", "long_context"],
     envVar: "NVIDIA_NIM_API_KEY",
-    defaultModel: "nvdev/nemotron-4-34b-reward",
+    defaultModel: PROVIDER_DEFAULT_MODELS.nvidia_nim,
     priority: 60,
     freeTier: true,
+    supportsModelEnv: "NVIDIA_NIM_MODEL",
   },
   {
     id: "cloudflare_workers_ai",
     capabilities: ["coding", "summarization", "fast_response", "structured_output", "tool_calling"],
     envVar: "CF_WORKERS_AI_TOKEN",
-    defaultModel: "@cf/meta/llama-3.1-70b-instruct",
+    defaultModel: PROVIDER_DEFAULT_MODELS.cloudflare_workers_ai,
     priority: 65,
     freeTier: true,
+    supportsModelEnv: "CF_WORKERS_AI_MODEL",
   },
   {
     id: "github_models",
@@ -122,17 +145,19 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
       "vision",
     ],
     envVar: "GITHUB_TOKEN",
-    defaultModel: "o1-mini",
+    defaultModel: PROVIDER_DEFAULT_MODELS.github_models,
     priority: 55,
     freeTier: true,
+    supportsModelEnv: "GITHUB_MODELS_MODEL",
   },
   {
     id: "huggingface",
     capabilities: ["coding", "planning", "summarization", "tool_calling"],
     envVar: "HF_API_KEY",
-    defaultModel: "deepseek-ai/DeepSeek-R1",
+    defaultModel: PROVIDER_DEFAULT_MODELS.huggingface,
     priority: 50,
     freeTier: true,
+    supportsModelEnv: "HF_MODEL",
   },
 ];
 
@@ -150,7 +175,7 @@ export function buildProviderAdapter(entry: BaseProviderEntry): ProviderAdapter 
 
   let baseURL = "";
   if (isOllama) {
-    baseURL = process.env.OLLAMA_BASE_URL || "http://localhost:11434/api/v1";
+    baseURL = process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1";
   } else if (isLmstudio) {
     baseURL = process.env.LMSTUDIO_BASE_URL || "http://localhost:1234/v1";
   } else if (isCfWorkers) {
@@ -164,28 +189,19 @@ export function buildProviderAdapter(entry: BaseProviderEntry): ProviderAdapter 
   const apiKey = process.env[entry.envVar] || "";
 
   const modelFactory = (modelId: string) => {
-    if (isOllama || isLmstudio) {
-      return createOpenAICompatible({
-        name: entry.id,
-        baseURL,
-      })(modelId);
-    } else if (isCfWorkers) {
-      return createOpenAICompatible({
-        name: entry.id,
-        baseURL,
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      })(modelId);
-    } else {
-      return createOpenAICompatible({
-        name: entry.id,
-        baseURL,
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      })(modelId);
+    const headers: Record<string, string> = {};
+    if (!isOllama && !isLmstudio) {
+      headers.Authorization = `Bearer ${apiKey}`;
     }
+    if (isCfWorkers) {
+      headers["X-Auth-Key"] = apiKey;
+    }
+
+    return createOpenAICompatible({
+      name: entry.id,
+      baseURL,
+      headers,
+    })(modelId);
   };
 
   return createProviderAdapter(

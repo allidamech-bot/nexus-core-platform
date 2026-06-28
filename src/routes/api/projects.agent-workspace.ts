@@ -2,6 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { runAgentSession } from "@/lib/agent-runtime";
+import { getProviderHealthDiagnostics } from "@/lib/nexus-core-ai";
 import type { Database } from "@/integrations/supabase/types";
 import type { AgentSessionInput, AgentSessionResult } from "@/lib/agent-types";
 import { getRequestCorrelationId, safeErrorLog, withLogContext } from "@/lib/safeLogging";
@@ -81,6 +82,7 @@ function sanitizeResult(result: AgentSessionResult, devMode: boolean): Record<st
     taskType: result.taskType,
     provider: devMode ? result.providerUsed : "nexus-core-ai",
     status: result.status,
+    aiStatus: result.status === "success" ? "available" : "unavailable",
   };
 
   if (result.error) {
@@ -183,6 +185,10 @@ function sanitizeResult(result: AgentSessionResult, devMode: boolean): Record<st
     };
   }
 
+  if (result.executionTrace) {
+    base.executionTrace = result.executionTrace;
+  }
+
   if (devMode) {
     base.developerDiagnostics = {
       internalProvider: result.providerUsed,
@@ -246,18 +252,25 @@ export const Route = createFileRoute("/api/projects/agent-workspace")({
         const devMode = isDeveloperMode(request);
 
         try {
-          const result = await runAgentSession(supabase, {
-            projectId,
-            userInstruction,
-            maxContextBytes,
-          });
+          const result = await runAgentSession(
+            supabase,
+            {
+              projectId,
+              userInstruction,
+              maxContextBytes,
+            },
+            devMode,
+          );
 
           const sanitized = sanitizeResult(result, devMode);
+          const routerHealth = getProviderHealthDiagnostics(devMode);
+
           return jsonResponse(
             {
               ...sanitized,
               projectId,
               projectName: project.name ?? undefined,
+              routerHealth,
             },
             200,
             correlationId,
@@ -280,31 +293,19 @@ export const Route = createFileRoute("/api/projects/agent-workspace")({
       GET: async ({ request }: { request: Request }) => {
         const correlationId = getRequestCorrelationId(request);
         const devMode = isDeveloperMode(request);
-        const providers = getProviderRegistry();
-        const configuredProviders = providers.filter((p) => p.status === "configured");
-        const hasConfiguredProvider = configuredProviders.length > 0;
-
-        const baseResponse = {
-          ready: hasConfiguredProvider,
-          provider: "nexus-core-ai",
-          status: hasConfiguredProvider ? "ready" : "blocked",
-          code: hasConfiguredProvider ? null : "BLOCKED_AI_PROVIDER_REQUIRED",
-          message: hasConfiguredProvider
-            ? "Nexus Core AI is ready for agent workspace."
-            : "AI provider configuration is required before agent workspace can run.",
-          requiredEnv: hasConfiguredProvider
-            ? []
-            : ["GEMINI_API_KEY", "OPENROUTER_FREE_API_KEY", "GROQ_API_KEY", "OLLAMA_BASE_URL"],
-        };
+        const healthDiagnostics = getProviderHealthDiagnostics(devMode);
 
         if (!devMode) {
-          return jsonResponse(baseResponse, 200, correlationId);
+          return jsonResponse(healthDiagnostics as Record<string, unknown>, 200, correlationId);
         }
 
+        const providers = getProviderRegistry();
+        const configuredProviders = providers.filter((p) => p.status === "configured");
         const missingProviders = providers.filter((p) => p.status === "missing_key");
+
         return jsonResponse(
           {
-            ...baseResponse,
+            ...healthDiagnostics,
             _diagnostics: {
               totalProviders: providers.length,
               configuredCount: configuredProviders.length,

@@ -1,15 +1,7 @@
 import type { LanguageModel } from "ai";
 import type { ProviderAdapter, ProviderSelectionResult } from "./provider-adapter";
 import type { TaskType, ProviderCapability } from "./provider-types";
-import { getAllProviders, getProviderById } from "./provider-registry";
-
-const TASK_TYPE_CAPABILITIES: Record<TaskType, ProviderCapability[]> = {
-  coding: ["coding", "fast_response"],
-  planning: ["planning", "structured_output"],
-  summarization: ["summarization", "long_context"],
-  chat: ["fast_response"],
-  analysis: ["long_context", "structured_output"],
-};
+import { buildFallbackChain } from "./provider-router";
 
 export interface AutoFreeRouter {
   selectProvider(taskType: TaskType, modelId?: string): ProviderSelectionResult | null;
@@ -18,48 +10,30 @@ export interface AutoFreeRouter {
 }
 
 export function createAutoFreeRouter(): AutoFreeRouter {
-  const providers = getAllProviders();
-
   function selectProvider(taskType: TaskType, modelId?: string): ProviderSelectionResult | null {
-    const requiredCapabilities = TASK_TYPE_CAPABILITIES[taskType] || [];
+    const chain = buildFallbackChain(taskType, modelId, [], false);
+    const eligible = chain.filter((entry) => !entry.skipped);
+    if (eligible.length === 0) return null;
 
-    const availableProviders = providers
-      .filter((p) => p.getStatus() === "configured")
-      .filter((p) => requiredCapabilities.every((cap) => p.getCapabilities().includes(cap)));
-
-    if (availableProviders.length === 0) {
-      const fallbackProviders = providers
-        .filter((p) => p.getStatus() === "configured")
-        .sort((a, b) => b.getPriority() - a.getPriority());
-
-      if (fallbackProviders.length === 0) {
-        return null;
-      }
-
-      const fallback = fallbackProviders[0];
-      return {
-        provider: fallback,
-        model: fallback.createModel(modelId),
-        usedFallback: true,
-        reason: "No provider matched required capabilities, used highest priority fallback",
-      };
-    }
-
-    const sorted = availableProviders.sort((a, b) => b.getPriority() - a.getPriority());
-    const selected = sorted[0];
-
+    const best = eligible[0];
     return {
-      provider: selected,
-      model: selected.createModel(modelId),
+      provider: best.provider,
+      model: best.provider.createModel(modelId),
       usedFallback: false,
+      reason: best.reason,
     };
   }
 
   return {
     selectProvider,
-    getAvailableProviders: () => providers.filter((p) => p.getStatus() === "configured"),
-    getFreeProviders: () =>
-      providers.filter((p) => p.isFreeTier() && p.getStatus() === "configured"),
+    getAvailableProviders: () => {
+      const chain = buildFallbackChain("chat", undefined, [], false);
+      return chain.filter((e) => !e.skipped).map((e) => e.provider);
+    },
+    getFreeProviders: () => {
+      const chain = buildFallbackChain("chat", undefined, [], false);
+      return chain.filter((e) => !e.skipped && e.provider.isFreeTier()).map((e) => e.provider);
+    },
   };
 }
 

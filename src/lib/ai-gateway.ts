@@ -41,8 +41,13 @@ export type {
   UnifiedGenerateResult,
   ExecutionError,
 } from "./provider-types";
+export { PROVIDER_DEFAULT_MODELS } from "./provider-registry";
 
-export { generateWithNexusCore, generateWithFallback } from "./nexus-core-ai";
+export {
+  generateWithNexusCore,
+  generateWithFallback,
+  getProviderHealthDiagnostics,
+} from "./nexus-core-ai";
 export { runAgentSession } from "./agent-runtime";
 export type {
   AgentTaskType,

@@ -128,6 +128,7 @@ export interface AgentSessionResult {
   validationPlan?: AgentValidationPlan;
   finalReport?: AgentFinalReport;
   patchProposals?: PatchProposalBundle;
+  executionTrace?: import("./provider-router").ExecutionTrace;
 }
 
 export interface AgentToolResult {

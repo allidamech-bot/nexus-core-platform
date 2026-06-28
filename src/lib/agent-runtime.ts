@@ -22,6 +22,7 @@ import type {
   PatchProposalBundle,
 } from "./agent-types";
 import type { TaskType, UnifiedGenerateInput, UnifiedGenerateResult } from "./provider-types";
+import type { ExecutionTrace } from "./provider-router";
 
 const LIFECYCLE_STAGES: AgentLifecycleStage[] = [
   "user_instruction",
@@ -78,7 +79,7 @@ Respond with JSON only.`;
     system: "Return valid JSON only. No markdown.",
   };
 
-  const result = await generateWithNexusCore(input);
+  const result = await generateWithNexusCore(input, false);
 
   if (result.status === "error") {
     return {
@@ -135,7 +136,7 @@ Respond with JSON only.`;
     system: "Return valid JSON array only. No markdown.",
   };
 
-  const result = await generateWithNexusCore(input);
+  const result = await generateWithNexusCore(input, false);
 
   if (result.status === "error") {
     return [];
@@ -226,7 +227,7 @@ Respond with JSON only.`;
     system: "Return valid JSON only. No markdown.",
   };
 
-  const result = await generateWithNexusCore(input);
+  const result = await generateWithNexusCore(input, false);
 
   if (result.status === "error") {
     return {
@@ -256,7 +257,8 @@ async function generateFinalReport(
   proposedChanges: ProposedChange[] = [],
   patchProposals?: PatchProposalBundle,
   validationPlan?: AgentValidationPlan,
-): Promise<AgentFinalReport> {
+  developerMode = false,
+): Promise<{ report: AgentFinalReport; trace?: ExecutionTrace }> {
   const risks: string[] = [];
   for (const proposal of patchProposals?.proposals || []) {
     if (proposal.risk_level === "high" || proposal.risk_level === "blocked") {
@@ -291,20 +293,24 @@ Respond with JSON only.`;
     system: "Return valid JSON only. No markdown.",
   };
 
-  const result = await generateWithNexusCore(input);
+  const result = await generateWithNexusCore(input, developerMode);
 
   return {
-    summary: result.status === "success" ? result.text.slice(0, 500) : "Agent session completed.",
-    plan: plan || { summary: "No plan generated.", steps: [] },
-    proposedChanges: proposedChanges,
-    validationPlan: validationPlan || { commands: [], explanation: "" },
-    risks: risks.length > 0 ? risks : ["Review proposed changes before applying"],
+    report: {
+      summary: result.status === "success" ? result.text.slice(0, 500) : "Agent session completed.",
+      plan: plan || { summary: "No plan generated.", steps: [] },
+      proposedChanges: proposedChanges,
+      validationPlan: validationPlan || { commands: [], explanation: "" },
+      risks: risks.length > 0 ? risks : ["Review proposed changes before applying"],
+    },
+    trace: result.trace,
   };
 }
 
 export async function runAgentSession(
   supabase: SupabaseClient<Database>,
   input: AgentSessionInput,
+  developerMode = false,
 ): Promise<AgentSessionResult> {
   const taskType = classifyTask(input.userInstruction);
   let context: AgentContextBundle | undefined;
@@ -343,14 +349,17 @@ export async function runAgentSession(
     stageResults.validation_plan = `${validationPlan.commands.length} commands suggested`;
   }
 
-  const finalReport = generateFinalReport(
+  const finalReportResult = await generateFinalReport(
     taskType,
     input.userInstruction,
     plan,
     proposedChanges,
     patchProposals,
     validationPlan,
+    developerMode,
   );
+  const finalReport = finalReportResult.report;
+  const executionTrace = finalReportResult.trace;
   stageResults.final_report = "Generated";
 
   return {
@@ -363,7 +372,8 @@ export async function runAgentSession(
     plan,
     proposedChanges,
     validationPlan,
-    finalReport: await finalReport,
+    finalReport,
     patchProposals,
+    executionTrace: developerMode ? executionTrace : undefined,
   };
 }
