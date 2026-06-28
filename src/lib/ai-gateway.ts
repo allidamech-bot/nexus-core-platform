@@ -48,6 +48,12 @@ export {
   generateWithFallback,
   getProviderHealthDiagnostics,
 } from "./nexus-core-ai";
+export {
+  evaluateProviderReadiness,
+  evaluateAllProviderReadiness,
+  runSmokeTest,
+  runSmokeTestsForAllConfigured,
+} from "./provider-readiness";
 export { runAgentSession } from "./agent-runtime";
 export type {
   AgentTaskType,

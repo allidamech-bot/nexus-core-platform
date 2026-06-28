@@ -3,8 +3,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { runAgentSession } from "@/lib/agent-runtime";
 import { getProviderHealthDiagnostics } from "@/lib/nexus-core-ai";
+import {
+  evaluateAllProviderReadiness,
+  runSmokeTest,
+  runSmokeTestsForAllConfigured,
+} from "@/lib/provider-readiness";
 import type { Database } from "@/integrations/supabase/types";
 import type { AgentSessionInput, AgentSessionResult } from "@/lib/agent-types";
+import type { ProviderRegistryEntry } from "@/lib/provider-types";
 import { getRequestCorrelationId, safeErrorLog, withLogContext } from "@/lib/safeLogging";
 import { getProviderRegistry } from "@/lib/provider-registry";
 
@@ -12,6 +18,8 @@ interface Body {
   projectId?: unknown;
   userInstruction?: unknown;
   maxContextBytes?: unknown;
+  smokeTest?: unknown;
+  smokeTestProviderId?: unknown;
 }
 
 function isDeveloperMode(request: Request): boolean {
@@ -217,6 +225,41 @@ export const Route = createFileRoute("/api/projects/agent-workspace")({
           return jsonResponse({ message: "Invalid request body" }, 400, correlationId);
         }
 
+        const isSmokeTest = body.smokeTest === true;
+
+        if (isSmokeTest) {
+          const devMode = isDeveloperMode(request);
+          if (!devMode) {
+            return jsonResponse({ message: "Smoke tests are developer-only." }, 403, correlationId);
+          }
+
+          const providerId =
+            typeof body.smokeTestProviderId === "string" ? body.smokeTestProviderId.trim() : "";
+          const runAll = !providerId;
+
+          if (runAll) {
+            const results = await runSmokeTestsForAllConfigured(true);
+            return jsonResponse(
+              {
+                smokeTest: true,
+                results,
+              },
+              200,
+              correlationId,
+            );
+          }
+
+          const result = await runSmokeTest(providerId, true);
+          return jsonResponse(
+            {
+              smokeTest: true,
+              results: [result],
+            },
+            200,
+            correlationId,
+          );
+        }
+
         const projectId = typeof body.projectId === "string" ? body.projectId.trim() : "";
         const userInstruction =
           typeof body.userInstruction === "string" ? body.userInstruction.trim() : "";
@@ -264,6 +307,7 @@ export const Route = createFileRoute("/api/projects/agent-workspace")({
 
           const sanitized = sanitizeResult(result, devMode);
           const routerHealth = getProviderHealthDiagnostics(devMode);
+          const readinessMatrix = evaluateAllProviderReadiness();
 
           return jsonResponse(
             {
@@ -271,6 +315,7 @@ export const Route = createFileRoute("/api/projects/agent-workspace")({
               projectId,
               projectName: project.name ?? undefined,
               routerHealth,
+              providerReadiness: devMode ? readinessMatrix : undefined,
             },
             200,
             correlationId,
@@ -294,34 +339,33 @@ export const Route = createFileRoute("/api/projects/agent-workspace")({
         const correlationId = getRequestCorrelationId(request);
         const devMode = isDeveloperMode(request);
         const healthDiagnostics = getProviderHealthDiagnostics(devMode);
+        const readinessMatrix = evaluateAllProviderReadiness();
 
-        if (!devMode) {
-          return jsonResponse(healthDiagnostics as Record<string, unknown>, 200, correlationId);
+        const response: Record<string, unknown> = {
+          ...healthDiagnostics,
+          providerReadiness: readinessMatrix,
+        };
+
+        if (devMode) {
+          const providers = getProviderRegistry() as ProviderRegistryEntry[];
+          const configuredProviders = providers.filter((p) => p.status === "configured");
+          const missingProviders = providers.filter((p) => p.status === "missing_key");
+          response._diagnostics = {
+            totalProviders: providers.length,
+            configuredCount: configuredProviders.length,
+            missingKeyCount: missingProviders.length,
+            providers: providers.map((p) => ({
+              id: p.id,
+              status: p.status,
+              capabilities: p.capabilities,
+              priority: p.priority,
+              freeTier: p.freeTier,
+              endpointType: p.endpointType,
+            })),
+          };
         }
 
-        const providers = getProviderRegistry();
-        const configuredProviders = providers.filter((p) => p.status === "configured");
-        const missingProviders = providers.filter((p) => p.status === "missing_key");
-
-        return jsonResponse(
-          {
-            ...healthDiagnostics,
-            _diagnostics: {
-              totalProviders: providers.length,
-              configuredCount: configuredProviders.length,
-              missingKeyCount: missingProviders.length,
-              providers: providers.map((p) => ({
-                id: p.id,
-                status: p.status,
-                capabilities: p.capabilities,
-                priority: p.priority,
-                freeTier: p.freeTier,
-              })),
-            },
-          },
-          200,
-          correlationId,
-        );
+        return jsonResponse(response, 200, correlationId);
       },
     },
   },

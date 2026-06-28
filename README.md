@@ -115,3 +115,11 @@ Never commit E2E credentials, cookies, JWTs, API keys, refresh tokens, or servic
 ## Roadmap
 
 See [docs/ROADMAP.md](D:/nexus-core-platform-main/docs/ROADMAP.md) and [docs/OPERATIONS.md](D:/nexus-core-platform-main/docs/OPERATIONS.md).
+
+## Provider Readiness (Internal)
+
+Provider readiness checks are configuration-only and do not make live API calls.
+`needs_live_check` means the provider is configured but its availability is unconfirmed.
+Live smoke tests are developer-only (`x-developer-mode: true` header required) and never run automatically during build, test, or normal page load.
+Smoke test results are not persisted and do not affect governed flows.
+Normal users always see `provider: "nexus-core-ai"`. Provider names, endpoints, and raw errors are never exposed in the public API or UI.

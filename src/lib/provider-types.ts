@@ -41,6 +41,37 @@ export interface ProviderRegistryEntry {
   priority: number;
   freeTier: boolean;
   status: ProviderStatus;
+  endpointType: ProviderEndpointType;
+  supportsModelEnv?: string;
+}
+
+export type ProviderEndpointType =
+  | "openai_compatible"
+  | "native"
+  | "local_openai_compatible"
+  | "unknown";
+
+export type ProviderReadinessStatus =
+  | "ready"
+  | "missing_key"
+  | "missing_endpoint"
+  | "missing_model"
+  | "unsupported"
+  | "needs_live_check"
+  | "failed_live_check"
+  | "unknown";
+
+export interface ProviderReadiness {
+  providerId: string;
+  configured: boolean;
+  endpointConfigured: boolean;
+  modelConfigured: boolean;
+  supportsOpenAICompatibleChat: boolean;
+  requiresSpecialHeaders: boolean;
+  endpointType: ProviderEndpointType;
+  readinessStatus: ProviderReadinessStatus;
+  sanitizedMessage: string;
+  developerMessage: string;
 }
 
 export interface ProviderHealthEntry {

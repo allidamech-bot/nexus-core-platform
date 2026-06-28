@@ -1,5 +1,10 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { ProviderCapability, ProviderStatus, ProviderRegistryEntry } from "./provider-types";
+import type {
+  ProviderCapability,
+  ProviderStatus,
+  ProviderRegistryEntry,
+  ProviderEndpointType,
+} from "./provider-types";
 import { createProviderAdapter } from "./provider-adapter";
 import type { ProviderAdapter } from "./provider-adapter";
 
@@ -28,6 +33,7 @@ interface BaseProviderEntry {
   priority: number;
   freeTier: boolean;
   supportsModelEnv?: string;
+  endpointType: ProviderEndpointType;
 }
 
 const PROVIDER_REGISTRY: BaseProviderEntry[] = [
@@ -39,6 +45,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 100,
     freeTier: true,
     supportsModelEnv: "GEMINI_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "openrouter_free",
@@ -56,6 +63,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 95,
     freeTier: true,
     supportsModelEnv: "OPENROUTER_FREE_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "groq",
@@ -65,6 +73,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 90,
     freeTier: true,
     supportsModelEnv: "GROQ_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "ollama",
@@ -81,6 +90,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 80,
     freeTier: true,
     supportsModelEnv: "OLLAMA_MODEL",
+    endpointType: "local_openai_compatible",
   },
   {
     id: "lmstudio",
@@ -97,6 +107,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 75,
     freeTier: true,
     supportsModelEnv: "LMSTUDIO_MODEL",
+    endpointType: "local_openai_compatible",
   },
   {
     id: "cerebras",
@@ -106,6 +117,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 85,
     freeTier: true,
     supportsModelEnv: "CEREBRAS_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "mistral",
@@ -115,6 +127,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 70,
     freeTier: true,
     supportsModelEnv: "MISTRAL_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "nvidia_nim",
@@ -124,6 +137,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 60,
     freeTier: true,
     supportsModelEnv: "NVIDIA_NIM_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "cloudflare_workers_ai",
@@ -133,6 +147,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 65,
     freeTier: true,
     supportsModelEnv: "CF_WORKERS_AI_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "github_models",
@@ -149,6 +164,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 55,
     freeTier: true,
     supportsModelEnv: "GITHUB_MODELS_MODEL",
+    endpointType: "openai_compatible",
   },
   {
     id: "huggingface",
@@ -158,6 +174,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     priority: 50,
     freeTier: true,
     supportsModelEnv: "HF_MODEL",
+    endpointType: "openai_compatible",
   },
 ];
 
