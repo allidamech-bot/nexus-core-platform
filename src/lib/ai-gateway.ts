@@ -43,3 +43,15 @@ export type {
 } from "./provider-types";
 
 export { generateWithNexusCore, generateWithFallback } from "./nexus-core-ai";
+export { runAgentSession } from "./agent-runtime";
+export type {
+  AgentTaskType,
+  AgentLifecycleStage,
+  AgentSessionInput,
+  AgentSessionResult,
+  AgentContextBundle,
+  AgentPlan,
+  ProposedChange,
+  AgentValidationPlan,
+  AgentFinalReport,
+} from "./agent-types";
