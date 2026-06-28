@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import {
   Archive,
   Send,
@@ -16,6 +17,13 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { AgentPlanSection } from "@/components/agent-workspace/AgentPlanSection";
+import { PatchProposalCard } from "@/components/agent-workspace/PatchProposalCard";
+import { ValidationSuggestions } from "@/components/agent-workspace/ValidationSuggestions";
+import { RiskBadge } from "@/components/agent-workspace/RiskBadge";
+import { ApprovalStatusBadge } from "@/components/agent-workspace/ApprovalStatusBadge";
+import { AgentFinalReportSection } from "@/components/agent-workspace/AgentFinalReportSection";
+import { DiffPreview } from "@/components/agent-workspace/DiffPreview";
 
 const agentModes = [
   { id: "engineering", label: "Engineering" },
@@ -26,6 +34,12 @@ const agentModes = [
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { AgentMode } from "@/lib/types";
+import type {
+  AgentPlan,
+  AgentFinalReport,
+  AgentValidationPlan,
+  PatchProposalBundle,
+} from "@/lib/agent-types";
 import { toast } from "sonner";
 import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
 import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
@@ -71,8 +85,11 @@ interface MessageRow {
 
 function friendlyChatError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "");
-  if (message.includes("ai_gateway_env_missing") || message.includes("LOVABLE_API_KEY")) {
-    return "AI gateway is not configured yet. Add LOVABLE_API_KEY, then retry the chat.";
+  if (
+    message.includes("ai_provider_unavailable") ||
+    message.includes("No AI provider is configured")
+  ) {
+    return "AI provider is not configured yet. Add GEMINI_API_KEY, OPENROUTER_FREE_API_KEY, or GROQ_API_KEY, then retry.";
   }
   if (message.includes("Unauthorized") || message.includes("401")) {
     return "Your session could not be verified. Sign in again and retry.";
@@ -96,6 +113,8 @@ function ThreadView() {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [mode, setMode] = useState<AgentMode>("engineering");
   const [input, setInput] = useState("");
+  const [agentResult, setAgentResult] = useState<Record<string, unknown> | null>(null);
+  const [agentLoading, setAgentLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { activeProject, selectedPreviewIds, setSelectedPreviewIds, setSelectedProjectId } =
@@ -242,7 +261,7 @@ function ThreadView() {
   });
 
   const hydratedThreadRef = useRef<string | null>(null);
-  const busy = status === "submitted" || status === "streaming";
+  const busy = status === "submitted" || status === "streaming" || agentLoading;
 
   useEffect(() => {
     hydratedThreadRef.current = null;
@@ -394,6 +413,7 @@ function ThreadView() {
       return;
     }
     setInput("");
+    setAgentResult(null);
 
     const userMsg: UIMessage = {
       id: crypto.randomUUID(),
@@ -425,7 +445,40 @@ function ThreadView() {
         .eq("id", threadId);
     }
 
-    sendMessage({ text });
+    if (projectContextProjectId) {
+      setAgentLoading(true);
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) throw new Error("Unauthorized");
+
+        const res = await fetch("/api/chat/agent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            projectId: projectContextProjectId,
+            userInstruction: text,
+            maxContextBytes: 8000,
+          }),
+        });
+
+        const apiData = (await res.json()) as Record<string, unknown>;
+        if (!res.ok) {
+          throw new Error((apiData as { message?: string }).message || "Agent request failed");
+        }
+        setAgentResult(apiData);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Agent request failed.";
+        toast.error(message);
+      } finally {
+        setAgentLoading(false);
+      }
+    } else {
+      sendMessage({ text });
+    }
   }
 
   return (
@@ -569,7 +622,13 @@ function ThreadView() {
             {messages.map((m) => (
               <MessageBlock key={m.id} message={m} />
             ))}
-            {status === "submitted" && (
+            {agentResult && <AgentResultBlock result={agentResult} />}
+            {agentLoading && (
+              <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
+                <Loader2 className="size-3 animate-spin" /> Running Nexus Core AI analysis...
+              </div>
+            )}
+            {status === "submitted" && !agentLoading && (
               <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
                 <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
               </div>
@@ -760,6 +819,85 @@ function MessageBlock({ message }: { message: UIMessage }) {
         Nexus Core
       </div>
       <StructuredAssistant text={text} />
+    </div>
+  );
+}
+
+function AgentResultBlock({ result }: { result: Record<string, unknown> }) {
+  const plan = result.plan as AgentPlan | undefined;
+  const patchProposals = result.patchProposals as PatchProposalBundle | undefined;
+  const finalReport = result.finalReport as AgentFinalReport | undefined;
+  const validationPlan = result.validationPlan as AgentValidationPlan | undefined;
+
+  return (
+    <div className="min-w-0 space-y-3 rounded-xl border border-border bg-background/40 p-4">
+      <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
+        <div className="size-1.5 rounded-full bg-accent" />
+        Nexus Core AI Agent Analysis
+      </div>
+
+      {result.status === "error" && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {(result.error as { message?: string })?.message || "Agent analysis failed."}
+        </div>
+      )}
+
+      {plan && <AgentPlanSection plan={plan} />}
+
+      {patchProposals && patchProposals.proposals && patchProposals.proposals.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Patch Proposals ({patchProposals.proposals.length})
+            </span>
+            <div className="flex items-center gap-2">
+              {patchProposals.summary && (
+                <>
+                  <RiskBadge level="low" />
+                  <span className="text-[10px] text-muted-foreground">
+                    {patchProposals.summary.low} low
+                  </span>
+                  <RiskBadge level="medium" />
+                  <span className="text-[10px] text-muted-foreground">
+                    {patchProposals.summary.medium} med
+                  </span>
+                  <RiskBadge level="high" />
+                  <span className="text-[10px] text-muted-foreground">
+                    {patchProposals.summary.high} high
+                  </span>
+                  {patchProposals.summary.blocked > 0 && (
+                    <>
+                      <RiskBadge level="blocked" />
+                      <span className="text-[10px] text-muted-foreground">
+                        {patchProposals.summary.blocked} blocked
+                      </span>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          {patchProposals.proposals.map((p) => (
+            <PatchProposalCard key={p.proposal_id} proposal={p} />
+          ))}
+        </div>
+      )}
+
+      {validationPlan && validationPlan.commands && (
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Validation Suggestions
+          </span>
+          <ValidationSuggestions suggestions={validationPlan.commands} />
+          {validationPlan.explanation && (
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {validationPlan.explanation}
+            </p>
+          )}
+        </div>
+      )}
+
+      {finalReport && <AgentFinalReportSection report={finalReport} />}
     </div>
   );
 }

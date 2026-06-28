@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { createDynamicProvider, getNexusCoreModel } from "@/lib/ai-gateway";
 import {
   getRequestCorrelationId,
   safeErrorLog,
@@ -1108,23 +1108,20 @@ export const Route = createFileRoute("/api/chat")({
           );
           model = dynamicGateway(dbKeyData.provider_type === "ollama" ? "llama3" : "gpt-4o");
         } else {
-          const key = process.env.LOVABLE_API_KEY;
-          if (!key) {
-            console.error(
-              "[chat] missing LOVABLE_API_KEY and no dynamic key found",
-              withLogContext(context),
-            );
+          const nexusModel = getNexusCoreModel("chat");
+          if (!nexusModel) {
+            console.error("[chat] no Nexus Core AI provider available", withLogContext(context));
             return jsonResponse(
               {
-                error: "ai_gateway_env_missing",
-                message: "A provider key is required before chat streaming can run.",
+                error: "ai_provider_unavailable",
+                message:
+                  "No AI provider is configured. Add GEMINI_API_KEY, OPENROUTER_FREE_API_KEY, or GROQ_API_KEY.",
               },
               503,
               context,
             );
           }
-          const gateway = createLovableAiGatewayProvider(key);
-          model = gateway("google/gemini-3-flash-preview");
+          model = nexusModel;
         }
 
         const system = mode

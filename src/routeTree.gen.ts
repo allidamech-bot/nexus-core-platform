@@ -38,6 +38,7 @@ import { Route as ApiGithubWebhookRouteImport } from './routes/api/github.webhoo
 import { Route as ApiGithubReposRouteImport } from './routes/api/github.repos'
 import { Route as ApiGithubInstallRouteImport } from './routes/api/github.install'
 import { Route as ApiEnterpriseAuditExportRouteImport } from './routes/api/enterprise.audit-export'
+import { Route as ApiChatAgentRouteImport } from './routes/api/chat.agent'
 import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing.webhook'
 import { Route as ApiBillingCheckoutSessionRouteImport } from './routes/api/billing.checkout-session'
 
@@ -197,6 +198,11 @@ const ApiEnterpriseAuditExportRoute =
     path: '/api/enterprise/audit-export',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiChatAgentRoute = ApiChatAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => ApiChatRoute,
+} as any)
 const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
   id: '/api/billing/webhook',
   path: '/api/billing/webhook',
@@ -214,7 +220,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/chat': typeof ApiChatRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
+  '/api/chat/agent': typeof ApiChatAgentRoute
   '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
   '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/repos': typeof ApiGithubReposRoute
@@ -246,7 +253,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/chat': typeof ApiChatRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
+  '/api/chat/agent': typeof ApiChatAgentRoute
   '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
   '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/repos': typeof ApiGithubReposRoute
@@ -280,7 +288,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/api/chat': typeof ApiChatRoute
+  '/api/chat': typeof ApiChatRouteWithChildren
   '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
+  '/api/chat/agent': typeof ApiChatAgentRoute
   '/api/enterprise/audit-export': typeof ApiEnterpriseAuditExportRoute
   '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/repos': typeof ApiGithubReposRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/billing/checkout-session'
     | '/api/billing/webhook'
+    | '/api/chat/agent'
     | '/api/enterprise/audit-export'
     | '/api/github/install'
     | '/api/github/repos'
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/billing/checkout-session'
     | '/api/billing/webhook'
+    | '/api/chat/agent'
     | '/api/enterprise/audit-export'
     | '/api/github/install'
     | '/api/github/repos'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/billing/checkout-session'
     | '/api/billing/webhook'
+    | '/api/chat/agent'
     | '/api/enterprise/audit-export'
     | '/api/github/install'
     | '/api/github/repos'
@@ -414,7 +426,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
-  ApiChatRoute: typeof ApiChatRoute
+  ApiChatRoute: typeof ApiChatRouteWithChildren
   ApiHealthRoute: typeof ApiHealthRoute
   ApiBillingCheckoutSessionRoute: typeof ApiBillingCheckoutSessionRoute
   ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
@@ -643,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEnterpriseAuditExportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat/agent': {
+      id: '/api/chat/agent'
+      path: '/agent'
+      fullPath: '/api/chat/agent'
+      preLoaderRoute: typeof ApiChatAgentRouteImport
+      parentRoute: typeof ApiChatRoute
+    }
     '/api/billing/webhook': {
       id: '/api/billing/webhook'
       path: '/api/billing/webhook'
@@ -678,12 +697,23 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface ApiChatRouteChildren {
+  ApiChatAgentRoute: typeof ApiChatAgentRoute
+}
+
+const ApiChatRouteChildren: ApiChatRouteChildren = {
+  ApiChatAgentRoute: ApiChatAgentRoute,
+}
+
+const ApiChatRouteWithChildren =
+  ApiChatRoute._addFileChildren(ApiChatRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
-  ApiChatRoute: ApiChatRoute,
+  ApiChatRoute: ApiChatRouteWithChildren,
   ApiHealthRoute: ApiHealthRoute,
   ApiBillingCheckoutSessionRoute: ApiBillingCheckoutSessionRoute,
   ApiBillingWebhookRoute: ApiBillingWebhookRoute,
