@@ -34,6 +34,33 @@ const LIFECYCLE_STAGES: AgentLifecycleStage[] = [
   "final_report",
 ];
 
+function extractJsonFromText(text: string): unknown {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("```json")) {
+    const jsonText = trimmed.slice(7).replace(/```$/, "").trim();
+    return JSON.parse(jsonText);
+  }
+  if (trimmed.startsWith("```")) {
+    const firstNewline = trimmed.indexOf("\n");
+    if (firstNewline === -1) return JSON.parse(trimmed);
+    const jsonText = trimmed
+      .slice(firstNewline + 1)
+      .replace(/```$/, "")
+      .trim();
+    return JSON.parse(jsonText);
+  }
+  return JSON.parse(trimmed);
+}
+
+function looksLikeUnifiedDiff(text: string): boolean {
+  const lines = text.split("\n");
+  return (
+    lines.length > 1 &&
+    lines.some((l) => l.startsWith("---")) &&
+    lines.some((l) => l.startsWith("+++"))
+  );
+}
+
 function mapTaskToProviderTask(taskType: AgentTaskType): TaskType {
   const mapping: Record<AgentTaskType, TaskType> = {
     coding: "coding",
@@ -89,17 +116,35 @@ Respond with JSON only.`;
   }
 
   try {
-    const parsed = JSON.parse(result.text);
-    return {
-      summary: parsed.summary || "Plan generated successfully.",
-      steps: parsed.steps || [],
-    };
+    const parsed = extractJsonFromText(result.text);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return {
+        summary: String(
+          (parsed as Record<string, unknown>).summary || "Plan generated successfully.",
+        ),
+        steps: Array.isArray((parsed as Record<string, unknown>).steps)
+          ? ((parsed as Record<string, unknown>).steps as Record<string, unknown>[]).map((s) => ({
+              order: typeof s.order === "number" ? s.order : 0,
+              description: String(s.description || ""),
+              targetFiles: Array.isArray(s.targetFiles) ? s.targetFiles.map(String) : [],
+              estimatedComplexity: ["low", "medium", "high"].includes(String(s.estimatedComplexity))
+                ? (s.estimatedComplexity as "low" | "medium" | "high")
+                : "medium",
+            }))
+          : [],
+      };
+    }
   } catch {
-    return {
-      summary: "Plan generated but could not be parsed as JSON.",
-      steps: [],
-    };
+    // fallback to raw text below
   }
+
+  return {
+    summary:
+      result.status === "success"
+        ? result.text.slice(0, 500)
+        : "Could not generate plan due to AI error.",
+    steps: [],
+  };
 }
 
 async function generateProposedChanges(
@@ -116,16 +161,28 @@ async function generateProposedChanges(
     .map((f) => `File: ${f.path}\n${f.previewText.slice(0, 3000)}`)
     .join("\n\n");
 
-  const prompt = `You are Nexus Core AI. Suggest changes to accomplish the task.
+  const prompt = `You are Nexus Core AI. Analyze the task and suggest changes.
 
 Task: ${instruction}
+Task type: ${taskType}
 Plan summary: ${planText}
 
 Project files:
 ${fileContext.slice(0, 15000)}
 
+Guidelines:
+- For "project_review": suggest multiple improvements across UI, structure, and safety.
+- For "bugfix": suggest minimal, targeted fixes.
+- For "refactor": suggest structural improvements with clear before/after.
+- For "ui_improvement": focus on components, styling, and layout.
+- For "coding": implement the requested code change.
+- Preserve the user's language (including Arabic) in reasons and summaries.
+
 Return JSON array of changes:
-[{filePath, reason, suggestedPatch, riskLevel}]
+[{filePath, reason, suggestedPatch, riskLevel, changeType}]
+
+For content changes: suggestedPatch should be the proposed FINAL file content (not a diff).
+For diff-only proposals: set changeType to "diff" and suggestedPatch should be unified diff text.
 
 Only suggest changes - do not claim files were written.
 Respond with JSON only.`;
@@ -143,15 +200,17 @@ Respond with JSON only.`;
   }
 
   try {
-    const parsed = JSON.parse(result.text);
-    return Array.isArray(parsed)
-      ? parsed.map((c: Record<string, unknown>) => ({
-          filePath: String(c.filePath || ""),
-          reason: String(c.reason || ""),
-          suggestedPatch: String(c.suggestedPatch || ""),
-          riskLevel: (c.riskLevel as "low" | "medium" | "high") || "medium",
-        }))
-      : [];
+    const parsed = extractJsonFromText(result.text);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((c: Record<string, unknown>) => ({
+      filePath: String(c.filePath || ""),
+      reason: String(c.reason || ""),
+      suggestedPatch: String(c.suggestedPatch || ""),
+      riskLevel: ["low", "medium", "high"].includes(String(c.riskLevel))
+        ? (c.riskLevel as "low" | "medium" | "high")
+        : "medium",
+      changeType: c.changeType === "diff" ? "diff" : "content",
+    }));
   } catch {
     return [];
   }
@@ -168,7 +227,15 @@ function convertToPatchProposals(
 
     const beforePreview =
       context?.previews.find((p) => p.path === change.filePath)?.previewText || "";
-    const afterPreview = change.suggestedPatch.slice(0, 500);
+
+    const isDiff = change.changeType === "diff" || looksLikeUnifiedDiff(change.suggestedPatch);
+
+    const afterPreview = isDiff
+      ? "[Diff preview only — clean file preview unavailable]"
+      : change.suggestedPatch.slice(0, 500);
+    const unifiedDiff = isDiff
+      ? change.suggestedPatch
+      : buildUnifiedDiff(beforePreview, afterPreview, change.filePath);
 
     return {
       proposal_id: generateProposalId(change.filePath, index),
@@ -178,12 +245,12 @@ function convertToPatchProposals(
       change_type: "update",
       before_preview: beforePreview.slice(0, 500),
       after_preview: afterPreview,
-      unified_diff: buildUnifiedDiff(beforePreview, afterPreview, change.filePath),
+      unified_diff: unifiedDiff,
       approval_required: approval.required,
       approval_status: approval.status,
       blocked_reason: approval.blocked_reason,
       risk_reasons: risk.reasons,
-      validation_suggestions: ["npm run typecheck", "npm run build"],
+      validation_suggestions: [],
       agent_confidence: risk.risk_level === "low" ? 0.9 : risk.risk_level === "medium" ? 0.7 : 0.5,
     };
   });
@@ -259,14 +326,14 @@ async function generateFinalReport(
   validationPlan?: AgentValidationPlan,
   developerMode = false,
 ): Promise<{ report: AgentFinalReport; trace?: ExecutionTrace }> {
-  const risks: string[] = [];
+  const baseRisks: string[] = [];
   for (const proposal of patchProposals?.proposals || []) {
     if (proposal.risk_level === "high" || proposal.risk_level === "blocked") {
-      risks.push(`Risk (${proposal.risk_level}) for ${proposal.target_file_path}`);
+      baseRisks.push(`Risk (${proposal.risk_level}) for ${proposal.target_file_path}`);
     }
   }
   if (plan?.steps && plan.steps.some((s) => s.estimatedComplexity === "high")) {
-    risks.push("Some plan steps are high complexity");
+    baseRisks.push("Some plan steps are high complexity");
   }
 
   const changesText =
@@ -280,7 +347,7 @@ async function generateFinalReport(
 Task: ${instruction}
 Plan: ${plan?.summary || "N/A"}
 Changes: ${changesText || "None suggested"}
-Risks: ${risks.slice(0, 3).join(", ") || "None identified"}
+Risks: ${baseRisks.slice(0, 3).join(", ") || "None identified"}
 
 Return JSON:
 {summary: "...", risks: ["..."]}
@@ -295,13 +362,36 @@ Respond with JSON only.`;
 
   const result = await generateWithNexusCore(input, developerMode);
 
+  let summary =
+    result.status === "success" ? result.text.slice(0, 500) : "Agent session completed.";
+  let risks = baseRisks.length > 0 ? baseRisks : ["Review proposed changes before applying"];
+
+  if (result.status === "success") {
+    try {
+      const parsed = extractJsonFromText(result.text);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const obj = parsed as Record<string, unknown>;
+        if (typeof obj.summary === "string" && obj.summary.trim()) {
+          summary = obj.summary.trim();
+        }
+        if (Array.isArray(obj.risks)) {
+          risks = obj.risks.map((r) => String(r)).filter(Boolean);
+        } else if (typeof obj.risks === "string" && obj.risks.trim()) {
+          risks = [obj.risks.trim()];
+        }
+      }
+    } catch {
+      // keep raw summary as fallback
+    }
+  }
+
   return {
     report: {
-      summary: result.status === "success" ? result.text.slice(0, 500) : "Agent session completed.",
+      summary,
       plan: plan || { summary: "No plan generated.", steps: [] },
       proposedChanges: proposedChanges,
       validationPlan: validationPlan || { commands: [], explanation: "" },
-      risks: risks.length > 0 ? risks : ["Review proposed changes before applying"],
+      risks,
     },
     trace: result.trace,
   };

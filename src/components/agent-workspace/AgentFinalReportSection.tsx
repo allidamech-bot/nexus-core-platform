@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { AgentFinalReport } from "@/lib/agent-types";
 import { cn } from "@/lib/utils";
 import { RiskBadge } from "@/components/agent-workspace/RiskBadge";
@@ -8,6 +9,53 @@ interface AgentFinalReportSectionProps {
 }
 
 export function AgentFinalReportSection({ report, className }: AgentFinalReportSectionProps) {
+  const displaySummary = useMemo(() => {
+    const text = report.summary;
+    if (!text) return text;
+    try {
+      const trimmed = text.trim();
+      if (trimmed.startsWith("```json")) {
+        const jsonText = trimmed.slice(7).replace(/```$/, "").trim();
+        const parsed = JSON.parse(jsonText);
+        if (
+          typeof parsed === "object" &&
+          parsed &&
+          typeof (parsed as Record<string, unknown>).summary === "string"
+        ) {
+          return String((parsed as Record<string, unknown>).summary);
+        }
+      }
+      if (trimmed.startsWith("```")) {
+        const firstNewline = trimmed.indexOf("\n");
+        if (firstNewline !== -1) {
+          const jsonText = trimmed
+            .slice(firstNewline + 1)
+            .replace(/```$/, "")
+            .trim();
+          const parsed = JSON.parse(jsonText);
+          if (
+            typeof parsed === "object" &&
+            parsed &&
+            typeof (parsed as Record<string, unknown>).summary === "string"
+          ) {
+            return String((parsed as Record<string, unknown>).summary);
+          }
+        }
+      }
+      const directParse = JSON.parse(trimmed);
+      if (
+        typeof directParse === "object" &&
+        directParse &&
+        typeof (directParse as Record<string, unknown>).summary === "string"
+      ) {
+        return String((directParse as Record<string, unknown>).summary);
+      }
+    } catch {
+      // return raw text as fallback
+    }
+    return text;
+  }, [report.summary]);
+
   return (
     <div
       className={cn("space-y-4 rounded-xl border border-border bg-background/40 p-4", className)}
@@ -17,7 +65,7 @@ export function AgentFinalReportSection({ report, className }: AgentFinalReportS
           Final Report
         </span>
       </div>
-      <p className="text-sm leading-relaxed text-foreground">{report.summary}</p>
+      <p className="text-sm leading-relaxed text-foreground">{displaySummary}</p>
 
       {report.risks && report.risks.length > 0 && (
         <div className="space-y-1.5">

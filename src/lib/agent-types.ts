@@ -55,6 +55,7 @@ export interface ProposedChange {
   reason: string;
   suggestedPatch: string;
   riskLevel: "low" | "medium" | "high";
+  changeType?: "content" | "diff";
 }
 
 export type PatchChangeType = "create" | "update" | "delete" | "rename";

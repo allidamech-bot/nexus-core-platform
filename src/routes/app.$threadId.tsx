@@ -829,6 +829,25 @@ function AgentResultBlock({ result }: { result: Record<string, unknown> }) {
   const finalReport = result.finalReport as AgentFinalReport | undefined;
   const validationPlan = result.validationPlan as AgentValidationPlan | undefined;
 
+  const allValidationCommands = useMemo(() => {
+    const commands = new Set<string>();
+    if (patchProposals) {
+      for (const p of patchProposals.proposals) {
+        for (const cmd of p.validation_suggestions) {
+          const trimmed = String(cmd).trim();
+          if (trimmed) commands.add(trimmed);
+        }
+      }
+    }
+    if (validationPlan && Array.isArray(validationPlan.commands)) {
+      for (const cmd of validationPlan.commands) {
+        const trimmed = String(cmd).trim();
+        if (trimmed) commands.add(trimmed);
+      }
+    }
+    return Array.from(commands);
+  }, [patchProposals, validationPlan]);
+
   return (
     <div className="min-w-0 space-y-3 rounded-xl border border-border bg-background/40 p-4">
       <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
@@ -883,13 +902,13 @@ function AgentResultBlock({ result }: { result: Record<string, unknown> }) {
         </div>
       )}
 
-      {validationPlan && validationPlan.commands && (
+      {allValidationCommands.length > 0 && (
         <div className="space-y-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Validation Suggestions
           </span>
-          <ValidationSuggestions suggestions={validationPlan.commands} />
-          {validationPlan.explanation && (
+          <ValidationSuggestions suggestions={allValidationCommands} />
+          {validationPlan?.explanation && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               {validationPlan.explanation}
             </p>
