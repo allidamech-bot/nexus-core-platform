@@ -57,6 +57,39 @@ export interface ProposedChange {
   riskLevel: "low" | "medium" | "high";
 }
 
+export type PatchChangeType = "create" | "update" | "delete" | "rename";
+
+export type ApprovalStatus = "pending_review" | "approved" | "rejected" | "blocked";
+
+export interface PatchProposal {
+  proposal_id: string;
+  target_file_path: string;
+  change_summary: string;
+  risk_level: "low" | "medium" | "high" | "blocked";
+  change_type: PatchChangeType;
+  before_preview: string;
+  after_preview: string;
+  unified_diff: string;
+  approval_required: boolean;
+  approval_status: ApprovalStatus;
+  blocked_reason?: string;
+  risk_reasons: string[];
+  validation_suggestions: string[];
+  agent_confidence: number;
+}
+
+export interface PatchProposalBundle {
+  proposals: PatchProposal[];
+  summary: {
+    total: number;
+    low: number;
+    medium: number;
+    high: number;
+    blocked: number;
+    requires_approval: number;
+  };
+}
+
 export interface AgentPlan {
   summary: string;
   steps: AgentPlanStep[];
@@ -94,6 +127,7 @@ export interface AgentSessionResult {
   proposedChanges?: ProposedChange[];
   validationPlan?: AgentValidationPlan;
   finalReport?: AgentFinalReport;
+  patchProposals?: PatchProposalBundle;
 }
 
 export interface AgentToolResult {

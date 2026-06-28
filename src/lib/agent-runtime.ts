@@ -3,6 +3,12 @@ import type { Database } from "@/integrations/supabase/types";
 import { generateWithNexusCore } from "./nexus-core-ai";
 import { buildContextBundle, selectRelevantFiles } from "./agent-tools";
 import { classifyTask, type AgentTaskType } from "./agent-classifier";
+import {
+  classifyRisk,
+  generateProposalId,
+  buildUnifiedDiff,
+  determineApprovalRequirement,
+} from "./agent-risk-classifier";
 import type {
   AgentSessionInput,
   AgentSessionResult,
@@ -12,6 +18,8 @@ import type {
   AgentFinalReport,
   ProposedChange,
   AgentContextBundle,
+  PatchProposal,
+  PatchProposalBundle,
 } from "./agent-types";
 import type { TaskType, UnifiedGenerateInput, UnifiedGenerateResult } from "./provider-types";
 
@@ -148,6 +156,49 @@ Respond with JSON only.`;
   }
 }
 
+function convertToPatchProposals(
+  changes: ProposedChange[],
+  context: AgentContextBundle | undefined,
+  instruction: string,
+): PatchProposalBundle {
+  const proposals: PatchProposal[] = changes.map((change, index) => {
+    const risk = classifyRisk(change.filePath, "update", instruction);
+    const approval = determineApprovalRequirement(risk.risk_level);
+
+    const beforePreview =
+      context?.previews.find((p) => p.path === change.filePath)?.previewText || "";
+    const afterPreview = change.suggestedPatch.slice(0, 500);
+
+    return {
+      proposal_id: generateProposalId(change.filePath, index),
+      target_file_path: change.filePath,
+      change_summary: change.reason,
+      risk_level: risk.risk_level,
+      change_type: "update",
+      before_preview: beforePreview.slice(0, 500),
+      after_preview: afterPreview,
+      unified_diff: buildUnifiedDiff(beforePreview, afterPreview, change.filePath),
+      approval_required: approval.required,
+      approval_status: approval.status,
+      blocked_reason: approval.blocked_reason,
+      risk_reasons: risk.reasons,
+      validation_suggestions: ["npm run typecheck", "npm run build"],
+      agent_confidence: risk.risk_level === "low" ? 0.9 : risk.risk_level === "medium" ? 0.7 : 0.5,
+    };
+  });
+
+  const summary = {
+    total: proposals.length,
+    low: proposals.filter((p) => p.risk_level === "low").length,
+    medium: proposals.filter((p) => p.risk_level === "medium").length,
+    high: proposals.filter((p) => p.risk_level === "high").length,
+    blocked: proposals.filter((p) => p.risk_level === "blocked").length,
+    requires_approval: proposals.filter((p) => p.approval_required).length,
+  };
+
+  return { proposals, summary };
+}
+
 async function generateValidationPlan(
   taskType: AgentTaskType,
   instruction: string,
@@ -203,22 +254,24 @@ async function generateFinalReport(
   instruction: string,
   plan?: AgentPlan,
   proposedChanges: ProposedChange[] = [],
+  patchProposals?: PatchProposalBundle,
   validationPlan?: AgentValidationPlan,
 ): Promise<AgentFinalReport> {
   const risks: string[] = [];
-  for (const change of proposedChanges) {
-    if (change.riskLevel === "high") {
-      risks.push(`High risk change to ${change.filePath}`);
+  for (const proposal of patchProposals?.proposals || []) {
+    if (proposal.risk_level === "high" || proposal.risk_level === "blocked") {
+      risks.push(`Risk (${proposal.risk_level}) for ${proposal.target_file_path}`);
     }
   }
   if (plan?.steps && plan.steps.some((s) => s.estimatedComplexity === "high")) {
     risks.push("Some plan steps are high complexity");
   }
 
-  const changesText = proposedChanges
-    .slice(0, 3)
-    .map((c) => `- ${c.filePath}: ${c.reason}`)
-    .join("\n");
+  const changesText =
+    patchProposals?.proposals
+      .slice(0, 3)
+      .map((p) => `- ${p.target_file_path}: ${p.change_summary}`)
+      .join("\n") || "";
 
   const prompt = `Summarize the execution plan:
 
@@ -243,7 +296,7 @@ Respond with JSON only.`;
   return {
     summary: result.status === "success" ? result.text.slice(0, 500) : "Agent session completed.",
     plan: plan || { summary: "No plan generated.", steps: [] },
-    proposedChanges,
+    proposedChanges: proposedChanges,
     validationPlan: validationPlan || { commands: [], explanation: "" },
     risks: risks.length > 0 ? risks : ["Review proposed changes before applying"],
   };
@@ -257,6 +310,7 @@ export async function runAgentSession(
   let context: AgentContextBundle | undefined;
   let plan: AgentPlan | undefined;
   let proposedChanges: ProposedChange[] = [];
+  let patchProposals: PatchProposalBundle | undefined;
   let validationPlan: AgentValidationPlan | undefined;
 
   const stageResults: Partial<Record<AgentLifecycleStage, string>> = {};
@@ -280,6 +334,10 @@ export async function runAgentSession(
     stageResults.proposed_changes = `${proposedChanges.length} changes proposed`;
   }
 
+  if (proposedChanges.length > 0 && context) {
+    patchProposals = convertToPatchProposals(proposedChanges, context, input.userInstruction);
+  }
+
   if (proposedChanges.length > 0) {
     validationPlan = await generateValidationPlan(taskType, input.userInstruction, proposedChanges);
     stageResults.validation_plan = `${validationPlan.commands.length} commands suggested`;
@@ -290,6 +348,7 @@ export async function runAgentSession(
     input.userInstruction,
     plan,
     proposedChanges,
+    patchProposals,
     validationPlan,
   );
   stageResults.final_report = "Generated";
@@ -305,5 +364,6 @@ export async function runAgentSession(
     proposedChanges,
     validationPlan,
     finalReport: await finalReport,
+    patchProposals,
   };
 }

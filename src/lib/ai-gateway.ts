@@ -54,4 +54,6 @@ export type {
   ProposedChange,
   AgentValidationPlan,
   AgentFinalReport,
+  PatchProposal,
+  PatchProposalBundle,
 } from "./agent-types";
