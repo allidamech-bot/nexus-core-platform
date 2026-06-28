@@ -1,4 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import type { LanguageModel } from "ai";
+import { getNexusCoreAiModel, autoFreeRouter } from "./auto-free-router";
 
 export const createDynamicProvider = (apiKey: string, baseURL?: string) => {
   return createOpenAICompatible({
@@ -19,3 +21,15 @@ export const createLovableAiGatewayProvider = (lovableApiKey: string) =>
       "X-Lovable-AIG-SDK": "vercel-ai-sdk",
     },
   });
+
+export function getNexusCoreModel(taskType: string, modelId?: string): LanguageModel | null {
+  const result = autoFreeRouter.selectProvider(
+    taskType as "coding" | "planning" | "summarization" | "chat" | "analysis",
+    modelId,
+  );
+  return result?.model ?? null;
+}
+
+export { autoFreeRouter, getNexusCoreAiModel } from "./auto-free-router";
+export type { ProviderAdapter, ProviderSelectionResult } from "./provider-adapter";
+export type { ProviderCapability, ProviderStatus, ProviderInfo, TaskType } from "./provider-types";
