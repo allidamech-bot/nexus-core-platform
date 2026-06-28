@@ -98,7 +98,19 @@ export function AgentWorkspacePanel({ projectId, className }: AgentWorkspacePane
     runMutation.mutate(instruction.trim());
   }
 
-  const isProviderNotConfigured = readiness && !(readiness as { ready?: boolean }).ready;
+  const readinessData = readiness as
+    | {
+        aiStatus?: string;
+        providerReadiness?: Array<{ configured: boolean; readinessStatus: string }>;
+      }
+    | undefined;
+
+  const configuredProvidersCount =
+    readinessData?.providerReadiness?.filter((p) => p.configured).length ?? 0;
+  const hasNeedsLiveCheck =
+    readinessData?.providerReadiness?.some((p) => p.readinessStatus === "needs_live_check") ??
+    false;
+  const isProviderNotConfigured = configuredProvidersCount === 0;
   const patchProposalsCount = result?.patchProposals?.proposals?.length ?? 0;
   const hasBlockedProposals =
     result?.patchProposals?.proposals?.some((p) => p.risk_level === "blocked") ?? false;
@@ -184,6 +196,22 @@ export function AgentWorkspacePanel({ projectId, className }: AgentWorkspacePane
               <p className="mt-1 text-xs leading-relaxed text-destructive/80">
                 Configure at least one AI provider environment variable ( GEMINI_API_KEY,
                 OPENROUTER_FREE_API_KEY, or GROQ_API_KEY) to enable the Nexus Agent workspace.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isProviderNotConfigured && hasNeedsLiveCheck && state === "idle" && (
+        <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-yellow-300" />
+            <div>
+              <p className="text-sm font-medium text-yellow-200">
+                Nexus Core AI Provider Configured
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-yellow-100/80">
+                Provider is configured and ready for live verification. You can run an analysis now.
               </p>
             </div>
           </div>
