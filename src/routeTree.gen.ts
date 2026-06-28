@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppAgentWorkspaceRouteImport } from './routes/app.agent-workspace'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppThreadIdRouteImport } from './routes/app.$threadId'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
@@ -32,6 +33,7 @@ import { Route as ApiProjectsGovernedDemoChainRouteImport } from './routes/api/p
 import { Route as ApiProjectsGithubImportRouteImport } from './routes/api/projects.github-import'
 import { Route as ApiProjectsAiProviderReadinessRouteImport } from './routes/api/projects.ai-provider-readiness'
 import { Route as ApiProjectsAiPatchPreviewRouteImport } from './routes/api/projects.ai-patch-preview'
+import { Route as ApiProjectsAgentWorkspaceRouteImport } from './routes/api/projects.agent-workspace'
 import { Route as ApiGithubWebhookRouteImport } from './routes/api/github.webhook'
 import { Route as ApiGithubReposRouteImport } from './routes/api/github.repos'
 import { Route as ApiGithubInstallRouteImport } from './routes/api/github.install'
@@ -67,6 +69,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentWorkspaceRoute = AppAgentWorkspaceRouteImport.update({
+  id: '/agent-workspace',
+  path: '/agent-workspace',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -163,6 +170,12 @@ const ApiProjectsAiPatchPreviewRoute =
     path: '/api/projects/ai-patch-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiProjectsAgentWorkspaceRoute =
+  ApiProjectsAgentWorkspaceRouteImport.update({
+    id: '/api/projects/agent-workspace',
+    path: '/api/projects/agent-workspace',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGithubWebhookRoute = ApiGithubWebhookRouteImport.update({
   id: '/api/github/webhook',
   path: '/api/github/webhook',
@@ -205,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/agent-workspace': typeof AppAgentWorkspaceRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
@@ -213,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/repos': typeof ApiGithubReposRoute
   '/api/github/webhook': typeof ApiGithubWebhookRoute
+  '/api/projects/agent-workspace': typeof ApiProjectsAgentWorkspaceRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
@@ -235,6 +250,7 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/agent-workspace': typeof AppAgentWorkspaceRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
@@ -243,6 +259,7 @@ export interface FileRoutesByTo {
   '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/repos': typeof ApiGithubReposRoute
   '/api/github/webhook': typeof ApiGithubWebhookRoute
+  '/api/projects/agent-workspace': typeof ApiProjectsAgentWorkspaceRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
@@ -267,6 +284,7 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/app/$threadId': typeof AppThreadIdRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/agent-workspace': typeof AppAgentWorkspaceRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/billing/checkout-session': typeof ApiBillingCheckoutSessionRoute
@@ -275,6 +293,7 @@ export interface FileRoutesById {
   '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/repos': typeof ApiGithubReposRoute
   '/api/github/webhook': typeof ApiGithubWebhookRoute
+  '/api/projects/agent-workspace': typeof ApiProjectsAgentWorkspaceRoute
   '/api/projects/ai-patch-preview': typeof ApiProjectsAiPatchPreviewRoute
   '/api/projects/ai-provider-readiness': typeof ApiProjectsAiProviderReadinessRoute
   '/api/projects/github-import': typeof ApiProjectsGithubImportRoute
@@ -300,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/app/$threadId'
     | '/app/admin'
+    | '/app/agent-workspace'
     | '/app/settings'
     | '/app/'
     | '/api/billing/checkout-session'
@@ -308,6 +328,7 @@ export interface FileRouteTypes {
     | '/api/github/install'
     | '/api/github/repos'
     | '/api/github/webhook'
+    | '/api/projects/agent-workspace'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/github-import'
@@ -330,6 +351,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/app/$threadId'
     | '/app/admin'
+    | '/app/agent-workspace'
     | '/app/settings'
     | '/app'
     | '/api/billing/checkout-session'
@@ -338,6 +360,7 @@ export interface FileRouteTypes {
     | '/api/github/install'
     | '/api/github/repos'
     | '/api/github/webhook'
+    | '/api/projects/agent-workspace'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/github-import'
@@ -361,6 +384,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/app/$threadId'
     | '/app/admin'
+    | '/app/agent-workspace'
     | '/app/settings'
     | '/app/'
     | '/api/billing/checkout-session'
@@ -369,6 +393,7 @@ export interface FileRouteTypes {
     | '/api/github/install'
     | '/api/github/repos'
     | '/api/github/webhook'
+    | '/api/projects/agent-workspace'
     | '/api/projects/ai-patch-preview'
     | '/api/projects/ai-provider-readiness'
     | '/api/projects/github-import'
@@ -397,6 +422,7 @@ export interface RootRouteChildren {
   ApiGithubInstallRoute: typeof ApiGithubInstallRoute
   ApiGithubReposRoute: typeof ApiGithubReposRoute
   ApiGithubWebhookRoute: typeof ApiGithubWebhookRoute
+  ApiProjectsAgentWorkspaceRoute: typeof ApiProjectsAgentWorkspaceRoute
   ApiProjectsAiPatchPreviewRoute: typeof ApiProjectsAiPatchPreviewRoute
   ApiProjectsAiProviderReadinessRoute: typeof ApiProjectsAiProviderReadinessRoute
   ApiProjectsGithubImportRoute: typeof ApiProjectsGithubImportRoute
@@ -454,6 +480,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agent-workspace': {
+      id: '/app/agent-workspace'
+      path: '/agent-workspace'
+      fullPath: '/app/agent-workspace'
+      preLoaderRoute: typeof AppAgentWorkspaceRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin': {
@@ -575,6 +608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsAiPatchPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/agent-workspace': {
+      id: '/api/projects/agent-workspace'
+      path: '/api/projects/agent-workspace'
+      fullPath: '/api/projects/agent-workspace'
+      preLoaderRoute: typeof ApiProjectsAgentWorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/github/webhook': {
       id: '/api/github/webhook'
       path: '/api/github/webhook'
@@ -623,6 +663,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppThreadIdRoute: typeof AppThreadIdRoute
   AppAdminRoute: typeof AppAdminRoute
+  AppAgentWorkspaceRoute: typeof AppAgentWorkspaceRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -630,6 +671,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppThreadIdRoute: AppThreadIdRoute,
   AppAdminRoute: AppAdminRoute,
+  AppAgentWorkspaceRoute: AppAgentWorkspaceRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -649,6 +691,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGithubInstallRoute: ApiGithubInstallRoute,
   ApiGithubReposRoute: ApiGithubReposRoute,
   ApiGithubWebhookRoute: ApiGithubWebhookRoute,
+  ApiProjectsAgentWorkspaceRoute: ApiProjectsAgentWorkspaceRoute,
   ApiProjectsAiPatchPreviewRoute: ApiProjectsAiPatchPreviewRoute,
   ApiProjectsAiProviderReadinessRoute: ApiProjectsAiProviderReadinessRoute,
   ApiProjectsGithubImportRoute: ApiProjectsGithubImportRoute,
