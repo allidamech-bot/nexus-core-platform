@@ -32,4 +32,14 @@ export function getNexusCoreModel(taskType: string, modelId?: string): LanguageM
 
 export { autoFreeRouter, getNexusCoreAiModel } from "./auto-free-router";
 export type { ProviderAdapter, ProviderSelectionResult } from "./provider-adapter";
-export type { ProviderCapability, ProviderStatus, ProviderInfo, TaskType } from "./provider-types";
+export type {
+  ProviderCapability,
+  ProviderStatus,
+  ProviderInfo,
+  TaskType,
+  UnifiedGenerateInput,
+  UnifiedGenerateResult,
+  ExecutionError,
+} from "./provider-types";
+
+export { generateWithNexusCore, generateWithFallback } from "./nexus-core-ai";

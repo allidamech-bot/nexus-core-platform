@@ -10,6 +10,7 @@ interface BaseProviderEntry {
   defaultModel: string;
   priority: number;
   freeTier: boolean;
+  supportsModelEnv?: string;
 }
 
 const PROVIDER_REGISTRY: BaseProviderEntry[] = [
@@ -20,6 +21,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     defaultModel: "gemini-1.5-flash",
     priority: 100,
     freeTier: true,
+    supportsModelEnv: "GEMINI_MODEL",
   },
   {
     id: "openrouter_free",
@@ -36,6 +38,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     defaultModel: "google/gemini-2.0-flash-exp:free",
     priority: 95,
     freeTier: true,
+    supportsModelEnv: "OPENROUTER_FREE_MODEL",
   },
   {
     id: "groq",
@@ -44,6 +47,7 @@ const PROVIDER_REGISTRY: BaseProviderEntry[] = [
     defaultModel: "llama-3.3-70b-versatile",
     priority: 90,
     freeTier: true,
+    supportsModelEnv: "GROQ_MODEL",
   },
   {
     id: "ollama",

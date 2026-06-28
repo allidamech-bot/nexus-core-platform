@@ -31,3 +31,32 @@ export interface ProviderRegistryEntry {
   freeTier: boolean;
   status: ProviderStatus;
 }
+
+export type ExecutionErrorType =
+  | "missing_key"
+  | "rate_limited"
+  | "provider_error"
+  | "timeout"
+  | "no_available_provider";
+
+export interface ExecutionError {
+  type: ExecutionErrorType;
+  message: string;
+  providerId?: string;
+  modelId?: string;
+}
+
+export interface UnifiedGenerateInput {
+  taskType: TaskType;
+  prompt: string;
+  system?: string;
+  modelId?: string;
+}
+
+export interface UnifiedGenerateResult {
+  text: string;
+  internalProvider: string;
+  internalModel: string;
+  status: "success" | "error";
+  error?: ExecutionError;
+}
