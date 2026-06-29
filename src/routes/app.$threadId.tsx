@@ -3,34 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
-import {
-  Archive,
-  Send,
-  Upload,
-  GitBranch,
-  Loader2,
-  PanelRight,
-  MessageSquare,
-  FolderOpen,
-  ShieldCheck,
-} from "lucide-react";
+import { Archive, Send, Loader2, MessageSquare, Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AgentPlanSection } from "@/components/agent-workspace/AgentPlanSection";
-import { PatchProposalCard } from "@/components/agent-workspace/PatchProposalCard";
-import { ValidationSuggestions } from "@/components/agent-workspace/ValidationSuggestions";
-import { RiskBadge } from "@/components/agent-workspace/RiskBadge";
-import { ApprovalStatusBadge } from "@/components/agent-workspace/ApprovalStatusBadge";
-import { AgentFinalReportSection } from "@/components/agent-workspace/AgentFinalReportSection";
-import { DiffPreview } from "@/components/agent-workspace/DiffPreview";
-
-const agentModes = [
-  { id: "engineering", label: "Engineering" },
-  { id: "business", label: "Business" },
-  { id: "research", label: "Research" },
-] as const;
-
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { AgentMode } from "@/lib/types";
@@ -41,18 +16,14 @@ import type {
   PatchProposalBundle,
 } from "@/lib/agent-types";
 import { toast } from "sonner";
-import { ProjectUploadDialog } from "@/features/projects/ProjectUploadDialog";
-import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 import { useProjectWorkspace } from "@/features/projects/projectWorkspaceContext";
-import { ProjectManifestCard } from "@/features/projects/ProjectManifestCard";
-import { ProjectTextPreviewPanel } from "@/features/projects/ProjectTextPreviewPanel";
-import { ProjectSafePreviewPanel } from "@/features/projects/ProjectSafePreviewPanel";
-import { ProjectPatchPreviewPanel } from "@/features/projects/ProjectPatchPreviewPanel";
+import { ProjectStatusBadge } from "@/features/projects/ProjectStatusBadge";
 import { getProjectManifest } from "@/features/projects/projectManifest";
 import {
   useProjectFilesQuery,
   useProjectQuery,
   useProjectTextPreviewsQuery,
+  usePatchPreviewsQuery,
 } from "@/features/projects/projectQueries";
 import { resolveThreadProjectContext } from "@/features/projects/projectThreadContext";
 import {
@@ -68,9 +39,17 @@ import {
 } from "@/features/governance/governanceService";
 import { useLocale } from "@/features/i18n/localeContext";
 import type { TranslationKey } from "@/features/i18n/translations";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 import { ProductBuilderWorkspace } from "@/components/agent-workspace/ProductBuilderWorkspace";
+import { AgentArtifactsPanel } from "@/components/agent-workspace/AgentArtifactsPanel";
+import { GovernanceStatusCompact } from "@/components/agent-workspace/GovernanceStatusCompact";
+import type { AgentSessionResult } from "@/lib/agent-types";
+
+const agentModes = [
+  { id: "engineering", label: "Engineering" },
+  { id: "business", label: "Business" },
+  { id: "research", label: "Research" },
+] as const;
 
 export const Route = createFileRoute("/app/$threadId")({
   component: ThreadView,
@@ -103,18 +82,21 @@ function friendlyChatError(error: unknown) {
   return message || "Chat is unavailable. Check project configuration and try again.";
 }
 
+type ArtifactTab = "plan" | "changes" | "validation" | "report";
+
 function ThreadView() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
   const { session } = useAuth();
   const qc = useQueryClient();
   const { t } = useLocale();
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [mode, setMode] = useState<AgentMode>("engineering");
   const [input, setInput] = useState("");
-  const [agentResult, setAgentResult] = useState<Record<string, unknown> | null>(null);
+  const [agentResult, setAgentResult] = useState<AgentSessionResult | null>(null);
   const [agentLoading, setAgentLoading] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { activeProject, selectedPreviewIds, setSelectedPreviewIds, setSelectedProjectId } =
@@ -167,6 +149,10 @@ function ThreadView() {
     isLoading: projectPreviewsLoading,
     isError: projectPreviewsError,
   } = useProjectTextPreviewsQuery(projectContextProjectId);
+  const { data: patchPreviews = [] } = usePatchPreviewsQuery(projectContextProjectId ?? null);
+  const hasSafePreview = projectPreviews.length > 0;
+  const hasIndexedFiles = projectFiles.length > 0;
+
   const projectContextState = resolvedProjectContext.state;
   const projectPreviewDataUnavailable =
     attachedProjectError || projectFilesError || projectPreviewsError;
@@ -275,7 +261,7 @@ function ThreadView() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, status]);
+  }, [messages, status, agentLoading]);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -465,7 +451,7 @@ function ThreadView() {
           }),
         });
 
-        const apiData = (await res.json()) as Record<string, unknown>;
+        const apiData = (await res.json()) as AgentSessionResult;
         if (!res.ok) {
           throw new Error((apiData as { message?: string }).message || "Agent request failed");
         }
@@ -481,158 +467,73 @@ function ThreadView() {
     }
   }
 
+  const hasArtifacts =
+    agentResult &&
+    (agentResult.plan ||
+      agentResult.patchProposals ||
+      agentResult.validationPlan ||
+      agentResult.finalReport);
+
   return (
     <>
       <div className="flex h-full min-w-0 flex-1 overflow-hidden bg-background">
-        {/* LEFT SIDEBAR: FILE TREE */}
-        <aside className="hidden lg:flex w-72 shrink-0 flex-col border-r border-border bg-surface/20 overflow-y-auto shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
-          <DrawerSection title="Project Context">
-            <ProjectContextStatus
-              state={projectContextState}
-              projectName={projectContextName}
-              isArchived={isArchived}
-              onAttach={handleAttachProject}
-              t={t}
-            />
-          </DrawerSection>
-          {projectContextProjectId && activeProjectManifest && (
-            <DrawerSection title="Project Scope">
-              <ProjectManifestCard manifest={activeProjectManifest} />
-            </DrawerSection>
-          )}
-          <DrawerSection title={projectContextProjectId ? t("safePreview") : "File Explorer"}>
-            {projectContextProjectId ? (
-              <ProjectSafePreviewPanel
-                files={projectFiles}
-                previews={projectPreviews}
-                manifest={activeProjectManifest}
-                latestJob={projectContextProject?.latest_job ?? null}
-                loading={projectFilesLoading || projectPreviewsLoading || attachedProjectLoading}
-                emptyMessage={threadProjectId ? projectContextEmptyMessage : undefined}
-              />
-            ) : (
-              <div className="text-xs text-muted-foreground">
-                Select a project to view file tree.
-              </div>
-            )}
-          </DrawerSection>
-        </aside>
-
-        {/* CENTER CORE: PREVIEW AND REVIEW WORKSPACE */}
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a]">
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-            {projectContextProjectId ? (
-              <div className="mx-auto max-w-5xl space-y-6">
-                <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
-                  <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    <PanelRight className="size-3.5" /> Safe Preview Tabs
-                  </div>
-                  <div className="p-4">
-                    <ProjectTextPreviewPanel
-                      previews={projectPreviews}
-                      loading={projectPreviewsLoading}
-                      selectedPreviewIds={selectedPreviewIds}
-                      onTogglePreview={handleTogglePreview}
-                    />
-                  </div>
-                </div>
-
-                {session && (
-                  <div className="overflow-hidden rounded-xl border border-border bg-background shadow-lg">
-                    <div className="flex items-center gap-2 border-b border-border bg-surface/80 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                      <GitBranch className="size-3.5" /> Patch Preview Workstation
-                    </div>
-                    <div className="p-4">
-                      <ProjectPatchPreviewPanel
-                        projectId={projectContextProjectId}
-                        userId={session.user.id}
-                        previews={projectPreviews}
-                        disabled={
-                          isArchived || !projectContextProject || projectPreviewDataUnavailable
-                        }
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <ProductBuilderWorkspace onSelectPrompt={setInput} />
-            )}
-          </div>
-
-          {/* BOTTOM GOVERNANCE LOG */}
-          <div className="h-[30vh] min-h-[200px] shrink-0 border-t border-border bg-[#050505] p-4 font-mono text-[11px] text-muted-foreground overflow-y-auto shadow-inner">
-            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-              <ShieldCheck className="size-3.5" /> Governance Handoff Log
-            </div>
-            <div className="space-y-1">
-              <div>&gt; Safe preview and review workspace initialized.</div>
-              <div>&gt; Direct source writeback disabled; exportable handoff artifacts only.</div>
-            </div>
-          </div>
-        </main>
-
-        {/* RIGHT SIDEBAR: AI CHAT */}
-        <aside className="flex w-full shrink-0 flex-col border-l border-border bg-surface/30 md:w-[28rem] z-30 shadow-[-1px_0_10px_rgba(0,0,0,0.02)]">
-          <div className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-background/50 px-3 py-2 sm:px-4">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-base font-semibold leading-tight md:text-sm">
-                {thread?.title ?? "Session"}
-              </div>
-              <div className="truncate font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Agent #{threadId.slice(0, 6)} / {mode}
-              </div>
-            </div>
-            {projectContextProject && (
-              <div className="flex shrink-0 items-center gap-2">
-                <ProjectStatusBadge
-                  status={projectContextProject.latest_job?.status ?? projectContextProject.status}
-                />
-                <span className="hidden max-w-[120px] truncate text-xs text-muted-foreground md:inline">
-                  {projectContextName}
-                </span>
-              </div>
-            )}
-            <div className="flex shrink-0 items-center gap-1">
+        {/* LEFT PANEL: Project Explorer (compact) */}
+        {leftPanelOpen && (
+          <aside className="hidden xl:flex w-64 shrink-0 flex-col border-r border-border bg-surface/30 overflow-y-auto">
+            <div className="border-b border-border px-3 py-2">
               <button
-                type="button"
-                onClick={handleNewSession}
-                className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-accent/20 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent transition-colors hover:bg-accent/20 md:min-h-[32px]"
+                onClick={() => setLeftPanelOpen(false)}
+                className="p-1.5 text-muted-foreground hover:text-foreground"
+                title="Collapse explorer"
               >
-                <MessageSquare className="size-3.5 md:size-3" />
-                <span className="hidden md:inline">New Chat</span>
+                <Copy className="size-4" />
               </button>
-              {hasThreadLifecycle && !isArchived && (
-                <button
-                  type="button"
-                  onClick={handleArchiveThread}
-                  className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted md:min-h-[32px]"
-                >
-                  <Archive className="size-3.5 md:size-3" />
-                </button>
+            </div>
+            <div className="flex-1 p-2">
+              {projectContextProjectId ? (
+                <div className="text-[11px] text-muted-foreground">
+                  {projectContextName ?? "Project loaded"}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">No project selected</div>
               )}
             </div>
-          </div>
+          </aside>
+        )}
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 pb-6 pt-4 md:px-5">
-            {loadingMsgs && (
-              <div className="font-mono text-xs text-muted-foreground">Loading session...</div>
-            )}
-            {!loadingMsgs && messages.length === 0 && <EmptyChat />}
-            {messages.map((m) => (
-              <MessageBlock key={m.id} message={m} />
-            ))}
-            {agentResult && <AgentResultBlock result={agentResult} />}
-            {agentLoading && (
-              <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
-                <Loader2 className="size-3 animate-spin" /> Running Nexus Core AI analysis...
-              </div>
-            )}
-            {status === "submitted" && !agentLoading && (
-              <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
-                <Loader2 className="size-3 animate-spin" /> {t("initializingWorkspace")}
-              </div>
-            )}
+        {/* CENTER: Chat (primary focus) */}
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6">
+            {!projectContextProjectId && <ProductBuilderWorkspace onSelectPrompt={setInput} />}
+
+            <div ref={scrollRef} className="space-y-4">
+              {loadingMsgs && (
+                <div className="font-mono text-xs text-muted-foreground">Loading session...</div>
+              )}
+              {!loadingMsgs && messages.length === 0 && projectContextProjectId && (
+                <div className="text-center py-8">
+                  <h2 className="text-lg font-semibold mb-2">Ask Nexus Core</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Describe the changes you want to make to your project
+                  </p>
+                </div>
+              )}
+              {messages.map((m) => (
+                <MessageBlock key={m.id} message={m} />
+              ))}
+              {agentLoading && (
+                <div className="flex items-center gap-2 text-[11px] text-accent">
+                  <Loader2 className="size-3 animate-spin" />
+                  Analyzing your request...
+                </div>
+              )}
+              {status === "submitted" && !agentLoading && (
+                <div className="flex items-center gap-2 text-[11px] text-accent">
+                  <Loader2 className="size-3 animate-spin" />
+                  {t("initializingWorkspace")}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="border-t border-border bg-background p-3 md:p-4">
@@ -668,7 +569,7 @@ function ThreadView() {
                 }}
                 placeholder="Ask Nexus Core..."
                 disabled={isArchived}
-                className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm text-start shadow-inner focus:outline-none focus:ring-1 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60 md:pb-4 md:pr-14"
+                className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
                 dir="auto"
               />
               <button
@@ -683,6 +584,21 @@ function ThreadView() {
               Cmd/Ctrl + Enter to send
             </div>
           </div>
+
+          <GovernanceStatusCompact
+            hasSafePreview={hasSafePreview}
+            hasIndexedFiles={hasIndexedFiles}
+            isProjectIndexed={!!activeProjectManifest}
+            hasPatchProposals={patchPreviews.length > 0}
+            isArchived={isArchived}
+          />
+        </main>
+
+        {/* RIGHT PANEL: Artifacts */}
+        <aside
+          className={`hidden xl:flex w-80 shrink-0 flex-col border-l border-border bg-surface/20 ${hasArtifacts ? "" : "overflow-hidden"}`}
+        >
+          {hasArtifacts && <AgentArtifactsPanel result={agentResult} isLoading={agentLoading} />}
         </aside>
       </div>
 
@@ -691,111 +607,6 @@ function ThreadView() {
         onClose={() => setIsUpgradeModalOpen(false)}
       />
     </>
-  );
-}
-
-function EmptyChat() {
-  const { t } = useLocale();
-  return (
-    <div className="min-w-0 py-10 text-center sm:py-12">
-      <div className="mx-auto mb-4 grid size-10 place-items-center rounded-lg border border-accent/20 bg-accent/10 text-accent">
-        <MessageSquare className="size-4" />
-      </div>
-      <h2 className="mb-2 text-xl font-semibold leading-tight tracking-tight sm:text-2xl">
-        {t("tellNexusToChange")}
-      </h2>
-      <div className="text-sm text-muted-foreground font-medium">{t("nexusHelperText")}</div>
-      <div className="mx-auto mt-6 grid w-full max-w-none grid-cols-1 gap-2 text-left md:max-w-xl md:grid-cols-2">
-        {[t("examplePrompt1"), t("examplePrompt2"), t("examplePrompt3"), t("examplePrompt4")].map(
-          (p, i) => (
-            <div
-              key={i}
-              className="min-h-[64px] rounded-lg border border-border bg-surface p-3 text-start text-sm leading-relaxed text-muted-foreground md:text-xs"
-            >
-              {p}
-            </div>
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProjectContextStatus({
-  state,
-  projectName,
-  isArchived,
-  onAttach,
-  t,
-}: {
-  state: "attached" | "detached" | "none";
-  projectName: string | null;
-  isArchived: boolean;
-  onAttach: () => void;
-  t: (key: TranslationKey, values?: Record<string, string | number>) => string;
-}) {
-  const isAttached = state === "attached";
-  const title =
-    state === "attached"
-      ? t("projectContextAttached")
-      : state === "detached"
-        ? t("projectContextNotAttached")
-        : t("noProjectContextAvailable");
-  const body = isAttached
-    ? t("assistantCanUseIndexedProjectContext")
-    : state === "detached"
-      ? t("attachProjectToImproveProposals")
-      : t("responsesMayBeGeneralWithoutProjectContext");
-
-  return (
-    <div
-      className={`rounded-md border px-3 py-2 text-xs ${
-        isAttached ? "border-accent/30 bg-accent/5" : "border-border bg-surface/50"
-      }`}
-    >
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div
-            className={isAttached ? "font-semibold text-accent" : "font-semibold text-foreground"}
-          >
-            {title}
-          </div>
-          <div className="mt-1 text-muted-foreground">
-            {projectName ? (
-              <>
-                <span className="font-medium text-foreground">
-                  {isAttached ? t("attachedProject") : t("activeProject")}:
-                </span>{" "}
-                {projectName}
-              </>
-            ) : (
-              body
-            )}
-          </div>
-          {projectName && <div className="mt-1 text-muted-foreground">{body}</div>}
-        </div>
-        {state === "detached" && !isArchived && (
-          <button
-            type="button"
-            onClick={onAttach}
-            className="min-h-[44px] shrink-0 rounded border border-border px-3 py-2 text-[11px] font-medium text-muted-foreground hover:bg-muted"
-          >
-            {t("attachThisProject")}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StatusMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-border bg-background/40 p-2">
-      <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-1 truncate text-xs font-semibold text-foreground">{value}</div>
-    </div>
   );
 }
 
@@ -818,129 +629,30 @@ function MessageBlock({ message }: { message: UIMessage }) {
         <div className="size-1.5 rounded-full bg-accent" />
         Nexus Core
       </div>
-      <StructuredAssistant text={text} />
+      <AssistantMessage text={text} />
     </div>
   );
 }
 
-function AgentResultBlock({ result }: { result: Record<string, unknown> }) {
-  const plan = result.plan as AgentPlan | undefined;
-  const patchProposals = result.patchProposals as PatchProposalBundle | undefined;
-  const finalReport = result.finalReport as AgentFinalReport | undefined;
-  const validationPlan = result.validationPlan as AgentValidationPlan | undefined;
+function AssistantMessage({ text }: { text: string }) {
+  const SECTION_NAMES = [
+    "Project Context Used",
+    "Implementation Plan",
+    "Files Likely Affected",
+    "Patch Preview / Proposed Changes",
+    "Verification Checklist",
+    "Risks / Notes",
+    "Limitations / Not Applied Yet",
+    "Readiness log",
+    "Understanding",
+    "Plan",
+    "Risks",
+    "Files to inspect or change",
+    "Proposed actions",
+    "Verification",
+    "Handoff summary",
+  ];
 
-  const allValidationCommands = useMemo(() => {
-    const commands = new Set<string>();
-    if (patchProposals) {
-      for (const p of patchProposals.proposals) {
-        for (const cmd of p.validation_suggestions) {
-          const trimmed = String(cmd).trim();
-          if (trimmed) commands.add(trimmed);
-        }
-      }
-    }
-    if (validationPlan && Array.isArray(validationPlan.commands)) {
-      for (const cmd of validationPlan.commands) {
-        const trimmed = String(cmd).trim();
-        if (trimmed) commands.add(trimmed);
-      }
-    }
-    return Array.from(commands);
-  }, [patchProposals, validationPlan]);
-
-  return (
-    <div className="min-w-0 space-y-3 rounded-xl border border-border bg-background/40 p-4">
-      <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
-        <div className="size-1.5 rounded-full bg-accent" />
-        Nexus Core AI Agent Analysis
-      </div>
-
-      {result.status === "error" && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-          {(result.error as { message?: string })?.message || "Agent analysis failed."}
-        </div>
-      )}
-
-      {plan && <AgentPlanSection plan={plan} />}
-
-      {patchProposals && patchProposals.proposals && patchProposals.proposals.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Patch Proposals ({patchProposals.proposals.length})
-            </span>
-            <div className="flex items-center gap-2">
-              {patchProposals.summary && (
-                <>
-                  <RiskBadge level="low" />
-                  <span className="text-[10px] text-muted-foreground">
-                    {patchProposals.summary.low} low
-                  </span>
-                  <RiskBadge level="medium" />
-                  <span className="text-[10px] text-muted-foreground">
-                    {patchProposals.summary.medium} med
-                  </span>
-                  <RiskBadge level="high" />
-                  <span className="text-[10px] text-muted-foreground">
-                    {patchProposals.summary.high} high
-                  </span>
-                  {patchProposals.summary.blocked > 0 && (
-                    <>
-                      <RiskBadge level="blocked" />
-                      <span className="text-[10px] text-muted-foreground">
-                        {patchProposals.summary.blocked} blocked
-                      </span>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          {patchProposals.proposals.map((p) => (
-            <PatchProposalCard key={p.proposal_id} proposal={p} />
-          ))}
-        </div>
-      )}
-
-      {allValidationCommands.length > 0 && (
-        <div className="space-y-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Validation Suggestions
-          </span>
-          <ValidationSuggestions suggestions={allValidationCommands} />
-          {validationPlan?.explanation && (
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {validationPlan.explanation}
-            </p>
-          )}
-        </div>
-      )}
-
-      {finalReport && <AgentFinalReportSection report={finalReport} />}
-    </div>
-  );
-}
-
-const SECTION_NAMES = [
-  "Project Context Used",
-  "Implementation Plan",
-  "Files Likely Affected",
-  "Patch Preview / Proposed Changes",
-  "Verification Checklist",
-  "Risks / Notes",
-  "Limitations / Not Applied Yet",
-  "Readiness log",
-  "Understanding",
-  "Plan",
-  "Risks",
-  "Files to inspect or change",
-  "Proposed actions",
-  "Readiness log",
-  "Verification",
-  "Handoff summary",
-];
-
-function StructuredAssistant({ text }: { text: string }) {
   if (!text) return <div className="text-xs text-muted-foreground font-mono">Thinking...</div>;
 
   const sections: { name: string; body: string }[] = [];
@@ -953,6 +665,7 @@ function StructuredAssistant({ text }: { text: string }) {
       indices.push({ name: sectionName, index: m.index, len: m[0].length });
     }
   }
+
   if (indices.length === 0) {
     return (
       <div className="text-sm text-foreground leading-relaxed">
@@ -991,6 +704,7 @@ function StructuredAssistant({ text }: { text: string }) {
       </div>
     );
   }
+
   indices.forEach((it, i) => {
     const start = it.index + it.len;
     const end = i + 1 < indices.length ? indices[i + 1].index : text.length;
@@ -1085,27 +799,28 @@ function SectionBlock({ name, body }: { name: string; body: string }) {
   );
 }
 
-export type VerificationStatus = "passed" | "failed" | "warning" | "not_run" | "running";
-export type TaskStatus =
-  | "pending"
-  | "running"
-  | "verifying"
-  | "completed"
-  | "failed"
-  | "awaiting_approval";
-export type FileNode = {
-  id: string;
-  name: string;
-  type: "file" | "dir";
-  status?: "added" | "modified" | "removed" | "unchanged";
-  children?: FileNode[];
-};
-
 function stripCodeFence(s: string) {
   return s
     .replace(/^```[a-z]*\n?/, "")
     .replace(/```$/, "")
     .trim();
+}
+
+export type VerificationStatus = "passed" | "failed" | "warning" | "not_run" | "running";
+
+function verifPill(s: VerificationStatus): string {
+  switch (s) {
+    case "passed":
+      return "bg-emerald-500/10 text-emerald-400";
+    case "failed":
+      return "bg-destructive/10 text-destructive";
+    case "warning":
+      return "bg-warning/10 text-warning";
+    case "running":
+      return "bg-accent/10 text-accent";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
 }
 
 function VerificationFromText({ text }: { text: string }) {
@@ -1137,81 +852,4 @@ function VerificationFromText({ text }: { text: string }) {
       ))}
     </div>
   );
-}
-
-function DrawerSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="p-4 border-b border-border last:border-b-0">
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function FileTree({ nodes, depth }: { nodes: FileNode[]; depth: number }) {
-  return (
-    <div className="space-y-0.5 font-mono text-[12px]">
-      {nodes.map((n) => (
-        <div key={n.id}>
-          <div
-            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted"
-            style={{ paddingLeft: 8 + depth * 12 }}
-          >
-            {n.type === "dir" ? (
-              <span className="text-muted-foreground">&gt;</span>
-            ) : (
-              <span
-                className={
-                  n.status === "added"
-                    ? "text-emerald-400"
-                    : n.status === "modified"
-                      ? "text-accent"
-                      : "text-muted-foreground"
-                }
-              >
-                {n.status === "added" ? "+" : n.status === "modified" ? "~" : "-"}
-              </span>
-            )}
-            <span className={n.type === "dir" ? "text-foreground" : "text-muted-foreground"}>
-              {n.name}
-            </span>
-          </div>
-          {n.children && <FileTree nodes={n.children} depth={depth + 1} />}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function statusDot(s: TaskStatus): string {
-  switch (s) {
-    case "completed":
-      return "bg-emerald-500";
-    case "running":
-    case "verifying":
-      return "bg-accent animate-pulse";
-    case "failed":
-      return "bg-destructive";
-    case "awaiting_approval":
-      return "bg-warning";
-    default:
-      return "bg-muted-foreground";
-  }
-}
-
-function verifPill(s: VerificationStatus): string {
-  switch (s) {
-    case "passed":
-      return "bg-emerald-500/10 text-emerald-400";
-    case "failed":
-      return "bg-destructive/10 text-destructive";
-    case "warning":
-      return "bg-warning/10 text-warning";
-    case "running":
-      return "bg-accent/10 text-accent";
-    default:
-      return "bg-muted text-muted-foreground";
-  }
 }
