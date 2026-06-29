@@ -102,7 +102,14 @@ export const Route = createFileRoute("/api/chat/agent")({
             : undefined;
         const intent =
           typeof body.intent === "string"
-            ? (body.intent as "greeting" | "general_chat" | "project_review" | "patch_request" | "bugfix" | "refactor" | "planning")
+            ? (body.intent as
+                | "greeting"
+                | "general_chat"
+                | "project_review"
+                | "patch_request"
+                | "bugfix"
+                | "refactor"
+                | "planning")
             : classifyIntent(userInstruction);
 
         if (!projectId) {

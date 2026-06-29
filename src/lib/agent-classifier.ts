@@ -2,7 +2,14 @@ import type { AgentTaskType } from "./agent-types";
 
 export { type AgentTaskType } from "./agent-types";
 
-export type AgentIntent = "greeting" | "general_chat" | "project_review" | "patch_request" | "bugfix" | "refactor" | "planning";
+export type AgentIntent =
+  | "greeting"
+  | "general_chat"
+  | "project_review"
+  | "patch_request"
+  | "bugfix"
+  | "refactor"
+  | "planning";
 
 const GREETING_PATTERNS = [
   "hello",

@@ -143,7 +143,9 @@ export function AgentResultBlock({
         </div>
       )}
 
-      {!hasArtifacts && <div className="text-[10px] text-muted-foreground">No review artifacts generated.</div>}
+      {!hasArtifacts && (
+        <div className="text-[10px] text-muted-foreground">No review artifacts generated.</div>
+      )}
     </div>
   );
 }

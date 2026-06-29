@@ -531,7 +531,7 @@ function ThreadView() {
                   Reading project context...
                 </div>
               )}
-              {!agentLoading && agentResult && agentNaturalResponse && (
+              {!agentLoading && agentResult && (
                 <div className="min-w-0 space-y-3">
                   <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
                     <div className="size-1.5 rounded-full bg-accent" />
