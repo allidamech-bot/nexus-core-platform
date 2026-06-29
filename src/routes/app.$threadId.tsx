@@ -86,6 +86,23 @@ function friendlyChatError(error: unknown) {
 
 type ArtifactTab = "plan" | "changes" | "validation" | "report";
 
+/** Build a UIMessage from an AgentSessionResult for the local transcript. */
+function agentResultToAssistantMessage(result: AgentSessionResult): UIMessage {
+  const text =
+    result.naturalResponse ??
+    "Nexus Agent completed the request. Review details in the artifacts panel.";
+  return {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    parts: [{ type: "text", text }],
+  };
+}
+
+/** Check whether a user message id already exists in the local transcript. */
+function messageExists(messages: UIMessage[], id: string): boolean {
+  return messages.some((m) => m.id === id);
+}
+
 function ThreadView() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
@@ -259,6 +276,7 @@ function ThreadView() {
     hydratedThreadRef.current = null;
   }, [threadId]);
 
+  // Hydrate messages from DB once per thread, but only if not busy
   useEffect(() => {
     if (!initialMessages || hydratedThreadRef.current === threadId || busy) return;
     setMessages(initialMessages);
@@ -281,14 +299,16 @@ function ThreadView() {
     // Clear the URL param immediately to prevent reprocessing on re-render
     window.history.replaceState(null, "", `/app/${threadId}`);
 
-    // Auto-process through the agent
     setAgentLoading(true);
     const intent = classifyIntent(text);
     (async () => {
       try {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
-        if (!token) return;
+        if (!token) {
+          toast.error("Authentication required to process your request.");
+          return;
+        }
 
         const res = await fetch("/api/chat/agent", {
           method: "POST",
@@ -304,16 +324,36 @@ function ThreadView() {
           }),
         });
 
+        if (!res.ok) {
+          const errBody = (await res.json()) as { message?: string };
+          toast.error(errBody?.message ?? "Agent request failed. Please try again.");
+          return;
+        }
+
         const apiData = (await res.json()) as AgentSessionResult;
-        if (!res.ok) return;
         setAgentResult(apiData);
-      } catch {
-        // silent fail — composer already saved the message
+
+        // Build and append assistant message
+        const assistantMsg = agentResultToAssistantMessage(apiData);
+        setMessages((prev) => [...prev, assistantMsg]);
+
+        // Persist assistant message
+        if (session?.user.id) {
+          await supabase.from("messages").insert({
+            thread_id: threadId,
+            user_id: session.user.id,
+            role: "assistant",
+            parts: assistantMsg.parts as never,
+          });
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : "Failed to process request.";
+        toast.error(msg);
       } finally {
         setAgentLoading(false);
       }
     })();
-  }, [threadId, session, projectContextProjectId, initialMessages, agentLoading, agentResult]);
+  }, [threadId, session, projectContextProjectId, initialMessages, agentLoading, agentResult, setMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -462,6 +502,13 @@ function ThreadView() {
       role: "user",
       parts: [{ type: "text", text }],
     };
+
+    // Append user message to local transcript immediately (avoid duplicate)
+    if (!messageExists(messages, userMsg.id)) {
+      setMessages((prev) => [...prev, userMsg]);
+    }
+
+    // Save user message to DB
     const { error: messageError } = await supabase.from("messages").insert({
       thread_id: threadId,
       user_id: session.user.id,
@@ -514,6 +561,18 @@ function ThreadView() {
           throw new Error((apiData as { message?: string }).message || "Agent request failed");
         }
         setAgentResult(apiData);
+
+        // Build and append assistant message
+        const assistantMsg = agentResultToAssistantMessage(apiData);
+        setMessages((prev) => [...prev, assistantMsg]);
+
+        // Persist assistant message
+        await supabase.from("messages").insert({
+          thread_id: threadId,
+          user_id: session.user.id,
+          role: "assistant",
+          parts: assistantMsg.parts as never,
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Agent request failed.";
         toast.error(message);
@@ -521,6 +580,7 @@ function ThreadView() {
         setAgentLoading(false);
       }
     } else {
+      // No project context — use standard chat transport
       sendMessage({ text });
     }
   }
@@ -583,21 +643,6 @@ function ThreadView() {
                 <div className="flex items-center gap-2 text-[11px] text-accent">
                   <Loader2 className="size-3 animate-spin" />
                   Reading project context...
-                </div>
-              )}
-              {!agentLoading && agentResult && (
-                <div className="min-w-0 space-y-3">
-                  <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
-                    <div className="size-1.5 rounded-full bg-accent" />
-                    Nexus Agent
-                  </div>
-                  <AgentResultBlock
-                    result={agentResult}
-                    isLoading={false}
-                    projectName={projectContextName}
-                    hasIndexedFiles={hasIndexedFiles}
-                    mode={mode}
-                  />
                 </div>
               )}
               {status === "submitted" && !agentLoading && !agentResult && (
