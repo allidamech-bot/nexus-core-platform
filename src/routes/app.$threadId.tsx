@@ -319,11 +319,6 @@ function ThreadView() {
     const assistantMessages = initialMessages.filter((m) => m.role === "assistant");
     if (userMessages.length !== 1 || assistantMessages.length > 0) return;
 
-    // Also skip if the user message is already in the local transcript
-    // (means it was already processed by handleSend in another tab/refresh)
-    const alreadyProcessed = messages.some((m) => m.role === "assistant");
-    if (alreadyProcessed) return;
-
     autoProcessRef.current = threadId;
     const text = userMessages[0].parts
       .map((p) => (p.type === "text" ? p.text : ""))
