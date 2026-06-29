@@ -353,7 +353,15 @@ function ThreadView() {
         setAgentLoading(false);
       }
     })();
-  }, [threadId, session, projectContextProjectId, initialMessages, agentLoading, agentResult, setMessages]);
+  }, [
+    threadId,
+    session,
+    projectContextProjectId,
+    initialMessages,
+    agentLoading,
+    agentResult,
+    setMessages,
+  ]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
