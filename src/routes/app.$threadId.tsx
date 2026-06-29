@@ -249,9 +249,13 @@ function ThreadView() {
   });
 
   const hydratedThreadRef = useRef<string | null>(null);
+  const autoProcessRef = useRef<string | null>(null);
   const busy = status === "submitted" || status === "streaming" || agentLoading;
 
+  // Reset agent artifacts on thread change
   useEffect(() => {
+    setAgentResult(null);
+    setAgentLoading(false);
     hydratedThreadRef.current = null;
   }, [threadId]);
 
@@ -260,6 +264,56 @@ function ThreadView() {
     setMessages(initialMessages);
     hydratedThreadRef.current = threadId;
   }, [busy, initialMessages, setMessages, threadId]);
+
+  // Auto-process initial message from /app composer
+  useEffect(() => {
+    if (autoProcessRef.current === threadId) return;
+    if (!session || !projectContextProjectId || agentLoading || agentResult) return;
+    if (!initialMessages || initialMessages.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const initialMsg = params.get("initial");
+    if (!initialMsg) return;
+
+    autoProcessRef.current = threadId;
+    const text = decodeURIComponent(initialMsg);
+
+    // Clear the URL param immediately to prevent reprocessing on re-render
+    window.history.replaceState(null, "", `/app/${threadId}`);
+
+    // Auto-process through the agent
+    setAgentLoading(true);
+    const intent = classifyIntent(text);
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return;
+
+        const res = await fetch("/api/chat/agent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            projectId: projectContextProjectId,
+            userInstruction: text,
+            maxContextBytes: 8000,
+            intent: intent,
+          }),
+        });
+
+        const apiData = (await res.json()) as AgentSessionResult;
+        if (!res.ok) return;
+        setAgentResult(apiData);
+      } catch {
+        // silent fail — composer already saved the message
+      } finally {
+        setAgentLoading(false);
+      }
+    })();
+  }, [threadId, session, projectContextProjectId, initialMessages, agentLoading, agentResult]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

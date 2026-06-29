@@ -19,7 +19,14 @@ const GREETING_PATTERNS = [
   "السلام عليكم",
   "اهلا",
   "أهلا",
+  "اهلين",
+  "هلا",
   "سلام",
+  "الو",
+  "ألو",
+  "الوو",
+  "صباح الخير",
+  "مساء الخير",
   "good morning",
   "good evening",
   "good night",
@@ -28,6 +35,19 @@ const GREETING_PATTERNS = [
   "thank you",
   "شكرا",
   "شكراً",
+];
+
+const NAME_ASKING_PATTERNS = [
+  "what is your name",
+  "what's your name",
+  "who are you",
+  "tell me about yourself",
+  "شو اسمك",
+  "ما اسمك",
+  "من أنت",
+  "عرفني بنفسك",
+  "what are you",
+  "what can you do",
 ];
 
 const KEYWORD_PATTERNS: Record<AgentTaskType, string[]> = {
@@ -47,6 +67,16 @@ export function classifyIntent(instruction: string): AgentIntent {
     if (instructionTrimmed.includes(pattern.toLowerCase())) {
       return "greeting";
     }
+  }
+
+  for (const pattern of NAME_ASKING_PATTERNS) {
+    if (instructionTrimmed.includes(pattern.toLowerCase())) {
+      return "general_chat";
+    }
+  }
+
+  if (instructionTrimmed.length < 10 && !/[a-zA-Z]/.test(instructionTrimmed)) {
+    return "general_chat";
   }
 
   return "project_review";
