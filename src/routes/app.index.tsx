@@ -135,8 +135,7 @@ function AppIndex() {
       setComposerStatus("idle", "");
       qc.invalidateQueries({ queryKey: ["threads", "recent", session.user.id] });
       qc.invalidateQueries({ queryKey: governanceKeys.usage(session.user.id) });
-      const encoded = encodeURIComponent(text);
-      window.location.href = `/app/${thread.id}?initial=${encoded}`;
+      navigate({ to: "/app/$threadId", params: { threadId: thread.id } });
     } catch (err) {
       const friendlyMessages = [
         t("sessionQuotaReached"),

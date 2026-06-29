@@ -42,7 +42,6 @@ import type { TranslationKey } from "@/features/i18n/translations";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 import { ProductBuilderWorkspace } from "@/components/agent-workspace/ProductBuilderWorkspace";
 import { AgentArtifactsPanel } from "@/components/agent-workspace/AgentArtifactsPanel";
-import { AgentResultBlock } from "@/components/agent-workspace/AgentResultBlock";
 import { GovernanceStatusCompact } from "@/components/agent-workspace/GovernanceStatusCompact";
 import type { AgentSessionResult } from "@/lib/agent-types";
 import { classifyIntent } from "@/lib/agent-classifier";
@@ -70,7 +69,7 @@ function friendlyChatError(error: unknown) {
     message.includes("ai_provider_unavailable") ||
     message.includes("No AI provider is configured")
   ) {
-    return "AI provider is not configured yet. Add GEMINI_API_KEY, OPENROUTER_FREE_API_KEY, or GROQ_API_KEY, then retry.";
+    return "The AI provider is not configured yet. Contact your administrator to set up API keys, then retry.";
   }
   if (message.includes("Unauthorized") || message.includes("401")) {
     return "Your session could not be verified. Sign in again and retry.";
@@ -98,9 +97,26 @@ function agentResultToAssistantMessage(result: AgentSessionResult): UIMessage {
   };
 }
 
-/** Check whether a user message id already exists in the local transcript. */
+/** Check whether a message id already exists in the local transcript. */
 function messageExists(messages: UIMessage[], id: string): boolean {
   return messages.some((m) => m.id === id);
+}
+
+/**
+ * Build an inline error assistant message for failed agent calls.
+ * Does not expose internal provider names or keys.
+ */
+function agentErrorToAssistantMessage(errorMsg: string): UIMessage {
+  return {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    parts: [
+      {
+        type: "text",
+        text: `I encountered an issue processing your request: ${errorMsg}`,
+      },
+    ],
+  };
 }
 
 function ThreadView() {
@@ -209,6 +225,10 @@ function ThreadView() {
     if (thread?.mode) setMode(thread.mode as AgentMode);
   }, [thread?.mode]);
 
+  // ── useChat: only for non-project fallback ──────────────────────────
+  // When no project is attached, useChat handles /api/chat transport.
+  // When a project IS attached, we bypass useChat.sendMessage entirely
+  // and manage messages explicitly via setMessages.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -245,6 +265,7 @@ function ThreadView() {
     id: threadId,
     messages: initialMessages,
     transport,
+    // onFinish only fires for useChat-sent messages (non-project path)
     onFinish: async ({ message }) => {
       if (!session) return;
       const { error } = await supabase.from("messages").insert({
@@ -283,21 +304,32 @@ function ThreadView() {
     hydratedThreadRef.current = threadId;
   }, [busy, initialMessages, setMessages, threadId]);
 
-  // Auto-process initial message from /app composer
+  // ── Auto-process first user message (from /app composer) ────────────
+  // Detects a thread that has exactly one user message and no assistant
+  // response yet. This replaces the fragile `?initial=` URL param approach.
+  // Uses DB messages as source of truth — the /app composer already saved
+  // the user message before navigation.
   useEffect(() => {
     if (autoProcessRef.current === threadId) return;
     if (!session || !projectContextProjectId || agentLoading || agentResult) return;
-    if (!initialMessages || initialMessages.length === 0) return;
+    if (loadingMsgs || !initialMessages) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const initialMsg = params.get("initial");
-    if (!initialMsg) return;
+    // Only auto-process if there's exactly 1 user message and no assistant messages
+    const userMessages = initialMessages.filter((m) => m.role === "user");
+    const assistantMessages = initialMessages.filter((m) => m.role === "assistant");
+    if (userMessages.length !== 1 || assistantMessages.length > 0) return;
+
+    // Also skip if the user message is already in the local transcript
+    // (means it was already processed by handleSend in another tab/refresh)
+    const alreadyProcessed = messages.some((m) => m.role === "assistant");
+    if (alreadyProcessed) return;
 
     autoProcessRef.current = threadId;
-    const text = decodeURIComponent(initialMsg);
-
-    // Clear the URL param immediately to prevent reprocessing on re-render
-    window.history.replaceState(null, "", `/app/${threadId}`);
+    const text = userMessages[0].parts
+      .map((p) => (p.type === "text" ? p.text : ""))
+      .join("")
+      .trim();
+    if (!text) return;
 
     setAgentLoading(true);
     const intent = classifyIntent(text);
@@ -326,7 +358,11 @@ function ThreadView() {
 
         if (!res.ok) {
           const errBody = (await res.json()) as { message?: string };
-          toast.error(errBody?.message ?? "Agent request failed. Please try again.");
+          const errMsg = errBody?.message ?? "Agent request failed. Please try again.";
+          toast.error(errMsg);
+          // Append visible error assistant message
+          const errMsgUi = agentErrorToAssistantMessage(errMsg);
+          setMessages((prev) => [...prev, errMsgUi]);
           return;
         }
 
@@ -349,6 +385,8 @@ function ThreadView() {
       } catch (error) {
         const msg = error instanceof Error ? error.message : "Failed to process request.";
         toast.error(msg);
+        const errMsgUi = agentErrorToAssistantMessage(msg);
+        setMessages((prev) => [...prev, errMsgUi]);
       } finally {
         setAgentLoading(false);
       }
@@ -357,6 +395,7 @@ function ThreadView() {
     threadId,
     session,
     projectContextProjectId,
+    loadingMsgs,
     initialMessages,
     agentLoading,
     agentResult,
@@ -542,6 +581,7 @@ function ThreadView() {
         .eq("id", threadId);
     }
 
+    // ── Project-aware path: use /api/chat/agent (single execution path) ──
     if (projectContextProjectId) {
       setAgentLoading(true);
       const intent = classifyIntent(text);
@@ -570,7 +610,7 @@ function ThreadView() {
         }
         setAgentResult(apiData);
 
-        // Build and append assistant message
+        // Append assistant message to local transcript
         const assistantMsg = agentResultToAssistantMessage(apiData);
         setMessages((prev) => [...prev, assistantMsg]);
 
@@ -584,11 +624,14 @@ function ThreadView() {
       } catch (error) {
         const message = error instanceof Error ? error.message : "Agent request failed.";
         toast.error(message);
+        // Append visible error assistant message to transcript
+        const errMsgUi = agentErrorToAssistantMessage(message);
+        setMessages((prev) => [...prev, errMsgUi]);
       } finally {
         setAgentLoading(false);
       }
     } else {
-      // No project context — use standard chat transport
+      // ── Non-project fallback: use useChat /api/chat transport ──
       sendMessage({ text });
     }
   }
@@ -638,7 +681,7 @@ function ThreadView() {
               )}
               {!loadingMsgs && messages.length === 0 && projectContextProjectId && (
                 <div className="text-center py-8">
-                  <h2 className="text-lg font-semibold mb-2">Ask Nexus Core</h2>
+                  <h2 className="text-lg font-semibold mb-2">Ask Nexus Agent</h2>
                   <p className="text-sm text-muted-foreground">
                     Describe the changes you want to make to your project
                   </p>
@@ -693,7 +736,7 @@ function ThreadView() {
                     handleSend();
                   }
                 }}
-                placeholder="Ask Nexus Core..."
+                placeholder="Ask Nexus Agent..."
                 disabled={isArchived}
                 className="min-h-[100px] w-full resize-none rounded-xl border border-border bg-surface p-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60"
                 dir="auto"
@@ -720,7 +763,7 @@ function ThreadView() {
           />
         </main>
 
-        {/* RIGHT PANEL: Artifacts */}
+        {/* RIGHT PANEL: Artifacts — always tied to latest agentResult */}
         <aside
           className={`hidden xl:flex w-80 shrink-0 flex-col border-l border-border bg-surface/20`}
         >
@@ -753,7 +796,7 @@ function MessageBlock({ message }: { message: UIMessage }) {
     <div className="min-w-0 space-y-3">
       <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
         <div className="size-1.5 rounded-full bg-accent" />
-        Nexus Core
+        Nexus Agent
       </div>
       <AssistantMessage text={text} />
     </div>
