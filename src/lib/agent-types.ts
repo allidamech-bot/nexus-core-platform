@@ -22,6 +22,7 @@ export interface AgentSessionInput {
   projectId: string;
   userInstruction: string;
   maxContextBytes?: number;
+  intent?: "greeting" | "general_chat" | "project_review" | "patch_request" | "bugfix" | "refactor" | "planning";
 }
 
 export interface AgentContextBundle {
@@ -130,6 +131,7 @@ export interface AgentSessionResult {
   finalReport?: AgentFinalReport;
   patchProposals?: PatchProposalBundle;
   executionTrace?: import("./provider-router").ExecutionTrace;
+  naturalResponse?: string;
 }
 
 export interface AgentToolResult {

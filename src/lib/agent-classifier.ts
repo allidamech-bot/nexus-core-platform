@@ -2,6 +2,27 @@ import type { AgentTaskType } from "./agent-types";
 
 export { type AgentTaskType } from "./agent-types";
 
+export type AgentIntent = "greeting" | "general_chat" | "project_review" | "patch_request" | "bugfix" | "refactor" | "planning";
+
+const GREETING_PATTERNS = [
+  "hello",
+  "hi",
+  "hey",
+  "مرحبا",
+  "السلام عليكم",
+  "اهلا",
+  "أهلا",
+  "سلام",
+  "good morning",
+  "good evening",
+  "good night",
+  "what's up",
+  "thanks",
+  "thank you",
+  "شكرا",
+  "شكراً",
+];
+
 const KEYWORD_PATTERNS: Record<AgentTaskType, string[]> = {
   coding: ["implement", "create", "build", "add", "function", "class", "method", "api endpoint"],
   planning: ["plan", "organize", "structure", "architect", "design", "approach"],
@@ -11,6 +32,18 @@ const KEYWORD_PATTERNS: Record<AgentTaskType, string[]> = {
   refactor: ["refactor", "cleanup", "improve", "modernize", "restructure"],
   bugfix: ["fix", "bug", "error", "issue", "problem", "crash", "fail"],
 };
+
+export function classifyIntent(instruction: string): AgentIntent {
+  const instructionTrimmed = instruction.trim().toLowerCase();
+
+  for (const pattern of GREETING_PATTERNS) {
+    if (instructionTrimmed.includes(pattern.toLowerCase())) {
+      return "greeting";
+    }
+  }
+
+  return "project_review";
+}
 
 export function classifyTask(instruction: string): AgentTaskType {
   const instructionLower = instruction.toLowerCase();

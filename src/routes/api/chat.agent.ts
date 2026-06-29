@@ -2,6 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { runAgentSession } from "@/lib/agent-runtime";
+import { classifyIntent } from "@/lib/agent-classifier";
 import { getRequestCorrelationId, safeErrorLog, withLogContext } from "@/lib/safeLogging";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -9,6 +10,7 @@ interface Body {
   projectId?: unknown;
   userInstruction?: unknown;
   maxContextBytes?: unknown;
+  intent?: unknown;
 }
 
 function isDeveloperMode(request: Request): boolean {
@@ -98,6 +100,10 @@ export const Route = createFileRoute("/api/chat/agent")({
           typeof body.maxContextBytes === "number" && Number.isFinite(body.maxContextBytes)
             ? body.maxContextBytes
             : undefined;
+        const intent =
+          typeof body.intent === "string"
+            ? (body.intent as "greeting" | "general_chat" | "project_review" | "patch_request" | "bugfix" | "refactor" | "planning")
+            : classifyIntent(userInstruction);
 
         if (!projectId) {
           return jsonResponse({ message: "projectId is required" }, 400, correlationId);
@@ -255,6 +261,10 @@ export const Route = createFileRoute("/api/chat/agent")({
               internalProvider: result.providerUsed,
               internalModel: result.modelUsed,
             };
+          }
+
+          if (result.naturalResponse) {
+            sanitized.naturalResponse = result.naturalResponse;
           }
 
           return jsonResponse(

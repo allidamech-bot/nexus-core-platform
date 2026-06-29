@@ -42,8 +42,10 @@ import type { TranslationKey } from "@/features/i18n/translations";
 import { PricingUpgradeModal } from "@/components/agent-workspace/PricingUpgradeModal";
 import { ProductBuilderWorkspace } from "@/components/agent-workspace/ProductBuilderWorkspace";
 import { AgentArtifactsPanel } from "@/components/agent-workspace/AgentArtifactsPanel";
+import { AgentResultBlock } from "@/components/agent-workspace/AgentResultBlock";
 import { GovernanceStatusCompact } from "@/components/agent-workspace/GovernanceStatusCompact";
 import type { AgentSessionResult } from "@/lib/agent-types";
+import { classifyIntent } from "@/lib/agent-classifier";
 
 const agentModes = [
   { id: "engineering", label: "Engineering" },
@@ -433,6 +435,7 @@ function ThreadView() {
 
     if (projectContextProjectId) {
       setAgentLoading(true);
+      const intent = classifyIntent(text);
       try {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
@@ -448,6 +451,7 @@ function ThreadView() {
             projectId: projectContextProjectId,
             userInstruction: text,
             maxContextBytes: 8000,
+            intent: intent,
           }),
         });
 
@@ -524,10 +528,25 @@ function ThreadView() {
               {agentLoading && (
                 <div className="flex items-center gap-2 text-[11px] text-accent">
                   <Loader2 className="size-3 animate-spin" />
-                  Analyzing your request...
+                  Reading project context...
                 </div>
               )}
-              {status === "submitted" && !agentLoading && (
+              {!agentLoading && agentResult && agentNaturalResponse && (
+                <div className="min-w-0 space-y-3">
+                  <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-accent">
+                    <div className="size-1.5 rounded-full bg-accent" />
+                    Nexus Agent
+                  </div>
+                  <AgentResultBlock
+                    result={agentResult}
+                    isLoading={false}
+                    projectName={projectContextName}
+                    hasIndexedFiles={hasIndexedFiles}
+                    mode={mode}
+                  />
+                </div>
+              )}
+              {status === "submitted" && !agentLoading && !agentResult && (
                 <div className="flex items-center gap-2 text-[11px] text-accent">
                   <Loader2 className="size-3 animate-spin" />
                   {t("initializingWorkspace")}
@@ -596,9 +615,9 @@ function ThreadView() {
 
         {/* RIGHT PANEL: Artifacts */}
         <aside
-          className={`hidden xl:flex w-80 shrink-0 flex-col border-l border-border bg-surface/20 ${hasArtifacts ? "" : "overflow-hidden"}`}
+          className={`hidden xl:flex w-80 shrink-0 flex-col border-l border-border bg-surface/20`}
         >
-          {hasArtifacts && <AgentArtifactsPanel result={agentResult} isLoading={agentLoading} />}
+          <AgentArtifactsPanel result={agentResult} isLoading={agentLoading} />
         </aside>
       </div>
 

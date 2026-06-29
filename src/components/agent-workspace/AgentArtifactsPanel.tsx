@@ -26,8 +26,20 @@ type ArtifactTab = "plan" | "changes" | "validation" | "report";
 export function AgentArtifactsPanel({ result, isLoading, className }: AgentArtifactsPanelProps) {
   const [activeTab, setActiveTab] = useState<ArtifactTab>("plan");
 
-  if (!result && !isLoading) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className={cn("flex h-full items-center justify-center p-4", className)}>
+        <div className="text-xs text-muted-foreground">Preparing review artifacts...</div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className={cn("flex h-full items-center justify-center p-4", className)}>
+        <div className="text-xs text-muted-foreground">No review artifacts yet</div>
+      </div>
+    );
   }
 
   const hasPlan = result?.plan && result.plan.steps.length > 0;

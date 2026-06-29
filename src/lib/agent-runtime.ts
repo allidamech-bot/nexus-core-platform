@@ -2,7 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { generateWithNexusCore } from "./nexus-core-ai";
 import { buildContextBundle, selectRelevantFiles } from "./agent-tools";
-import { classifyTask, type AgentTaskType } from "./agent-classifier";
+import {
+  classifyTask,
+  classifyIntent,
+  type AgentTaskType,
+  type AgentIntent,
+} from "./agent-classifier";
 import {
   classifyRisk,
   generateProposalId,
@@ -397,11 +402,82 @@ Respond with JSON only.`;
   };
 }
 
+async function generateNaturalResponse(
+  intent: AgentIntent | undefined,
+  instruction: string,
+  projectName: string | undefined,
+  hasIndexedFiles: boolean,
+  developerMode = false,
+): Promise<string> {
+  if (intent === "greeting") {
+    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+      instruction,
+    );
+    if (isArabic) {
+      const projectInfo = projectName ? `على مشروع ${projectName}. ` : "";
+      const filesInfo = hasIndexedFiles ? "أقدر أراجع الملفات المفهرسة. " : "";
+      return `أهلاً، أنا جاهز ${projectInfo}${filesInfo}ماذا تريد أن أفحص أولاً؟`;
+    }
+    const projectInfo = projectName ? `on the ${projectName} project. ` : "";
+    const filesInfo = hasIndexedFiles ? "I can work with your indexed files. " : "";
+    return `Hello! I'm ready ${projectInfo}${filesInfo}What would you like me to examine first?`;
+  }
+
+  if (intent === "general_chat") {
+    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+      instruction,
+    );
+    if (isArabic) {
+      return projectName
+        ? `أفهم طلبك. أنا هنا أساعدك في مشروع ${projectName}.`
+        : "كيف يمكنني مساعدتك اليوم؟";
+    }
+    return projectName
+      ? `I understand. I'm here to help with the ${projectName} project.`
+      : "I'm ready to help. How can I assist you today?";
+  }
+
+  if (
+    intent === "project_review" ||
+    intent === "patch_request" ||
+    intent === "bugfix" ||
+    intent === "refactor"
+  ) {
+    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+      instruction,
+    );
+    if (isArabic) {
+      return projectName
+        ? `**فهم المهمة**: طلبك يتعلق بتحليل أو مراجعة مشروع ${projectName}.
+**السياق المتاح**: ${hasIndexedFiles ? "تم تحميل ملفات مفهرسة." : "لم يتم فهرسة ملفات بعد."}
+**النتيجة**: تم تحضير ملخص التحليل والتقييمات في لوحة الآثار.
+**الخطوة التالية**: راجع الخطة والتقارير على الجانب الأيمن للاطلاع على التفاصيل.`
+        : `**فهم المهمة**: طلب تحليل أو مراجعة.
+**السياق المتاح**: لا توجد مشروع مرتبط بهذه الجلسة.
+**ملاحظة**: قم بإرفاق مشروع للحصول على تحليل مبني على محتوى فعلي.`;
+    }
+    return projectName
+      ? `**Understanding**: Your request involves analysis or review of the ${projectName} project.
+**Available context**: ${hasIndexedFiles ? "Indexed files are available." : "No indexed files attached yet."}
+**Result**: Analysis summary and review artifacts are prepared in the right panel.
+**Next step**: Review the plan and reports on the right for full details.`
+      : `**Understanding**: Your request involves project review.
+**Available context**: No project attached to this session.
+**Note**: Attach a project for grounded analysis with actual file content.`;
+  }
+
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+    instruction,
+  );
+  return isArabic ? "أنا جاهز للمساعدة." : "Ready to help.";
+}
+
 export async function runAgentSession(
   supabase: SupabaseClient<Database>,
   input: AgentSessionInput,
   developerMode = false,
 ): Promise<AgentSessionResult> {
+  const intent = input.intent ?? classifyIntent(input.userInstruction);
   const taskType = classifyTask(input.userInstruction);
   let context: AgentContextBundle | undefined;
   let plan: AgentPlan | undefined;
@@ -413,6 +489,8 @@ export async function runAgentSession(
 
   stageResults.task_classification = taskType;
 
+  const shouldGenerateArtifacts = intent !== "greeting" && intent !== "general_chat";
+
   try {
     context = await buildContextBundle(supabase, input.projectId, input.maxContextBytes);
     stageResults.context_gathering = `Collected ${context.files.length} files, ${context.previews.length} previews`;
@@ -420,37 +498,51 @@ export async function runAgentSession(
     stageResults.context_gathering = `Error: ${e instanceof Error ? e.message : String(e)}`;
   }
 
-  if (context) {
+  const hasIndexedFiles = context?.files.length ? context.files.length > 0 : false;
+  const naturalResponse = await generateNaturalResponse(
+    intent,
+    input.userInstruction,
+    context?.projectName,
+    hasIndexedFiles,
+    developerMode,
+  );
+
+  if (shouldGenerateArtifacts && context) {
     plan = await generatePlan(taskType, input.userInstruction, context);
     stageResults.planning = plan ? "Plan generated" : "Plan generation failed";
   }
 
-  if (context && plan) {
+  if (shouldGenerateArtifacts && context && plan) {
     proposedChanges = await generateProposedChanges(taskType, input.userInstruction, context, plan);
     stageResults.proposed_changes = `${proposedChanges.length} changes proposed`;
   }
 
-  if (proposedChanges.length > 0 && context) {
+  if (shouldGenerateArtifacts && proposedChanges.length > 0 && context) {
     patchProposals = convertToPatchProposals(proposedChanges, context, input.userInstruction);
   }
 
-  if (proposedChanges.length > 0) {
+  if (shouldGenerateArtifacts && proposedChanges.length > 0) {
     validationPlan = await generateValidationPlan(taskType, input.userInstruction, proposedChanges);
     stageResults.validation_plan = `${validationPlan.commands.length} commands suggested`;
   }
 
-  const finalReportResult = await generateFinalReport(
-    taskType,
-    input.userInstruction,
-    plan,
-    proposedChanges,
-    patchProposals,
-    validationPlan,
-    developerMode,
-  );
-  const finalReport = finalReportResult.report;
-  const executionTrace = finalReportResult.trace;
-  stageResults.final_report = "Generated";
+  let finalReport: AgentFinalReport | undefined;
+  let executionTrace: ExecutionTrace | undefined;
+
+  if (shouldGenerateArtifacts) {
+    const finalReportResult = await generateFinalReport(
+      taskType,
+      input.userInstruction,
+      plan,
+      proposedChanges,
+      patchProposals,
+      validationPlan,
+      developerMode,
+    );
+    finalReport = finalReportResult.report;
+    executionTrace = finalReportResult.trace;
+    stageResults.final_report = "Generated";
+  }
 
   return {
     stage: "final_report",
@@ -459,11 +551,12 @@ export async function runAgentSession(
     modelUsed: "auto-selected",
     status: "success",
     context,
-    plan,
-    proposedChanges,
-    validationPlan,
+    plan: shouldGenerateArtifacts ? plan : undefined,
+    proposedChanges: shouldGenerateArtifacts ? proposedChanges : undefined,
+    validationPlan: shouldGenerateArtifacts ? validationPlan : undefined,
     finalReport,
     patchProposals,
     executionTrace: developerMode ? executionTrace : undefined,
+    naturalResponse,
   };
 }
